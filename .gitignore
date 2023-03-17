@@ -1,0 +1,8 @@
+src/fenstring.h.gch
+src/fenString.o
+src/moveGenerator.h.gch
+src/moveGenerator.o
+build/
+out
+.vs
+.vscode

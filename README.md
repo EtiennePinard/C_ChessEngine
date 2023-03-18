@@ -1,4 +1,4 @@
-# C ChessEngine
+# C_ChessEngine
 
 A chess engine coded in C used in my Flutter Chess Application.
 This project was greatly inspired by Sabastian Lague chess video: https://www.youtube.com/watch?v=U4ogK0MIzqk

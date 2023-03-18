@@ -947,6 +947,33 @@ void generateSupportingPiecesMoves(Moves* validMoves) {
     }
 }
 
+bool compareGameStateForRepetition(GameState gameStateToCompare) {
+    // Comparing boards
+    for (int i = 0; i < BOARD_SIZE; i++) {
+        if (state->boardArray[i] != gameStateToCompare.boardArray[i]) {
+            return false;
+        }
+    }
+    return state->castlinPerm == gameStateToCompare.castlinPerm &&
+        state->colorToGo == gameStateToCompare.colorToGo &&
+        state->enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
+}
+
+bool isThereThreeFoldRepetition(GameState previousStates[]) {
+    bool hasOneDuplicate = false;
+    for (int i = 0; i < state->nbMoves; i++) {
+        if (compareGameStateForRepetition(previousStates[i])) {
+            if (!hasOneDuplicate) {
+                hasOneDuplicate = true;
+            } else {
+                // Already has a duplicate, this is the third repetition
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void noMemoryLeaksPlease() {
     free(attackedSquares);
     free(doubleAttackedSquares);
@@ -973,16 +1000,15 @@ Moves* simplifyMoves(Moves og) {
     return result;
 }
 
-Moves* getValidMoves(GameState *gameState) {
+Moves* getValidMoves(GameState *gameState, GameState *previousStates) {
     Moves validMoves = { 0 };
     state = gameState;
     
-    if (state->turnsForFiftyRule >= 50) {
-        noMemoryLeaksPlease();
+    if (isThereThreeFoldRepetition(previousStates) || (state->turnsForFiftyRule >= 50)) {
         appendMove(0, 0, STALEMATE, &validMoves); // This is the `draw` move
         return simplifyMoves(validMoves);
     }
-    
+
     init();
     calculateAttackSquares();
     generateKingMoves(&validMoves);

@@ -108,8 +108,8 @@ GameState* setGameStateFromFenString(char *fen, GameState* result) {
     splitString;
     result->enPassantTargetSquare = convertSquareToIndex(split);
     splitString;
-    result->nbMoves = (int) strtol(split, NULL, 10);
-    splitString;
     result->turnsForFiftyRule = (int) strtol(split, NULL, 10);
+    splitString;
+    result->nbMoves = (int) strtol(split, NULL, 10);
     return result;
 }

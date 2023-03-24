@@ -36,6 +36,7 @@ typedef struct gameState {
         nbMoves;
 } GameState;
 
+// 4 bit number, so can have total of 16 flags
 enum Flag {
     NOFlAG,
     EN_PASSANT,
@@ -47,7 +48,8 @@ enum Flag {
     PROMOTE_TO_ROOK,
     PROMOTE_TO_BISHOP,
     STALEMATE,
-    CHECKMATE
+    CHECKMATE,
+    DRAW // For losing in repetition
 };
 
 // First 2 bits are for the color

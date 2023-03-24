@@ -35,7 +35,8 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   n_moves = move_list->count;
   if (n_moves == 1) {
     if ((move_list->items[0] >> 12) == STALEMATE || 
-        (move_list->items[0] >> 12) == CHECKMATE) {
+        (move_list->items[0] >> 12) == CHECKMATE ||
+        (move_list->items[0] >> 12) == DRAW) {
           // Game is finished, continuing to next move
           free(move_list->items);
           free(move_list);

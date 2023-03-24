@@ -1005,7 +1005,7 @@ Moves* getValidMoves(GameState *gameState, GameState *previousStates) {
     state = gameState;
     
     if (isThereThreeFoldRepetition(previousStates) || (state->turnsForFiftyRule >= 50)) {
-        appendMove(0, 0, STALEMATE, &validMoves); // This is the `draw` move
+        appendMove(0, 0, DRAW, &validMoves); // This is the `draw` move
         return simplifyMoves(validMoves);
     }
 

@@ -1,6 +1,6 @@
 # ON WINDOWS: Commands to run to get the .dll
 # Note: Use MinGW to get the gcc executable
-# cd ./engine_src/src
+# cd ./src
 # gcc -c fenString.c moveGenerator.c
 # gcc -shared -o chess_engine.dll fenString.o moveGenerator.o
 

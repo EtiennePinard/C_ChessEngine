@@ -36,9 +36,9 @@ GameState* createState(
     int nbMoves
 ) {
     GameState* result = malloc(sizeof(GameState));
-    assert(result == NULL && "Buy more RAM lol");
+    assert(result != NULL && "Buy more RAM lol");
     result->boardArray = malloc(sizeof(int) * BOARD_SIZE);
-    assert(boardArray == NULL && "Buy more RAM lol");
+    assert(boardArray != NULL && "Buy more RAM lol");
 
     for (int i = 0; i < BOARD_SIZE; i++) {
         result->boardArray[i] = boardArray[i];

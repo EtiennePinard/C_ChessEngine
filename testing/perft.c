@@ -28,7 +28,7 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  Moves* move_list = getValidMoves(&previousState, achievedStates);
+  Moves* move_list = getValidMoves(&previousState, achievedStates, nbMoveMade + 1);
   int n_moves, i;
   u64 nodes = 0;
 

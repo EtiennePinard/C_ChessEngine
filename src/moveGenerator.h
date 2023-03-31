@@ -83,7 +83,7 @@ enum PIECE {
         (da)->items[(da)->count++] = (item);                                         \
     } while (0)
 
-Moves* getValidMoves(GameState* gameState, GameState *previousStates);
+Moves* getValidMoves(GameState* gameState, GameState *previousStates, int nbStatesReached);
 
 GameState* createState(
     int *boardArray,

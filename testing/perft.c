@@ -11,7 +11,7 @@ typedef unsigned long long u64;
 GameState copyState(GameState from) {
   GameState to = {
     .boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE),
-    .castlinPerm = from.castlinPerm,
+    .castlingPerm = from.castlingPerm,
     .colorToGo = from.colorToGo,
     .enPassantTargetSquare = from.enPassantTargetSquare,
     .nbMoves = from.nbMoves,
@@ -28,15 +28,21 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  Moves* move_list = getValidMoves(&previousState, achievedStates, nbMoveMade + 1);
+  Moves* move_list = getValidMoves(&previousState, NULL, 0); // We do not care about draw by repetition
   int n_moves, i;
   u64 nodes = 0;
 
   n_moves = move_list->count;
   if (n_moves == 1) {
+    if (move_list->items[0] >> 12 == DRAW) {
+      printf("You just encounted a draw\nThis is not supposed to happen\nDid you hit the fifty move rule?\n");
+      free(move_list->items);
+      free(move_list);
+      return 0;
+    }
+
     if ((move_list->items[0] >> 12) == STALEMATE || 
-        (move_list->items[0] >> 12) == CHECKMATE ||
-        (move_list->items[0] >> 12) == DRAW) {
+        (move_list->items[0] >> 12) == CHECKMATE) {
           // Game is finished, continuing to next move
           free(move_list->items);
           free(move_list);
@@ -78,8 +84,6 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
 }
 
 char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-// TODO: Test the move repetition strategy
 
 // To compile the perft program: gcc -g -o perft testing/perft.c testing/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c
 // To run the compiled program: ./perft <depth>

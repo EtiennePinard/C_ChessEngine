@@ -30,17 +30,20 @@ bool inCheck;
 GameState* createState(
     int *boardArray,
     int colorToGo, 
-    int castlinPerm, 
+    int castlingPerm, 
     int enPassantTargetSquare, 
     int turnsForFiftyRule, 
     int nbMoves
 ) {
     GameState* result = malloc(sizeof(GameState));
+    assert(result == NULL && "Buy more RAM lol");
     result->boardArray = malloc(sizeof(int) * BOARD_SIZE);
+    assert(boardArray == NULL && "Buy more RAM lol");
+
     for (int i = 0; i < BOARD_SIZE; i++) {
         result->boardArray[i] = boardArray[i];
     }
-    result->castlinPerm = castlinPerm;
+    result->castlingPerm = castlingPerm;
     result->colorToGo = colorToGo;
     result->enPassantTargetSquare = enPassantTargetSquare;
     result->nbMoves = nbMoves;
@@ -499,7 +502,7 @@ void generateCastle(Moves* validMoves) {
     const int defaultKingIndex = state->colorToGo == WHITE ? 60 : 4;
     if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
 
-    const int castlingBits = state->colorToGo == WHITE ? state->castlinPerm >> 2 : state-> castlinPerm & 0b11;
+    const int castlingBits = state->colorToGo == WHITE ? state->castlingPerm >> 2 : state-> castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
         // Trusting the caller that the the king nor the rook has moved
         // Note the first check is redundant, if we assume 
@@ -954,7 +957,7 @@ bool compareGameStateForRepetition(GameState gameStateToCompare) {
             return false;
         }
     }
-    return state->castlinPerm == gameStateToCompare.castlinPerm &&
+    return state->castlingPerm == gameStateToCompare.castlingPerm &&
         state->colorToGo == gameStateToCompare.colorToGo &&
         state->enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }

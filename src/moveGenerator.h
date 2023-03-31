@@ -30,7 +30,7 @@ typedef struct moves {
 typedef struct gameState {
     int* boardArray;
     int colorToGo, 
-        castlinPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
+        castlingPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
         enPassantTargetSquare, 
         turnsForFiftyRule, 
         nbMoves;
@@ -88,7 +88,7 @@ Moves* getValidMoves(GameState* gameState, GameState *previousStates, int nbStat
 GameState* createState(
     int *boardArray,
     int colorToGo, 
-    int castlinPerm, 
+    int castlingPerm, 
     int enPassantTargetSquare, 
     int turnsForFiftyRule, 
     int nbMoves

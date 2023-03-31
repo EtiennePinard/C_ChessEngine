@@ -104,7 +104,7 @@ GameState* setGameStateFromFenString(char *fen, GameState* result) {
     splitString;
     result->colorToGo = (strcmp(split, "w") == 0) ? WHITE : BLACK;
     splitString;
-    result->castlinPerm = getCastlingPermFromFenString(split);
+    result->castlingPerm = getCastlingPermFromFenString(split);
     splitString;
     result->enPassantTargetSquare = convertSquareToIndex(split);
     splitString;

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "chessGameEmulator.h"
 
-void updateCastlePerm(int pieceToMove, int from, GameState* state) {
+void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
   bool kingWhiteRookHasMoved = false;
   bool queenWhiteRookHasMoved = false;
   bool kingBlackRookHasMoved = false;
@@ -47,7 +47,7 @@ void updateCastlePerm(int pieceToMove, int from, GameState* state) {
   }    
 }
 
-void updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
+void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
   if ((pieceToMove & pieceTypeBitMask) == PAWN) {
     state->turnsForFiftyRule = 0; // A pawn has moved
   } else if (state->boardArray[to] != NONE) {
@@ -60,8 +60,8 @@ void makeMove(unsigned short move, GameState* state) {
   int to = (move >> 6) & 0b111111;
   int flag = (move >> 12);
   int pieceToMove = state->boardArray[from];
-  updateCastlePerm(pieceToMove, from, state);
-  updateFiftyFiftyMove(pieceToMove, to, state);
+  _updateCastlePerm(pieceToMove, from, state);
+  _updateFiftyFiftyMove(pieceToMove, to, state);
 
   state->boardArray[from] = NONE;
   if (state->boardArray[to] != NONE) {
@@ -117,5 +117,7 @@ void makeMove(unsigned short move, GameState* state) {
     state->enPassantTargetSquare = -1;
   }
   state->turnsForFiftyRule++;
-  state->nbMoves++;
+  if (state->colorToGo == WHITE) {
+    state->nbMoves++; // Only recording full moves
+  }
 }

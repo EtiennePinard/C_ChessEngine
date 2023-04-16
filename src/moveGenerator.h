@@ -3,6 +3,8 @@
 
 #define BOARD_SIZE 64
 
+#include <stddef.h>
+
 /**
 * This is a dynamic array of integers. You can use the 
 * da_append macro to append integer to this list
@@ -27,7 +29,7 @@ typedef struct moves {
     size_t capacity;
 } Moves;
 
-typedef struct gameState {
+typedef struct GameState {
     int* boardArray;
     int colorToGo, 
         castlingPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
@@ -35,6 +37,12 @@ typedef struct gameState {
         turnsForFiftyRule, 
         nbMoves;
 } GameState;
+
+typedef struct gameStates {
+    GameState* items;
+    size_t count;
+    size_t capacity;
+} GameStates;
 
 // 4 bit number, so can have total of 16 flags
 enum Flag {
@@ -83,7 +91,7 @@ enum PIECE {
         (da)->items[(da)->count++] = (item);                                         \
     } while (0)
 
-Moves* getValidMoves(GameState* gameState, GameState *previousStates, int nbStatesReached);
+Moves* getValidMoves(GameState* gameState, GameStates previousStates);
 
 GameState* createState(
     int *boardArray,

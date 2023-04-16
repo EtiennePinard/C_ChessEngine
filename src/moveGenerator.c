@@ -962,10 +962,10 @@ bool compareGameStateForRepetition(GameState gameStateToCompare) {
         state->enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(GameState previousStates[], int nbStatesReached) {
+bool isThereThreeFoldRepetition(GameStates previousStates) {
     bool hasOneDuplicate = false;
-    for (int i = 0; i < nbStatesReached; i++) {
-        if (compareGameStateForRepetition(previousStates[i])) {
+    for (int i = 0; i < previousStates.count; i++) {
+        if (compareGameStateForRepetition(previousStates.items[i])) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
@@ -1003,11 +1003,11 @@ Moves* simplifyMoves(Moves og) {
     return result;
 }
 
-Moves* getValidMoves(GameState *gameState, GameState *previousStates, int nbStatesReached) {
+Moves* getValidMoves(GameState *gameState, GameStates previousStates) {
     Moves validMoves = { 0 };
     state = gameState;
     
-    if (isThereThreeFoldRepetition(previousStates, nbStatesReached) || (state->turnsForFiftyRule >= 50)) {
+    if (isThereThreeFoldRepetition(previousStates) || (state->turnsForFiftyRule >= 50)) {
         appendMove(0, 0, DRAW, &validMoves); // This is the `draw` move
         return simplifyMoves(validMoves);
     }

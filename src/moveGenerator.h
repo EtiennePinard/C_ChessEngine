@@ -4,6 +4,7 @@
 #define BOARD_SIZE 64
 
 #include <stddef.h>
+#include <stdlib.h>
 
 /**
 * This is a dynamic array of integers. You can use the 
@@ -15,16 +16,20 @@ typedef struct intList {
     size_t capacity;
 } IntList;
 
+/**
+* The structure is copied from Sebastian Lague chess program
+* A move is a 16 bit number
+* bit 0-5: from square (0 to 63)
+* bit 6-11: to square (0 to 63)
+* bit 12-15: flag
+*/
+typedef unsigned short Move;
+
 /** 
- * Dynamic array of moves
- * The structure is copied from Sebastian Lague chess program
- * A move is a 16 bit number
- * bit 0-5: from square (0 to 63)
- * bit 6-11: to square (0 to 63)
- * bit 12-15: flag
+ * Dynamic array of moves. Use the da_append macro to append moves
  */
 typedef struct moves {
-    unsigned short* items;
+    Move* items;
     size_t count;
     size_t capacity;
 } Moves;
@@ -101,5 +106,10 @@ GameState* createState(
     int turnsForFiftyRule, 
     int nbMoves
 );
+
+/**
+ * Utility function to make a copy of a GameState
+*/
+GameState copyState(GameState from);
 
 #endif

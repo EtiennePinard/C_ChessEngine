@@ -4,11 +4,25 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include "moveGenerator.h"
 
 #define BOARD_LENGTH 8
+
+GameState copyState(GameState from) {
+  GameState to = {
+    .boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE),
+    .castlingPerm = from.castlingPerm,
+    .colorToGo = from.colorToGo,
+    .enPassantTargetSquare = from.enPassantTargetSquare,
+    .nbMoves = from.nbMoves,
+    .turnsForFiftyRule = from.turnsForFiftyRule
+  };
+  for (int i = 0; i < BOARD_SIZE; i++) {
+    to.boardArray[i] = from.boardArray[i];
+  }
+  return to;
+}
 
 GameState* state;
 
@@ -70,7 +84,7 @@ void appendIntListToAttackedSquare(int src[BOARD_LENGTH]) {
 }
 
 void appendMove(int startSquare, int targetSquare, int flag, Moves* validMoves) {
-    unsigned short move = startSquare;
+    Move move = startSquare;
     move |= (targetSquare << 6);
     move |= (flag << 12);
     da_append(validMoves, move);
@@ -963,6 +977,7 @@ bool compareGameStateForRepetition(GameState gameStateToCompare) {
 }
 
 bool isThereThreeFoldRepetition(GameStates previousStates) {
+    if (previousStates.items == NULL) return false;
     bool hasOneDuplicate = false;
     for (int i = 0; i < previousStates.count; i++) {
         if (compareGameStateForRepetition(previousStates.items[i])) {
@@ -995,7 +1010,7 @@ Moves* simplifyMoves(Moves og) {
     Moves* result = malloc(sizeof(Moves));
     result->capacity = og.count;
     result->count = og.count;
-    result->items = malloc(sizeof(unsigned short) * result->capacity);
+    result->items = malloc(sizeof(Move) * result->capacity);
     for (int i = 0; i < result->count; i++) {
         result->items[i] = og.items[i];
     }

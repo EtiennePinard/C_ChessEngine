@@ -1,8 +1,8 @@
 # ON WINDOWS: Commands to run to get the .dll
 # Note: Use MinGW to get the gcc executable
 # cd ./src
-# gcc -c fenString.c moveGenerator.c
-# gcc -shared -o chess_engine.dll fenString.o moveGenerator.o
+# gcc -c fenString.c moveGenerator.c chessComputer.c chessGameEmulator.c chessComputer.c
+# gcc -shared -o chess_engine.dll fenString.o moveGenerator.o chessComputer.o chessGameEmulator.o chessComputer.o
 
 # ON LINUX: Use CMake to create the .so files
 # cd ./engine_src/
@@ -14,6 +14,8 @@ project(chess_engine VERSION 1.0.0 LANGUAGES C)
 add_library(chess_engine SHARED 
     src/moveGenerator.c
     src/fenString.c
+    src/chessComputer.c
+    src/chessGameEmulator.c
     )
 
 set_target_properties(chess_engine PROPERTIES

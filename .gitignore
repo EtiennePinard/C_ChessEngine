@@ -7,3 +7,5 @@ out
 .vs
 .vscode
 perft
+test
+testing/testChessComputer.txt

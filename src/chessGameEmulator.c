@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <assert.h>
 #include "chessGameEmulator.h"
 
 void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
@@ -55,7 +56,7 @@ void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
   }
 }
 
-void makeMove(unsigned short move, GameState* state) {
+void makeMove(Move move, GameState* state) {
   int from = move & 0b111111;
   int to = (move >> 6) & 0b111111;
   int flag = (move >> 12);

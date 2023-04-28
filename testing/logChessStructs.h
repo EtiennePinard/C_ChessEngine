@@ -1,9 +1,18 @@
 #ifndef LOGCHESSSTRCUTS_H
 #define LOGCHESSSTRCUTS_H
 
-void printMove(unsigned short move);
+#include <stdio.h>
+#include "../src/moveGenerator.h"
 
-void printMoveToAlgebraic(unsigned short move);
+void printMove(Move move);
+
+void printMoveToAlgebraic(Move move);
 
 void printBoard(int board[64]);
+
+void writeMoveToFile(Move move, FILE *file);
+
+void writeMoveToAlgebraicToFile(Move move, FILE *file);
+
+void writeBoardToFile(int board[64], FILE *file);
 #endif

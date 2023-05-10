@@ -3,6 +3,8 @@
 
 #define BOARD_SIZE 64
 
+#include <stddef.h>
+
 /**
 * The structure is copied from Sebastian Lague chess program
 * A move is a 16 bit number

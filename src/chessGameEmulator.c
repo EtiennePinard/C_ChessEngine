@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "chessGameEmulator.h"
 
 void _updateCastlePerm(int pieceToMove, int from, GameState* state) {

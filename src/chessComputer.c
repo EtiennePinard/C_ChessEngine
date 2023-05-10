@@ -1,3 +1,5 @@
+#include <assert.h>
+#include <stdlib.h>
 #include "chessComputer.h"
 #include "chessGameEmulator.h"
 #include "../testing/logChessStructs.h"
@@ -37,9 +39,9 @@ int evaluationPosition(GameState state) {
     }
     // mobility
     state.colorToGo = BLACK;
-    Moves* blackLegalMoves = getValidMoves(&state, (GameStates){ .capacity = 0, .count = 0, .items = NULL });
+    Moves* blackLegalMoves = getValidMoves(&state, NULL);
     state.colorToGo = WHITE;
-    Moves* whiteLegalMoves = getValidMoves(&state, (GameStates){ .capacity = 0, .count = 0, .items = NULL });
+    Moves* whiteLegalMoves = getValidMoves(&state, NULL);
     int mobilityScore = (whiteLegalMoves->count - blackLegalMoves->count) * _mobilityWeight;
     state.colorToGo = colorToGoOg;
     free(whiteLegalMoves->items);
@@ -60,7 +62,7 @@ int _search(int depth, int alpha, int beta, GameState currentState, GameStates *
         // It changes the color to go but it is passed by value not reference so no side effects from evaluatePosition
         return evaluationPosition(currentState) * perspective;
     }
-    Moves* moves = getValidMoves(&currentState, *previousStates);
+    Moves* moves = getValidMoves(&currentState, previousStates);
     _orderMoves(moves, currentState);
     
     if (moves->count == 1) {
@@ -100,13 +102,16 @@ int _search(int depth, int alpha, int beta, GameState currentState, GameStates *
     return alpha;
 }
 
-Moves bestMovesAccordingToComputer(int depth, GameState *state, GameStates *previousStates) {
+Moves* bestMovesAccordingToComputer(int depth, const GameState *state, GameStates *previousStates) {
     Moves* legalMoves;
-    legalMoves = getValidMoves(state, *previousStates);
+    legalMoves = getValidMoves(state, previousStates);
 
     int bestEval = _negativeInfinity;
 
-    Moves bestMoves = {0};
+    Moves* bestMoves = malloc(sizeof(Moves));
+    bestMoves->capacity = 0;
+    bestMoves->count = 0;
+    bestMoves->items = NULL;
 
     for (int i = 0; i < legalMoves->count; i++) {
         Move move = legalMoves->items[i];
@@ -115,17 +120,20 @@ Moves bestMovesAccordingToComputer(int depth, GameState *state, GameStates *prev
         da_append(previousStates, *state);
         int eval = _search(depth, _negativeInfinity, _positiveInfinity,
             newState, previousStates) * -1;
-        previousStates->count--;
+        if (previousStates->count > 0) {
+            previousStates->count--;
+        }
         free(newState.boardArray);
         if (eval > bestEval) {
             bestEval = eval;
-            bestMoves.count = 0;
-            da_append(&bestMoves, move);
+            bestMoves->count = 0;
+            da_append(bestMoves, move);
         } else if (eval == bestEval) {
-            da_append(&bestMoves, move);
+            da_append(bestMoves, move);
         }
     }
     free(legalMoves->items);
     free(legalMoves);
+
     return bestMoves;
 }

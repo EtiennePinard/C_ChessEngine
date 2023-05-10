@@ -3,19 +3,6 @@
 
 #define BOARD_SIZE 64
 
-#include <stddef.h>
-#include <stdlib.h>
-
-/**
-* This is a dynamic array of integers. You can use the 
-* da_append macro to append integer to this list
-*/
-typedef struct intList {
-    int* items;
-    size_t count;
-    size_t capacity;
-} IntList;
-
 /**
 * The structure is copied from Sebastian Lague chess program
 * A move is a 16 bit number
@@ -43,11 +30,15 @@ typedef struct GameState {
         nbMoves;
 } GameState;
 
+/** 
+ * Dynamic array of GameState. Use the da_append macro to append GameState
+ */
 typedef struct gameStates {
     GameState* items;
     size_t count;
     size_t capacity;
 } GameStates;
+
 
 // 4 bit number, so can have total of 16 flags
 enum Flag {
@@ -96,7 +87,7 @@ enum PIECE {
         (da)->items[(da)->count++] = (item);                                         \
     } while (0)
 
-Moves* getValidMoves(GameState* gameState, GameStates previousStates);
+Moves* getValidMoves(const GameState* gameState, const GameStates* previousStates);
 
 GameState* createState(
     int *boardArray,

@@ -94,8 +94,8 @@ do { \
 
 GameState* setGameStateFromFenString(char *fen, GameState* result) {
     if (result == NULL) result = malloc(sizeof(GameState));
-    assert(result != NULL && "Buy more RAM lol");
-    char copy[100];
+    assert(result != NULL && "Malloc failed so buy more RAM lol");
+    char copy[100]; // Could have potential buffer overflow
     strcpy(copy, fen);
     char* split = strtok(copy, " ");
     int* boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE);

@@ -5,9 +5,21 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdlib.h>
 #include "moveGenerator.h"
 
 #define BOARD_LENGTH 8
+
+/**
+* This is a dynamic array of integers. You can use the 
+* da_append macro to append integer to this list
+*/
+typedef struct intList {
+    int* items;
+    size_t count;
+    size_t capacity;
+} IntList;
 
 GameState copyState(GameState from) {
   GameState to = {
@@ -24,7 +36,7 @@ GameState copyState(GameState from) {
   return to;
 }
 
-GameState* state;
+const GameState* state;
 
 int opponentColor;
 int friendlyKingIndex;
@@ -50,9 +62,9 @@ GameState* createState(
     int nbMoves
 ) {
     GameState* result = malloc(sizeof(GameState));
-    assert(result != NULL && "Buy more RAM lol");
+    assert(result != NULL && "Malloc failed so buy more RAM lol");
     result->boardArray = malloc(sizeof(int) * BOARD_SIZE);
-    assert(boardArray != NULL && "Buy more RAM lol");
+    assert(boardArray != NULL && "Malloc failed so buy more RAM lol");
 
     for (int i = 0; i < BOARD_SIZE; i++) {
         result->boardArray[i] = boardArray[i];
@@ -976,11 +988,15 @@ bool compareGameStateForRepetition(GameState gameStateToCompare) {
         state->enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(GameStates previousStates) {
-    if (previousStates.items == NULL) return false;
+bool isThereThreeFoldRepetition(const GameStates* previousStates) {
+    if ((previousStates == NULL) || 
+        (previousStates->items == NULL) || 
+        (previousStates->capacity == 0)) { 
+        return false;
+    }
     bool hasOneDuplicate = false;
-    for (int i = 0; i < previousStates.count; i++) {
-        if (compareGameStateForRepetition(previousStates.items[i])) {
+    for (int i = 0; i < previousStates->count; i++) {
+        if (compareGameStateForRepetition(previousStates->items[i])) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
@@ -1018,7 +1034,7 @@ Moves* simplifyMoves(Moves og) {
     return result;
 }
 
-Moves* getValidMoves(GameState *gameState, GameStates previousStates) {
+Moves* getValidMoves(const GameState *gameState, const GameStates* previousStates) {
     Moves validMoves = { 0 };
     state = gameState;
     

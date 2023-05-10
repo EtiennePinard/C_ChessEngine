@@ -1,10 +1,9 @@
 #ifndef CHESSAI_H
 #define CHESSAI_H
 
-#include <assert.h>
 #include "moveGenerator.h"
 
-Moves bestMovesAccordingToComputer(int depth, GameState *state, GameStates *previousStates);
+Moves* bestMovesAccordingToComputer(int depth, const GameState *state, GameStates *previousStates);
 
 #define _pawnValue 100
 #define _knightValue 300

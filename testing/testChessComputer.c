@@ -11,7 +11,7 @@ GameState* makeMoveFromStartingState(int nbMoveToDo, GameStates *previousStates)
     GameState *state = setGameStateFromFenString(
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", NULL);
     for (int i = 0; i < nbMoveToDo; i++) {
-        Moves *moves = getValidMoves(state, *previousStates);
+        Moves *moves = getValidMoves(state, previousStates);
         Move move = moves->items[0]; // There will always be a move right?
         da_append(previousStates, copyState(*state));
         makeMove(move, state);
@@ -31,11 +31,11 @@ int main() {
         previousStates->count = 0;
         previousStates->items = NULL;
         GameState *state = makeMoveFromStartingState(i, previousStates);
-        Moves moves = bestMovesAccordingToComputer(3, state, previousStates);
+        Moves* moves = bestMovesAccordingToComputer(3, state, previousStates);
         writeBoardToFile(state->boardArray, file);
         fprintf(file, "\n");
-        for (int j = 0; j < moves.count; j++) {
-            Move move = moves.items[j];
+        for (int j = 0; j < moves->count; j++) {
+            Move move = moves->items[j];
             writeMoveToFile(move, file);
         }
         fprintf(file, "\n\n");
@@ -46,7 +46,8 @@ int main() {
         free(previousStates);
         free(state->boardArray);
         free(state);
-        free(moves.items);
+        free(moves->items);
+        free(moves);
     }
     fclose(file);
     return 0;

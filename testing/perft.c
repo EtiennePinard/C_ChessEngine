@@ -3,31 +3,17 @@
 #include <stdbool.h>
 #include "../src/moveGenerator.h"
 #include "../src/fenString.h"
-#include "logChessStructs.h"
 #include "../src/chessGameEmulator.h"
+#include "logChessStructs.h"
 
 typedef unsigned long long u64;
-
-GameState copyState(GameState from) {
-  GameState to = {
-    .boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE),
-    .castlingPerm = from.castlingPerm,
-    .colorToGo = from.colorToGo,
-    .enPassantTargetSquare = from.enPassantTargetSquare,
-    .nbMoves = from.nbMoves,
-    .turnsForFiftyRule = from.turnsForFiftyRule
-  };
-  for (int i = 0; i < BOARD_SIZE; i++) {
-    to.boardArray[i] = from.boardArray[i];
-  }
-  return to;
-}
 
 u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMoveOfMaxDepth) {
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  Moves* move_list = getValidMoves(&previousState, (GameStates){ 0 }); // We do not care about draw by repetition
+  GameStates previousStates = { 0 };
+  Moves* move_list = getValidMoves(&previousState, &previousStates); // We do not care about draw by repetition
   int n_moves, i;
   u64 nodes = 0;
 

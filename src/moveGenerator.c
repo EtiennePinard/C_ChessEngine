@@ -1048,7 +1048,7 @@ Moves* getValidMoves(const GameState *gameState, const GameStates* previousState
     generateKingMoves(&validMoves);
 
     if (inDoubleCheck) { 
-
+        // Only king moves are valid when in double check
         if (validMoves.count == 0) {
             // A pretty cool double checkmate
             appendMove(0, 0, CHECKMATE, &validMoves); // This is the `checkmate` move
@@ -1059,7 +1059,7 @@ Moves* getValidMoves(const GameState *gameState, const GameStates* previousState
     }
     
     generateSupportingPiecesMoves(&validMoves);
-
+    
     if (validMoves.count == 0) {
         // There is no valid move
         if (inCheck) {

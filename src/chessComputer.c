@@ -12,8 +12,8 @@
 
 #define _mobilityWeight 1 // Mobility is not that important
 
-#define _positiveInfinity 9999999
-#define _negativeInfinity -9999999
+#define _positiveInfinity 999999
+#define _negativeInfinity -999999
 
 #define _capturedPieceValueMultiplier 10
 
@@ -64,6 +64,7 @@ int evaluationPosition(GameState state) {
     return materialScore + mobilityScore;
 }
 
+// TODO: Fix this function
 void _orderMoves(Moves* moves, GameState state) {
     // Giving each move a score
     int scores[moves->count];
@@ -100,43 +101,38 @@ void _orderMoves(Moves* moves, GameState state) {
             default:
                 break;
             }
-
-            scores[i] = score;
         }
+        scores[i] = score;
+    }
 
-        // Sorting Moves
-        int order[moves->count];
-        int tempScores[moves->count];
-        int lastSmallestIndex = 0;
-        for (int i = 0; i < moves->count; i++) {
-            // Removing any score that was already sorted
-            for (int x = 0; x < moves->count - i; x++) {
-                int score = scores[x];
-                if (score != -1) {
-                    tempScores[x] = score;
-                }
+    // Sorting Moves
+    int order[moves->count];
+    int lastSmallestIndex = 0;
+    int nextSmall;
+    for (int i = 0; i < moves->count; i++) {
+        // Sorting the remainging scores
+        nextSmall = scores[0];
+        lastSmallestIndex = 0;
+        int score;
+        for (int x = 1; x < moves->count; x++) {
+            score = scores[x];
+            if (score == -1) { continue; }
+            if (score < nextSmall || nextSmall == -1) {
+                nextSmall = score;
+                lastSmallestIndex = x;
             }
-            // Sorting the remainging scores
-            int nextSmall = tempScores[0];
-            for (int x = 1; x < moves->count - i; x++) {
-                int score = tempScores[x];
-                if (score < nextSmall) {
-                    nextSmall = score;
-                    lastSmallestIndex = x;
-                }
-            }
-            order[i] = lastSmallestIndex;
-            scores[lastSmallestIndex] = -1;
         }
+        order[i] = lastSmallestIndex;
+        scores[lastSmallestIndex] = -1;
+    }
 
-        // Ordering the original moves dynamic array
-        Move results[moves->count];
-        for (int i = 0; i < moves->count; i++) {
-            results[i] = moves->items[order[i]]; 
-        }
-        for (int i = 0; i < moves->count; i++) {
-            moves->items[i] = results[i];
-        }
+    // Ordering the original moves dynamic array
+    Move results[moves->count];
+    for (int i = 0; i < moves->count; i++) {
+        results[i] = moves->items[order[i]]; 
+    }
+    for (int i = 0; i < moves->count; i++) {
+        moves->items[i] = results[i];
     }
 }
 
@@ -148,7 +144,6 @@ int _search(int depth, int alpha, int beta, GameState currentState, GameStates *
     }
     Moves* moves = getValidMoves(&currentState, previousStates);
     _orderMoves(moves, currentState);
-    
     if (moves->count == 1) {
         int flag = moves->items[0] >> 12;
         if (flag == CHECKMATE) {

@@ -65,10 +65,81 @@ int evaluationPosition(GameState state) {
 }
 
 void _orderMoves(Moves* moves, GameState state) {
-    // TODO: Implement the move ordering
+    // Giving each move a score
+    int scores[moves->count];
+    for (int i = 0; i < moves->count; i++) {
+        Move move = moves->items[i];
+        int score = 0;
+        int startSquare = move & 0b111111;
+        int endSquare = (move >> 6) & 0b111111;
+        int pieceThatMoves = state.boardArray[startSquare];
+        int pieceToCapture = state.boardArray[endSquare];
+
+        // Captures a piece with a smaller piece
+        if ((pieceToCapture & pieceTypeBitMask) != NONE) {
+            score += _capturedPieceValueMultiplier * abs(_pieceToValue(pieceToCapture)) - 
+                abs(_pieceToValue(pieceThatMoves));
+        }
+
+        // Promote a piece
+        if ((pieceToCapture & pieceTypeBitMask) == PAWN) {
+            int flag = move >> 12;
+            switch (flag) {
+            case PROMOTE_TO_QUEEN:
+                score += _queenValue;
+                break;
+            case PROMOTE_TO_KNIGHT:
+                score += _knightValue;
+                break;
+            case PROMOTE_TO_ROOK:
+                score += _rookValue;
+                break;
+            case PROMOTE_TO_BISHOP:
+                score += _bishopValue;
+                break;
+            default:
+                break;
+            }
+
+            scores[i] = score;
+        }
+
+        // Sorting Moves
+        int order[moves->count];
+        int tempScores[moves->count];
+        int lastSmallestIndex = 0;
+        for (int i = 0; i < moves->count; i++) {
+            // Removing any score that was already sorted
+            for (int x = 0; x < moves->count - i; x++) {
+                int score = scores[x];
+                if (score != -1) {
+                    tempScores[x] = score;
+                }
+            }
+            // Sorting the remainging scores
+            int nextSmall = tempScores[0];
+            for (int x = 1; x < moves->count - i; x++) {
+                int score = tempScores[x];
+                if (score < nextSmall) {
+                    nextSmall = score;
+                    lastSmallestIndex = x;
+                }
+            }
+            order[i] = lastSmallestIndex;
+            scores[lastSmallestIndex] = -1;
+        }
+
+        // Ordering the original moves dynamic array
+        Move results[moves->count];
+        for (int i = 0; i < moves->count; i++) {
+            results[i] = moves->items[order[i]]; 
+        }
+        for (int i = 0; i < moves->count; i++) {
+            moves->items[i] = results[i];
+        }
+    }
 }
 
-// TODO: Fix memory leaks in this function
 int _search(int depth, int alpha, int beta, GameState currentState, GameStates *previousStates) {
     if (depth == 0) {
         int perspective = currentState.colorToGo == WHITE ? 1 : -1;

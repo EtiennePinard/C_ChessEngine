@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <unistd.h>
-#include <limits.h>
+#include <linux/limits.h>
 #include "../src/moveGenerator.h"
 #include "../src/fenString.h"
 #include "../src/chessComputer.h"

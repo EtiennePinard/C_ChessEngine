@@ -13,38 +13,30 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
   GameStates previousStates = { 0 };
-  Moves* move_list = getValidMoves(&previousState, &previousStates); // We do not care about draw by repetition
+  Moves move_list = getValidMoves(previousState, previousStates); // We do not care about draw by repetition
   int n_moves, i;
   u64 nodes = 0;
 
-  n_moves = move_list->count;
+  n_moves = move_list.count;
   if (n_moves == 1) {
-    if (move_list->items[0] >> 12 == DRAW) {
-      printf("You just encounted a draw\nThis is not supposed to happen\nDid you hit the fifty move rule?\n");
-      free(move_list->items);
-      free(move_list);
+    int flag = flag(move_list.items[0]);
+    if (flag == DRAW || flag == STALEMATE || flag == CHECKMATE) {
+      // Game is finished, continuing to next move
+      free(move_list.items);
       return 0;
     }
-
-    if ((move_list->items[0] >> 12) == STALEMATE || 
-        (move_list->items[0] >> 12) == CHECKMATE) {
-          // Game is finished, continuing to next move
-          free(move_list->items);
-          free(move_list);
-          return 0;
-        }
   }
 
   if (depth == 1) {
-    free(move_list->items);
-    free(move_list);
+    free(move_list.items);
     return n_moves;
   }
 
   for (i = 0; i < n_moves; i++) {
-    if (depth != 1) { // So that if we want to check moves at depth 1 with don't get memory leaks
+  if (depth != 1) { // So that if we want to check moves at depth 1 with don't get memory leaks
       GameState newState = copyState(previousState);
-      makeMove(move_list->items[i], &newState); // Move is made
+      Move move = move_list.items[i];
+      makeMove(move, &newState); // Move is made
 
       if (i != 0 || !firstMoveOfMaxDepth) { // When it is the first time we have reached this depth, the next state is not stored
         // If it is not the first iteration of this perft, then there is something stored at this location
@@ -56,14 +48,13 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
 
     u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth, firstMoveOfMaxDepth && i == 0); // We generate the moves for the next perft
     if (depth == maximumDepth) {
-      printMoveToAlgebraic(move_list->items[i]);
+      printMoveToAlgebraic(move_list.items[i]);
       printf(": %lld\n", moveOutput);
     }
     nodes += moveOutput;
   }
 
-  free(move_list->items);
-  free(move_list);
+  free(move_list.items);
   
   return nodes;
 }

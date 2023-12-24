@@ -14,6 +14,11 @@
 */
 typedef unsigned short Move;
 
+#define fromSquare(move) (move & 0b111111)
+#define targetSquare(move) ((move >> 6) & 0b111111)
+#define flag(move) (move >> 12)
+
+
 /** 
  * Dynamic array of moves. Use the da_append macro to append moves
  */
@@ -89,7 +94,7 @@ enum PIECE {
         (da)->items[(da)->count++] = (item);                                         \
     } while (0)
 
-Moves* getValidMoves(const GameState* gameState, const GameStates* previousStates);
+Moves getValidMoves(const GameState gameState, const GameStates previousStates);
 
 GameState* createState(
     int *boardArray,

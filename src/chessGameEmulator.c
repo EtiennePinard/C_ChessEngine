@@ -5,48 +5,43 @@
 #include "chessGameEmulator.h"
 
 void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
-  bool kingWhiteRookHasMoved = false;
-  bool queenWhiteRookHasMoved = false;
-  bool kingBlackRookHasMoved = false;
-  bool queenBlackRookHasMoved = false;
-  bool whiteKingHasMoved = false;
-  bool blackKingHasMoved = false;
-  if (state->castlingPerm == 0) return;
-  if (pieceToMove == (WHITE | ROOK)) {
-    if (from == 63) {
-      kingWhiteRookHasMoved = true;
-    } else if (from == 56) {
-      queenWhiteRookHasMoved = true;
-    }
-  } else if (pieceToMove == (BLACK | ROOK)) {
-    if (from == 7) {
-      kingBlackRookHasMoved = true;
-    } else if (from == 0) {
-      queenBlackRookHasMoved = true;
-    }
-  } else if (pieceToMove == (WHITE | KING)) {
-    whiteKingHasMoved = true;
-  } else if (pieceToMove == (BLACK | KING)) {
-    blackKingHasMoved = true;
+  if (state->castlingPerm == 0) { return; }
+
+  int kingSideWhiteRookPosition = 63;
+  int queenSideWhiteRookPosition = 56;
+  int kingSideBlackRookPosition = 7;
+  int queenSideBlackRookPosition = 0;
+
+  switch (pieceToMove) {
+
+    case WHITE | ROOK:
+      if (from == kingSideWhiteRookPosition) {
+        state->castlingPerm &= 0b0111; // Removing white king side castling perm
+      } else if (from == queenSideWhiteRookPosition) {
+        state->castlingPerm &= 0b1011; // Removing white queen side caslting perm
+      }
+      break;
+
+    case BLACK | ROOK:
+      if (from == kingSideBlackRookPosition) {
+        state->castlingPerm &= 0b1101; // Removing black king side caslting perm
+      } else if (from == queenSideBlackRookPosition) {
+        state->castlingPerm &= 0b1110; // Removing black queen side caslting perm
+      }
+      break;
+
+    case WHITE | KING:
+      state->castlingPerm &= 0b0011; // The white king castling perm is none existant
+      break;
+
+    case BLACK | KING:
+      state->castlingPerm &= 0b1100; // The black king castling perm is none existant
+      break;
+
+    default:
+      break;
   }
-  if (whiteKingHasMoved) {
-    state->castlingPerm &= 0b0011; // The white king castling perm is none existant
-  }
-  if (blackKingHasMoved) {
-    state->castlingPerm &= 0b1100; // The black king castling perm is none existant
-  }
-  if (kingWhiteRookHasMoved) {
-    state->castlingPerm &= 0b0111; // Removing white king side
-  }
-  if (queenWhiteRookHasMoved) {
-    state->castlingPerm &= 0b1011; // Removing white queen side
-  }
-  if (kingBlackRookHasMoved) {
-    state->castlingPerm &= 0b1101; // Removing black king side
-  }
-  if (queenBlackRookHasMoved) {
-    state->castlingPerm &= 0b1110; // Removing black queen side
-  }    
+
 }
 
 void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
@@ -58,9 +53,9 @@ void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
 }
 
 void makeMove(Move move, GameState* state) {
-  int from = move & 0b111111;
-  int to = (move >> 6) & 0b111111;
-  int flag = (move >> 12);
+  int from = fromSquare(move);
+  int to = targetSquare(move);
+  int flag = flag(move);
   int pieceToMove = state->boardArray[from];
   _updateCastlePerm(pieceToMove, from, state);
   _updateFiftyFiftyMove(pieceToMove, to, state);

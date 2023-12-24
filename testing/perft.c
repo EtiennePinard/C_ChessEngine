@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include "../src/moveGenerator.h"
 #include "../src/fenString.h"
 #include "../src/chessGameEmulator.h"
 #include "logChessStructs.h"
+
+#define TEST_ITERATION 100
 
 typedef unsigned long long u64;
 
@@ -47,10 +50,10 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
     }
 
     u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth, firstMoveOfMaxDepth && i == 0); // We generate the moves for the next perft
-    if (depth == maximumDepth) {
-      printMoveToAlgebraic(move_list.items[i]);
-      printf(": %lld\n", moveOutput);
-    }
+    // if (depth == maximumDepth) {
+    //   printMoveToAlgebraic(move_list.items[i]);
+    //   printf(": %lld\n", moveOutput);
+    // }
     nodes += moveOutput;
   }
 
@@ -86,11 +89,24 @@ int main(int argc, char* argv[]) {
   achievedStates[0] = *startingState;
   free(startingState);
 
-  u64 totalNumberOfMoves = perft(maximumDepth, achievedStates, maximumDepth, true);
-  printf("Total moves made for perft %d is %llu\n", maximumDepth, totalNumberOfMoves);
-  for (int i = 0; i < maximumDepth; i++) {
-    free(achievedStates[i].boardArray);
+  double averageExecutionTime = 0;
+  clock_t begin, end;
+  u64 perftResult;
+
+  for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
+    begin = clock();
+    perftResult = perft(maximumDepth, achievedStates, maximumDepth, true);
+    end = clock();
+    double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
+    averageExecutionTime += timeSpent;
+    printf("ITERATION #%d, Time: %fs, Perft: %llu\n", iterations, timeSpent, perftResult);
+    for (int i = 1; i < maximumDepth; i++) {
+      // i starts at 1 because I do not want to free the first state
+      free(achievedStates[i].boardArray);
+    }
   }
+  averageExecutionTime /= TEST_ITERATION;
+  printf("Perft depth %d took on average %fs (%fms)\n", maximumDepth, averageExecutionTime, averageExecutionTime * 1000);
   return 0;
 }
 

@@ -2,6 +2,7 @@
 #define MOVEGENERATOR_H
 
 #define BOARD_SIZE 64
+#define MAX_LEGAL_MOVES 218
 
 #include <stddef.h>
 
@@ -18,15 +19,9 @@ typedef unsigned short Move;
 #define targetSquare(move) ((move >> 6) & 0b111111)
 #define flag(move) (move >> 12)
 
+#define LAST_MOVE_ARRAY_ELEMENT 0 // This would be an invalid, as the from square from equal the to square, so we use it to encode the length
 
-/** 
- * Dynamic array of moves. Use the da_append macro to append moves
- */
-typedef struct moves {
-    Move* items;
-    size_t count;
-    size_t capacity;
-} Moves;
+int nbMoves(Move moves[LAST_MOVE_ARRAY_ELEMENT + 1]);
 
 typedef struct GameState {
     int* boardArray;
@@ -94,7 +89,11 @@ enum PIECE {
         (da)->items[(da)->count++] = (item);                                         \
     } while (0)
 
-Moves getValidMoves(const GameState gameState, const GameStates previousStates);
+/**
+ * Returns the valid moves in a given position
+ * The results array is assumed to be 0 initialized
+*/
+void getValidMoves(Move* results, const GameState currentState, const GameStates previousStates);
 
 GameState* createState(
     int *boardArray,

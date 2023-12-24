@@ -16,29 +16,29 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
   GameStates previousStates = { 0 };
-  Moves move_list = getValidMoves(previousState, previousStates); // We do not care about draw by repetition
-  int n_moves, i;
-  u64 nodes = 0;
+  
+  Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
 
-  n_moves = move_list.count;
-  if (n_moves == 1) {
-    int flag = flag(move_list.items[0]);
+  getValidMoves(moves, previousState, previousStates); // We do not care about draw by repetition
+  int nbOfMoves, i;
+  u64 nodes = 0;
+  nbOfMoves = nbMoves(moves);
+  if (nbOfMoves == 1) {
+    int flag = flag(moves[0]);
     if (flag == DRAW || flag == STALEMATE || flag == CHECKMATE) {
       // Game is finished, continuing to next move
-      free(move_list.items);
       return 0;
     }
   }
 
   if (depth == 1) {
-    free(move_list.items);
-    return n_moves;
+    return nbOfMoves;
   }
 
-  for (i = 0; i < n_moves; i++) {
+  for (i = 0; i < nbOfMoves; i++) {
   if (depth != 1) { // So that if we want to check moves at depth 1 with don't get memory leaks
       GameState newState = copyState(previousState);
-      Move move = move_list.items[i];
+      Move move = moves[i];
       makeMove(move, &newState); // Move is made
 
       if (i != 0 || !firstMoveOfMaxDepth) { // When it is the first time we have reached this depth, the next state is not stored
@@ -56,8 +56,6 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
     // }
     nodes += moveOutput;
   }
-
-  free(move_list.items);
   
   return nodes;
 }
@@ -106,7 +104,7 @@ int main(int argc, char* argv[]) {
     }
   }
   averageExecutionTime /= TEST_ITERATION;
-  printf("Perft depth %d took on average %fs (%fms)\n", maximumDepth, averageExecutionTime, averageExecutionTime * 1000);
+  printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
   return 0;
 }
 

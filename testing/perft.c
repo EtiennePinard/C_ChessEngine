@@ -43,7 +43,7 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
 
       if (i != 0 || !firstMoveOfMaxDepth) { // When it is the first time we have reached this depth, the next state is not stored
         // If it is not the first iteration of this perft, then there is something stored at this location
-        free(achievedStates[nbMoveMade + 1].boardArray);
+        free(achievedStates[nbMoveMade + 1].board.boardArray);
       }
 
       achievedStates[nbMoveMade + 1] = newState;
@@ -51,7 +51,7 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
 
     u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth, firstMoveOfMaxDepth && i == 0); // We generate the moves for the next perft
     // if (depth == maximumDepth) {
-    //   printMoveToAlgebraic(move_list.items[i]);
+    //   printMoveToAlgebraic(move);
     //   printf(": %lld\n", moveOutput);
     // }
     nodes += moveOutput;
@@ -99,8 +99,8 @@ int main(int argc, char* argv[]) {
     averageExecutionTime += timeSpent;
     printf("ITERATION #%d, Time: %fs, Perft: %llu\n", iterations, timeSpent, perftResult);
     for (int i = 1; i < maximumDepth; i++) {
-      // i starts at 1 because I do not want to free the first state
-      free(achievedStates[i].boardArray);
+      // `i` starts at 1 because I do not want to free the first state
+      free(achievedStates[i].board.boardArray);
     }
   }
   averageExecutionTime /= TEST_ITERATION;

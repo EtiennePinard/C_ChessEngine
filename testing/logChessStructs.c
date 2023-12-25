@@ -58,7 +58,7 @@ void writeMoveToAlgebraicToFile(Move move, FILE *file) {
 
 char pieceToFenChar(int piece) {
   char result;
-  switch (piece & pieceTypeBitMask) {
+  switch (pieceType(piece)) {
     case KING:
       result = 'k';
     break;
@@ -81,7 +81,7 @@ char pieceToFenChar(int piece) {
       return ' ';
     break;
   }
-  if ((piece & pieceColorBitMask) == WHITE) {
+  if (pieceColor(piece) == WHITE) {
     result = toupper(result);
   }
   return result;

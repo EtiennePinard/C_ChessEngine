@@ -100,7 +100,7 @@ GameState* setGameStateFromFenString(char *fen, GameState* result) {
     char* split = strtok(copy, " ");
     int* boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE);
     setBoardArrayFromFenString(split, boardArray);
-    result->boardArray = boardArray; 
+    result->board.boardArray = boardArray; 
     splitString;
     result->colorToGo = (strcmp(split, "w") == 0) ? WHITE : BLACK;
     splitString;

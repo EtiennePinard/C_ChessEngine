@@ -45,9 +45,9 @@ void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
 }
 
 void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
-  if ((pieceToMove & pieceTypeBitMask) == PAWN) {
+  if (pieceType(pieceToMove) == PAWN) {
     state->turnsForFiftyRule = 0; // A pawn has moved
-  } else if (state->boardArray[to] != NONE) {
+  } else if (state->board.boardArray[to] != NONE) {
     state->turnsForFiftyRule = 0; // There has been a capture
   }
 }
@@ -56,15 +56,15 @@ void makeMove(Move move, GameState* state) {
   int from = fromSquare(move);
   int to = targetSquare(move);
   int flag = flag(move);
-  int pieceToMove = state->boardArray[from];
+  int pieceToMove = state->board.boardArray[from];
   _updateCastlePerm(pieceToMove, from, state);
   _updateFiftyFiftyMove(pieceToMove, to, state);
 
-  state->boardArray[from] = NONE;
-  if (state->boardArray[to] != NONE) {
+  state->board.boardArray[from] = NONE;
+  if (state->board.boardArray[to] != NONE) {
     state->turnsForFiftyRule++;
   }
-  state->boardArray[to] = pieceToMove;
+  state->board.boardArray[to] = pieceToMove;
   int rookIndex;
   int rookPiece;
   int enPassantTargetSquare;
@@ -75,7 +75,7 @@ void makeMove(Move move, GameState* state) {
     break;
   case EN_PASSANT:
     pawnIndex = state->colorToGo == WHITE ? to + 8 : to - 8;
-    state->boardArray[pawnIndex] = NONE;
+    state->board.boardArray[pawnIndex] = NONE;
     break;
   case DOUBLE_PAWN_PUSH:
     enPassantTargetSquare = state->colorToGo == WHITE ? to + 8 : to - 8;
@@ -83,27 +83,27 @@ void makeMove(Move move, GameState* state) {
     break;
   case KING_SIDE_CASTLING:
     rookIndex = from + 3;
-    rookPiece = state->boardArray[rookIndex];
-    state->boardArray[rookIndex] = NONE;
-    state->boardArray[to - 1] = rookPiece;
+    rookPiece = state->board.boardArray[rookIndex];
+    state->board.boardArray[rookIndex] = NONE;
+    state->board.boardArray[to - 1] = rookPiece;
     break;
   case QUEEN_SIDE_CASTLING:
     rookIndex = from - 4;
-    rookPiece = state->boardArray[rookIndex];
-    state->boardArray[rookIndex] = NONE;
-    state->boardArray[to + 1] = rookPiece;
+    rookPiece = state->board.boardArray[rookIndex];
+    state->board.boardArray[rookIndex] = NONE;
+    state->board.boardArray[to + 1] = rookPiece;
     break;
   case PROMOTE_TO_QUEEN: 
-    state->boardArray[to] = state->colorToGo | QUEEN;
+    state->board.boardArray[to] = state->colorToGo | QUEEN;
     break;
   case PROMOTE_TO_KNIGHT: 
-    state->boardArray[to] = state->colorToGo | KNIGHT;
+    state->board.boardArray[to] = state->colorToGo | KNIGHT;
     break;
   case PROMOTE_TO_ROOK: 
-    state->boardArray[to] = state->colorToGo | ROOK;
+    state->board.boardArray[to] = state->colorToGo | ROOK;
     break;
   case PROMOTE_TO_BISHOP: 
-    state->boardArray[to] = state->colorToGo | BISHOP;
+    state->board.boardArray[to] = state->colorToGo | BISHOP;
     break;
   default:
     printf("ERROR: Invalid flag %d\n", flag);

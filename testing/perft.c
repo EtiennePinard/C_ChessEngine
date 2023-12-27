@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include "../src/moveGenerator.h"
-#include "../src/fenString.h"
+#include "../src/utils/fenString.h"
 #include "../src/chessGameEmulator.h"
 #include "logChessStructs.h"
 
@@ -15,16 +15,16 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  GameStates previousStates = { 0 };
+  GBA previousStates = { 0 };
   
   Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
 
   getValidMoves(moves, previousState, previousStates); // We do not care about draw by repetition
   int nbOfMoves, i;
   u64 nodes = 0;
-  nbOfMoves = nbMoves(moves);
+  nbOfMoves = nbMovesInArray(moves);
   if (nbOfMoves == 1) {
-    int flag = flag(moves[0]);
+    int flag = flagFromMove(moves[0]);
     if (flag == DRAW || flag == STALEMATE || flag == CHECKMATE) {
       // Game is finished, continuing to next move
       return 0;
@@ -62,7 +62,7 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
 
 char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-// To compile the perft program: gcc -g -o perft testing/perft.c src/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c
+// To compile the perft program: gcc -g -o perft testing/perft.c src/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c src/piece.c
 // To run the compiled program: ./perft <depth>
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes ./perft <depth>
 int main(int argc, char* argv[]) {

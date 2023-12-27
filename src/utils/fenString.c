@@ -22,7 +22,7 @@ int getCastlingPermFromFenString(char* fen) {
     return result;
 }
 
-void setBoardArrayFromFenString(char *fen, int *board) {
+void setBoardArrayFromFenString(char* fen, Piece* board) {
   int row = 0, col = 0;
   for (int i = 0; i < strlen(fen); i++) {
     char fenChar = fen[i];
@@ -98,7 +98,7 @@ GameState* setGameStateFromFenString(char *fen, GameState* result) {
     char copy[100]; // Could have potential buffer overflow
     strcpy(copy, fen);
     char* split = strtok(copy, " ");
-    int* boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE);
+    Piece* boardArray = (Piece*) malloc(sizeof(Piece) * BOARD_SIZE);
     setBoardArrayFromFenString(split, boardArray);
     result->board.boardArray = boardArray; 
     splitString;

@@ -1,7 +1,7 @@
 #ifndef FEN_STRING_H
 #define FEN_STRING_H
 
-#include "moveGenerator.h"
+#include "../state/GameState.h"
 
 GameState* setGameStateFromFenString(char* fenString, GameState* result);
 

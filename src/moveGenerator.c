@@ -9,20 +9,6 @@
 #include <stdlib.h>
 #include "moveGenerator.h"
 
-#define BOARD_LENGTH 8
-
-inline Piece pieceAtIndex(Board board, int index) {
-    return board.boardArray[index];
-}
-
-inline int nbMoves(Move moves[MAX_LEGAL_MOVES + 1]) {
-    int index = 0;
-    while (moves[index]) {
-        index++;
-    }
-    return index;
-}
-
 /**
 * This is a dynamic array of integers. You can use the 
 * da_append macro to append integer to this list
@@ -32,24 +18,6 @@ typedef struct intList {
     size_t count;
     size_t capacity;
 } IntList;
-
-GameState copyState(GameState from) {
-  Board board = {
-    .boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE)
-  };
-  GameState to = {
-    .board = board,
-    .castlingPerm = from.castlingPerm,
-    .colorToGo = from.colorToGo,
-    .enPassantTargetSquare = from.enPassantTargetSquare,
-    .nbMoves = from.nbMoves,
-    .turnsForFiftyRule = from.turnsForFiftyRule
-  };
-  for (int i = 0; i < BOARD_SIZE; i++) {
-    to.board.boardArray[i] = from.board.boardArray[i];
-  }
-  return to;
-}
 
 int opponentColor;
 int friendlyKingIndex;
@@ -65,30 +33,6 @@ IntList** isPieceAtLocationPinned;
 
 bool inDoubleCheck;
 bool inCheck;
-
-GameState* createState(
-    int *boardArray,
-    int colorToGo, 
-    int castlingPerm, 
-    int enPassantTargetSquare, 
-    int turnsForFiftyRule, 
-    int nbMoves
-) {
-    GameState* result = malloc(sizeof(GameState));
-    assert(result != NULL && "Malloc failed so buy more RAM lol");
-    Board board = { .boardArray = malloc(sizeof(int) * BOARD_SIZE) };
-    assert(board.boardArray != NULL && "Malloc failed so buy more RAM lol");
-    result->board = board;
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        result->board.boardArray[i] = boardArray[i];
-    }
-    result->castlingPerm = castlingPerm;
-    result->colorToGo = colorToGo;
-    result->enPassantTargetSquare = enPassantTargetSquare;
-    result->nbMoves = nbMoves;
-    result->turnsForFiftyRule = turnsForFiftyRule;
-    return result;
-}
 
 void resetRayResult(int ray[BOARD_LENGTH]) {
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -1006,14 +950,15 @@ bool compareGameStateForRepetition(const GameState state, const GameState gameSt
         state.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(const GameState currentState, const GameStates previousStates) {
+bool isThereThreeFoldRepetition(const GameState currentState, const GBA previousStates) {
     if ((previousStates.capacity == 0) ||
         (previousStates.items == NULL)) { 
         return false;
     }
     bool hasOneDuplicate = false;
+    GameState* items = (GameState*) (previousStates.items);
     for (int i = 0; i < previousStates.count; i++) {
-        if (compareGameStateForRepetition(currentState, previousStates.items[i])) {
+        if (compareGameStateForRepetition(currentState, items[i])) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
@@ -1039,7 +984,7 @@ void noMemoryLeaksPlease() {
     free(isPieceAtLocationPinned);
 }
 
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GameStates previousStates) {
+void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GBA previousStates) {
     int currentIndex = 0;
     
     if (isThereThreeFoldRepetition(currentState, previousStates) || (currentState.turnsForFiftyRule >= 50)) {

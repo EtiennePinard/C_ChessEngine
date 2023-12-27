@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# Run this bash file with ./perft <depth> to compile and run the perft functionality of this chess engine
+
+# Check if one argument is provided
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <depth>"
+    exit 1
+fi
+
+# Check if the argument is a number
+if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    echo "Error: '$1' is not a valid number."
+    exit 1
+fi
+
+gcc -g -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c
+./perftTesting "$1"

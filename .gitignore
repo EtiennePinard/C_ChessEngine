@@ -6,6 +6,6 @@ build/
 out
 .vs
 .vscode
-perft
+perftTesting
 test
 testing/testChessComputer.txt

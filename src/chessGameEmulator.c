@@ -11,7 +11,7 @@ void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
   int queenSideWhiteRookPosition = 56;
   int kingSideBlackRookPosition = 7;
   int queenSideBlackRookPosition = 0;
-
+  
   switch (pieceToMove) {
 
     case WHITE | ROOK:
@@ -53,9 +53,9 @@ void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
 }
 
 void makeMove(Move move, GameState* state) {
-  int from = fromSquare(move);
-  int to = targetSquare(move);
-  int flag = flag(move);
+  int from = fromSquareFromMove(move);
+  int to = toSquareFromMove(move);
+  Flag flag = flagFromMove(move);
   int pieceToMove = state->board.boardArray[from];
   _updateCastlePerm(pieceToMove, from, state);
   _updateFiftyFiftyMove(pieceToMove, to, state);

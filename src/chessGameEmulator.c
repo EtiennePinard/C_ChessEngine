@@ -44,11 +44,11 @@ void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
 
 }
 
-void _updateFiftyFiftyMove(int pieceToMove, int to, GameState* state) {
-  if (pieceType(pieceToMove) == PAWN) {
-    state->turnsForFiftyRule = 0; // A pawn has moved
-  } else if (state->board.boardArray[to] != NONE) {
-    state->turnsForFiftyRule = 0; // There has been a capture
+void _updateFiftyMoveRule(int pieceToMove, int to, GameState* state) {
+  if (pieceType(pieceToMove) == PAWN || pieceAtIndex(state->board, to) != NONE) {
+    state->turnsForFiftyRule = 0; // A pawn has moved or a capture has happened
+  } else {
+    state->turnsForFiftyRule++; // No captures or pawn advance happenned
   }
 }
 
@@ -56,64 +56,62 @@ void makeMove(Move move, GameState* state) {
   int from = fromSquareFromMove(move);
   int to = toSquareFromMove(move);
   Flag flag = flagFromMove(move);
-  int pieceToMove = state->board.boardArray[from];
+  int pieceToMove = pieceAtIndex(state->board, from);
   _updateCastlePerm(pieceToMove, from, state);
-  _updateFiftyFiftyMove(pieceToMove, to, state);
+  _updateFiftyMoveRule(pieceToMove, to, state);
 
-  state->board.boardArray[from] = NONE;
-  if (state->board.boardArray[to] != NONE) {
-    state->turnsForFiftyRule++;
-  }
-  state->board.boardArray[to] = pieceToMove;
+  handleMove(&state->board, from, to);
+
+  PieceCharacteristics oppositeColor = state->colorToGo == WHITE ? BLACK : WHITE;
+
   int rookIndex;
-  int rookPiece;
-  int enPassantTargetSquare;
-  int pawnIndex;
+  Piece piece;
+  int enPassantPawnIndex;
   switch (flag) {
   case NOFlAG:
     // Just for completeness
     break;
   case EN_PASSANT:
-    pawnIndex = state->colorToGo == WHITE ? to + 8 : to - 8;
-    state->board.boardArray[pawnIndex] = NONE;
+    enPassantPawnIndex = state->colorToGo == WHITE ? to + 8 : to - 8;
+    piece = pieceAtIndex(state->board, enPassantPawnIndex);
+    togglePieceAtIndex(&state->board, enPassantPawnIndex, piece);
     break;
   case DOUBLE_PAWN_PUSH:
-    enPassantTargetSquare = state->colorToGo == WHITE ? to + 8 : to - 8;
-    state->enPassantTargetSquare = enPassantTargetSquare;
+    enPassantPawnIndex = state->colorToGo == WHITE ? to + 8 : to - 8;
+    state->enPassantTargetSquare = enPassantPawnIndex;
     break;
   case KING_SIDE_CASTLING:
     rookIndex = from + 3;
-    rookPiece = state->board.boardArray[rookIndex];
-    state->board.boardArray[rookIndex] = NONE;
-    state->board.boardArray[to - 1] = rookPiece;
+    piece = pieceAtIndex(state->board, rookIndex);
+    togglePieceAtIndex(&state->board, rookIndex, piece);
+    togglePieceAtIndex(&state->board, to - 1, piece);
     break;
   case QUEEN_SIDE_CASTLING:
     rookIndex = from - 4;
-    rookPiece = state->board.boardArray[rookIndex];
-    state->board.boardArray[rookIndex] = NONE;
-    state->board.boardArray[to + 1] = rookPiece;
+    piece = pieceAtIndex(state->board, rookIndex);
+    togglePieceAtIndex(&state->board, rookIndex, piece);
+    togglePieceAtIndex(&state->board, to + 1, piece);
     break;
   case PROMOTE_TO_QUEEN: 
-    state->board.boardArray[to] = state->colorToGo | QUEEN;
+    togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, QUEEN));
     break;
   case PROMOTE_TO_KNIGHT: 
-    state->board.boardArray[to] = state->colorToGo | KNIGHT;
+    togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, KNIGHT));
     break;
   case PROMOTE_TO_ROOK: 
-    state->board.boardArray[to] = state->colorToGo | ROOK;
+    togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, ROOK));
     break;
   case PROMOTE_TO_BISHOP: 
-    state->board.boardArray[to] = state->colorToGo | BISHOP;
+    togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, BISHOP));
     break;
   default:
     printf("ERROR: Invalid flag %d\n", flag);
     return;
   }
-  state->colorToGo = state->colorToGo == WHITE ? BLACK : WHITE;
+  state->colorToGo = oppositeColor;
   if (flag != DOUBLE_PAWN_PUSH && state->enPassantTargetSquare != -1) {
     state->enPassantTargetSquare = -1;
   }
-  state->turnsForFiftyRule++;
   if (state->colorToGo == WHITE) {
     state->nbMoves++; // Only recording full moves
   }

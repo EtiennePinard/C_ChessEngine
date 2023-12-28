@@ -7,11 +7,11 @@
 #include "../src/chessGameEmulator.h"
 #include "logChessStructs.h"
 
-#define TEST_ITERATION 100
+#define TEST_ITERATION 1
 
 typedef unsigned long long u64;
 
-u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMoveOfMaxDepth) {
+u64 perft(int depth, GameState* achievedStates, int maximumDepth) {
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
@@ -36,24 +36,18 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   }
 
   for (i = 0; i < nbOfMoves; i++) {
-  if (depth != 1) { // So that if we want to check moves at depth 1 with don't get memory leaks
-      GameState newState = copyState(previousState);
-      Move move = moves[i];
-      makeMove(move, &newState); // Move is made
 
-      if (i != 0 || !firstMoveOfMaxDepth) { // When it is the first time we have reached this depth, the next state is not stored
-        // If it is not the first iteration of this perft, then there is something stored at this location
-        free(achievedStates[nbMoveMade + 1].board.boardArray);
-      }
+    GameState newState = previousState;
+    Move move = moves[i];
+    makeMove(move, &newState); // Move is made
 
-      achievedStates[nbMoveMade + 1] = newState;
+    achievedStates[nbMoveMade + 1] = newState;
+
+    u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth); // We generate the moves for the next perft
+    if (depth == maximumDepth) {
+      printMoveToAlgebraic(move);
+      printf(": %lld\n", moveOutput);
     }
-
-    u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth, firstMoveOfMaxDepth && i == 0); // We generate the moves for the next perft
-    // if (depth == maximumDepth) {
-    //   printMoveToAlgebraic(move);
-    //   printf(": %lld\n", moveOutput);
-    // }
     nodes += moveOutput;
   }
   
@@ -64,7 +58,7 @@ char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 
 
 // To compile the perft program: gcc -g -o perft testing/perft.c src/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c src/piece.c
 // To run the compiled program: ./perft <depth>
-// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes ./perft <depth>
+// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     printf("Usage: ./perft <depth>\n");
@@ -80,12 +74,13 @@ int main(int argc, char* argv[]) {
 
   GameState achievedStates[maximumDepth];
   
-  GameState* startingState = setGameStateFromFenString(
-    startingFenString
-    , NULL);
+  GameState startingState = { 0 }; 
+  
+  setGameStateFromFenString(
+    startingFenString,
+    &startingState);
 
-  achievedStates[0] = *startingState;
-  free(startingState);
+  achievedStates[0] = startingState;
 
   double averageExecutionTime = 0;
   clock_t begin, end;
@@ -93,15 +88,11 @@ int main(int argc, char* argv[]) {
 
   for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
     begin = clock();
-    perftResult = perft(maximumDepth, achievedStates, maximumDepth, true);
+    perftResult = perft(maximumDepth, achievedStates, maximumDepth);
     end = clock();
     double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
     averageExecutionTime += timeSpent;
     printf("ITERATION #%d, Time: %fs, Perft: %llu\n", iterations, timeSpent, perftResult);
-    for (int i = 1; i < maximumDepth; i++) {
-      // `i` starts at 1 because I do not want to free the first state
-      free(achievedStates[i].board.boardArray);
-    }
   }
   averageExecutionTime /= TEST_ITERATION;
   printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);

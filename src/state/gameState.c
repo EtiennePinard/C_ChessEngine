@@ -14,27 +14,6 @@ size_t nbGameStatesInArray(GameState* gameStates) {
   return size;
 }
 
-GameState copyState(GameState from) {
-
-  Board board = {
-    .boardArray = (Piece*) malloc(sizeof(Piece) * BOARD_SIZE)
-  };
-
-  GameState to = {
-    .board = board,
-    .castlingPerm = from.castlingPerm,
-    .colorToGo = from.colorToGo,
-    .enPassantTargetSquare = from.enPassantTargetSquare,
-    .nbMoves = from.nbMoves,
-    .turnsForFiftyRule = from.turnsForFiftyRule
-  };
-
-  for (int i = 0; i < BOARD_SIZE; i++) {
-    to.board.boardArray[i] = from.board.boardArray[i];
-  }
-  return to;
-}
-
 GameState* createState(
     Board board,
     int colorToGo, 

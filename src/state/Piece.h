@@ -13,7 +13,7 @@ typedef char Piece;
 
 // First 2 bits are for the color
 // Last 3 bits are for the type
-typedef enum {
+typedef enum PieceCharacteristics {
     NONE   = 0, 
     KING   = 1, 
     QUEEN  = 2, 

@@ -8,4 +8,8 @@ out
 .vscode
 perftTesting
 test
+test.txt
+s.txt
+t.txt
 testing/testChessComputer.txt
+testBoard

@@ -25,13 +25,6 @@ void printMoveToAlgebraic(Move move) {
   printf("%s", algebraic);
 }
 
-void printBoard(int board[BOARD_SIZE]) {
-  for (int i = 0; i < BOARD_SIZE; i++) {
-    int pieceAtPosition = board[i];
-    printf("[%d%s]", pieceAtPosition, pieceAtPosition / 10 == 0 ? " " : "");
-    printf((i + 1) % 8 == 0 ? "\n" : " ");
-  }
-}
 void writeMoveToFile(Move move, FILE *file) {
       fprintf(file, "[From: %d, To: %d, Flag: %d], ", 
       move & 0b111111,
@@ -56,7 +49,7 @@ void writeMoveToAlgebraicToFile(Move move, FILE *file) {
   fprintf(file, "%s", algebraic);
 }
 
-char pieceToFenChar(int piece) {
+char pieceToFenChar(Piece piece) {
   char result;
   switch (pieceType(piece)) {
     case KING:
@@ -87,9 +80,17 @@ char pieceToFenChar(int piece) {
   return result;
 }
 
-void writeBoardToFile(int board[64], FILE *file) {
+void printBoard(Board board) {
+  for (int index = 0; index < BOARD_SIZE; index++) {
+    Piece pieceAtPosition = pieceAtIndex(board, index);
+    printf("[%c]", pieceToFenChar(pieceAtPosition));
+    printf((index + 1) % 8 == 0 ? "\n" : " ");
+  }
+}
+
+void writeBoardToFile(Board board, FILE *file) {
     for (int i = 0; i < BOARD_SIZE; i++) {
-    int pieceAtPosition = board[i];
+    Piece pieceAtPosition = pieceAtIndex(board, i);
     fprintf(file, "[ %c ]", pieceToFenChar(pieceAtPosition));
     if ((i + 1) % 8 == 0 && i != 63) fprintf(file, "\n");
   }

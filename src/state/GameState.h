@@ -28,9 +28,4 @@ GameState* createState(
     int nbMoves
 );
 
-/**
- * Utility function to make a copy of a GameState
-*/
-GameState copyState(GameState from);
-
 #endif /* BDF83061_7504_461E_BCDD_602085692048 */

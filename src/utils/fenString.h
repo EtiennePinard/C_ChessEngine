@@ -3,6 +3,6 @@
 
 #include "../state/GameState.h"
 
-GameState* setGameStateFromFenString(char* fenString, GameState* result);
+void setGameStateFromFenString(char* fenString, GameState* result);
 
 #endif

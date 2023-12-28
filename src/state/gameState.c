@@ -4,7 +4,18 @@
 #include "stdlib.h"
 #include "assert.h"
 
+size_t nbGameStatesInArray(GameState* gameStates) {
+  size_t size = 0;
+  // I just check that colorToGo == 0
+  // If that is the case, then the GameState is not valid, as WHITE = 8 and BLACK = 16
+  while (gameStates[size].colorToGo == 0) {
+    size++;
+  }
+  return size;
+}
+
 GameState copyState(GameState from) {
+
   Board board = {
     .boardArray = (Piece*) malloc(sizeof(Piece) * BOARD_SIZE)
   };
@@ -25,7 +36,7 @@ GameState copyState(GameState from) {
 }
 
 GameState* createState(
-    int *boardArray,
+    Board board,
     int colorToGo, 
     int castlingPerm, 
     int enPassantTargetSquare, 
@@ -33,12 +44,7 @@ GameState* createState(
     int nbMoves) {
     GameState* result = malloc(sizeof(GameState));
     assert(result != NULL && "Malloc failed so buy more RAM lol");
-    Board board = { .boardArray = malloc(sizeof(int) * BOARD_SIZE) };
-    assert(board.boardArray != NULL && "Malloc failed so buy more RAM lol");
     result->board = board;
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        result->board.boardArray[i] = boardArray[i];
-    }
     result->castlingPerm = castlingPerm;
     result->colorToGo = colorToGo;
     result->enPassantTargetSquare = enPassantTargetSquare;

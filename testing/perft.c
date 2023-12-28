@@ -15,7 +15,7 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMove
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  GBA previousStates = { 0 };
+  GameState previousStates[1] = { 0 };
   
   Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
 

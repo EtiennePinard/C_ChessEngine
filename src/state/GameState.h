@@ -6,15 +6,21 @@
 
 typedef struct {
     Board board;
-    int colorToGo, 
-        castlingPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
+    PieceCharacteristics colorToGo;
+    int castlingPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
         enPassantTargetSquare, 
         turnsForFiftyRule, 
         nbMoves;
 } GameState;
 
+/**
+ * Returns the number of elements in an array of gamestates.
+ * Assumes that the last element of the array is 0
+*/
+size_t nbGameStatesInArray(GameState* gameStates);
+
 GameState* createState(
-    int *boardArray,
+    Board board,
     int colorToGo, 
     int castlingPerm, 
     int enPassantTargetSquare, 

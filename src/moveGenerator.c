@@ -10,6 +10,22 @@
 #include "moveGenerator.h"
 
 /**
+ * Macro that you use to append items to your dynamic array.
+ * Copy and pasted from https://github.com/tsoding/ded/blob/master/src/common.h#L45
+*/
+#define DA_INIT_CAP 256
+#define da_append(da, item)                                                          \
+    do {                                                                             \
+        if ((da)->count >= (da)->capacity) {                                         \
+            (da)->capacity = (da)->capacity == 0 ? DA_INIT_CAP : (da)->capacity*2;   \
+            (da)->items = realloc((da)->items, (da)->capacity*sizeof(*(da)->items)); \
+            assert((da)->items != NULL && "Buy more RAM lol");                       \
+        }                                                                            \
+                                                                                     \
+        (da)->items[(da)->count++] = (item);                                         \
+    } while (0)
+
+/**
 * This is a dynamic array of integers. You can use the 
 * da_append macro to append integer to this list
 */
@@ -950,24 +966,34 @@ bool compareGameStateForRepetition(const GameState state, const GameState gameSt
         state.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(const GameState currentState, const GBA previousStates) {
-    if ((previousStates.capacity == 0) ||
-        (previousStates.items == NULL)) { 
+bool isThereThreeFoldRepetition(const GameState currentState, const GameState* previousStates) {
+    if (previousStates == NULL) { 
         return false;
     }
     bool hasOneDuplicate = false;
-    GameState* items = (GameState*) (previousStates.items);
-    for (int i = 0; i < previousStates.count; i++) {
-        if (compareGameStateForRepetition(currentState, items[i])) {
+    int index = 0;
+    bool result = false;
+    GameState previousState;
+    // If colorToGo == 0 then it is not a valid state
+    while (true) {
+
+        previousState = previousStates[index];
+        if (previousState.colorToGo == 0) {
+            break;
+        }
+
+        if (compareGameStateForRepetition(currentState, previousState)) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
                 // Already has a duplicate, this is the third repetition
-                return true;
+                result = true;
+                break;
             }
         }
+        index++;
     }
-    return false;
+    return result;
 }
 
 void noMemoryLeaksPlease() {
@@ -984,7 +1010,7 @@ void noMemoryLeaksPlease() {
     free(isPieceAtLocationPinned);
 }
 
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GBA previousStates) {
+void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GameState* previousStates) {
     int currentIndex = 0;
     
     if (isThereThreeFoldRepetition(currentState, previousStates) || (currentState.turnsForFiftyRule >= 50)) {

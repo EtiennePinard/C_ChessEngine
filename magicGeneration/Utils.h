@@ -14,4 +14,11 @@ u64 random_u64_fewbits();
 int trailingZeros_64(const u64 x);
 int nbBitsSet(u64 num);
 
+/**
+ * Returns the number of pseudo legal moves bit board for a given position
+*/
+int nbOfPseudoLegalMoveBitBoardForPosition(int position);
+
+u64 generateBlockingBitBoardFromIndex(int position, int index, int nbValidSquareForPiece, u64 movementMask);
+
 #endif /* C5445595_E964_49BF_A12D_178666EDA063 */

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include "Utils.h"
 
 u64 random_u64() {
@@ -25,4 +26,36 @@ int nbBitsSet(u64 num) {
     num &= num - 1;
   }
   return result;
+}
+
+u64 generateBlockingBitBoardFromIndex(int position, int index, int nbValidSquareForPiece, u64 movementMask) {
+    if (index >= (1 << nbValidSquareForPiece)) {
+        printf("ERROR: index %d is invalid in function `generateBlockingBitBoardFromPosition`\n", index);
+    }
+    u64 result = (u64) 0;
+    for (int i = 0; i < nbValidSquareForPiece; i++) {
+        u64 bitToShift = (u64) ((index >> i) & 1);
+        int movementMaskNextBit = trailingZeros_64(movementMask);
+        result |= bitToShift << movementMaskNextBit;
+        movementMask &= movementMask - 1;
+    }
+    return result;
+}
+
+int nbOfPseudoLegalMoveBitBoardForPosition(int position) {
+    int x = position % 8;
+    int y = position / 8;
+    
+    int factor1 = x;
+    factor1 = factor1 == 0 ? 1 : factor1;
+    int factor2 = 7 - x;
+    factor2 = factor2 == 0 ? 1 : factor2;
+
+    int factor3 = y;
+    factor3 = factor3 == 0 ? 1 : factor3;
+
+    int factor4 = 7 - y;
+    factor4 = factor4 == 0 ? 1 : factor4;
+
+    return factor1 * factor2 * factor3 * factor4;
 }

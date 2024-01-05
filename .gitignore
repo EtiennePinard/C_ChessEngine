@@ -13,3 +13,6 @@ s.txt
 t.txt
 testing/testChessComputer.txt
 testBoard
+magicGeneration/chessWikiMethod.c
+magicGeneration/generateMagic
+magicGeneration/output.txt

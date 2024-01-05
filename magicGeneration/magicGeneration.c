@@ -307,7 +307,7 @@ int main(int argc, char const *argv[]) {
             fprintf(output, ", ");
         } else {
             fprintf(output, "};\n");
-            indexOffset += 1 << (64 - shifts[i - 1]);
+            indexOffset += 1 << (64 - shifts[i]);
             fprintf(output, "#define ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE %d\n", indexOffset);
         }
     }
@@ -355,7 +355,7 @@ int main(int argc, char const *argv[]) {
             fprintf(output, ", ");
         } else {
             fprintf(output, "};\n");
-            indexOffset += 1 << (64 - shifts[i - 1]);
+            indexOffset += 1 << (64 - shifts[i]);
             fprintf(output, "#define BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE %d\n", indexOffset);
         }
     }

@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <stdlib.h>
-#include "chessGameEmulator.h"
+#include "ChessGameEmulator.h"
 
 void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
   if (state->castlingPerm == 0) { return; }
@@ -45,7 +45,7 @@ void _updateCastlePerm(int pieceToMove, int from, GameState* state) {
 }
 
 void _updateFiftyMoveRule(int pieceToMove, int to, GameState* state) {
-  if (pieceType(pieceToMove) == PAWN || pieceAtIndex(state->board, to) != NONE) {
+  if (pieceType(pieceToMove) == PAWN || pieceAtIndex(state->board, to) != NOPIECE) {
     state->turnsForFiftyRule = 0; // A pawn has moved or a capture has happened
   } else {
     state->turnsForFiftyRule++; // No captures or pawn advance happenned
@@ -94,15 +94,23 @@ void makeMove(Move move, GameState* state) {
     break;
   case PROMOTE_TO_QUEEN: 
     togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, QUEEN));
+    // To undo what the `handleMove` function did wrong (on accident, I might add)
+    togglePieceAtIndex(&state->board, to, pieceToMove);
     break;
   case PROMOTE_TO_KNIGHT: 
     togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, KNIGHT));
+    // To undo what the `handleMove` function did wrong (on accident, I might add)
+    togglePieceAtIndex(&state->board, to, pieceToMove);
     break;
   case PROMOTE_TO_ROOK: 
     togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, ROOK));
+    // To undo what the `handleMove` function did wrong (on accident, I might add)
+    togglePieceAtIndex(&state->board, to, pieceToMove);
     break;
   case PROMOTE_TO_BISHOP: 
     togglePieceAtIndex(&state->board, to, makePiece(state->colorToGo, BISHOP));
+    // To undo what the `handleMove` function did wrong (on accident, I might add)
+    togglePieceAtIndex(&state->board, to, pieceToMove);
     break;
   default:
     printf("ERROR: Invalid flag %d\n", flag);

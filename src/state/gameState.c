@@ -1,6 +1,4 @@
 #include "GameState.h"
-#include "Constants.h"
-
 #include "stdlib.h"
 #include "assert.h"
 

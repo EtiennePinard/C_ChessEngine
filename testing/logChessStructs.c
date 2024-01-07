@@ -1,4 +1,4 @@
-#include "logChessStructs.h"
+#include "LogChessStructs.h"
 #include <ctype.h>
 
 void printMove(Move move) {
@@ -12,7 +12,7 @@ void printMove(Move move) {
 void printMoveToAlgebraic(Move move) {
   int from = move & 0b111111;
   int to = (move >> 6) & 0b111111;
-  char algebraic[5];
+  char algebraic[6];
   int row1 = from / 8;
   int col1 = from % 8;
   algebraic[0] = 'a' + col1;
@@ -21,7 +21,27 @@ void printMoveToAlgebraic(Move move) {
   int col2 = to % 8;
   algebraic[2] = 'a' + col2;
   algebraic[3] = '1' + (7 - row2);
-  algebraic[4] = '\0';
+  switch (flagFromMove(move)) {
+  case PROMOTE_TO_BISHOP:
+    algebraic[4] = 'b';
+    algebraic[5] = '\0';
+    break;
+  case PROMOTE_TO_KNIGHT:
+    algebraic[4] = 'n';
+    algebraic[5] = '\0';
+    break;
+  case PROMOTE_TO_ROOK:
+    algebraic[4] = 'r';
+    algebraic[5] = '\0';
+    break;    
+  case PROMOTE_TO_QUEEN:
+    algebraic[4] = 'q';
+    algebraic[5] = '\0';
+    break;       
+  default:
+    algebraic[4] = '\0';
+  }
+  
   printf("%s", algebraic);
 }
 

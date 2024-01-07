@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "fenString.h"
+#include "FenString.h"
 
 int getCastlingPermFromFenString(char* fen) {
     int result = 0;
@@ -32,7 +32,7 @@ void setBoardArrayFromFenString(char* fen, Piece* board) {
     } else if (fenChar >= '1' && fenChar <= '8') {
       int emptySquares = fenChar - '0';
       for (int j = 0; j < emptySquares; j++) {
-        board[row * 8 + col] = NONE;
+        board[row * 8 + col] = NOPIECE;
         col++;
       }
     } else {

@@ -2,16 +2,17 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
-#include "../src/moveGenerator.h"
-#include "../src/utils/fenString.h"
-#include "../src/chessGameEmulator.h"
-#include "logChessStructs.h"
+#include "../src/magicBitBoard/MagicBitBoard.h"
+#include "../src/MoveGenerator.h"
+#include "../src/utils/FenString.h"
+#include "../src/ChessGameEmulator.h"
+#include "LogChessStructs.h"
 
 #define TEST_ITERATION 1
 
-typedef unsigned long long u64;
+int maximumDepth;
 
-u64 perft(int depth, GameState* achievedStates, int maximumDepth) {
+u64 perft(int depth, GameState* achievedStates) {
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
@@ -40,14 +41,16 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth) {
     GameState newState = previousState;
     Move move = moves[i];
     makeMove(move, &newState); // Move is made
-
-    achievedStates[nbMoveMade + 1] = newState;
-
-    u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth); // We generate the moves for the next perft
-    if (depth == maximumDepth) {
-      printMoveToAlgebraic(move);
-      printf(": %lld\n", moveOutput);
+    
+    if (depth != 1) { // when depth == 1 it would write to invalid indices
+      achievedStates[nbMoveMade + 1] = newState;
     }
+
+    u64 moveOutput = perft(depth - 1, achievedStates); // We generate the moves for the next perft
+    // if (depth == maximumDepth) {
+    //   printMoveToAlgebraic(move);
+    //   printf(": %lu\n", moveOutput);
+    // }
     nodes += moveOutput;
   }
   
@@ -56,29 +59,29 @@ u64 perft(int depth, GameState* achievedStates, int maximumDepth) {
 
 char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-// To compile the perft program: gcc -g -o perft testing/perft.c src/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c src/piece.c
-// To run the compiled program: ./perft <depth>
-// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes ./perftTesting <depth>
+// To compile and run the program: ./perft <depth>
+// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    printf("Usage: ./perft <depth>\n");
+    printf("Usage: ./%s <depth>\n", argv[0]);
     return 0;
   }
 
-  int maximumDepth = atoi(argv[1]);
+  maximumDepth = atoi(argv[1]);
 
   if (maximumDepth <= 0) {
     printf("Invalid depth %d\n", maximumDepth);
     return 0;
   }
 
-  GameState achievedStates[maximumDepth];
+  magicBitBoardInitialize();
+
+  GameState* achievedStates = malloc(sizeof(GameState) * maximumDepth);
   
   GameState startingState = { 0 }; 
   
   setGameStateFromFenString(
-    startingFenString,
-    &startingState);
+    startingFenString, &startingState);
 
   achievedStates[0] = startingState;
 
@@ -88,14 +91,16 @@ int main(int argc, char* argv[]) {
 
   for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
     begin = clock();
-    perftResult = perft(maximumDepth, achievedStates, maximumDepth);
+    perftResult = perft(maximumDepth, achievedStates);
     end = clock();
     double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
     averageExecutionTime += timeSpent;
-    printf("ITERATION #%d, Time: %fs, Perft: %llu\n", iterations, timeSpent, perftResult);
+    printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
   }
   averageExecutionTime /= TEST_ITERATION;
   printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
+  free(achievedStates);
+  magicBitBoardTerminate();
   return 0;
 }
 

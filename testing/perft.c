@@ -23,7 +23,6 @@ u64 perft(int depth) {
   GameState previousStates[1] = { 0 };
   
   Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
-
   getValidMoves(moves, previousState, previousStates); // We do not care about draw by repetition
   int nbOfMoves, i;
   u64 nodes = 0;
@@ -61,7 +60,19 @@ u64 perft(int depth) {
   return nodes;
 }
 
-// "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"
+bool isStringValidPerftNumber(char* string) {
+  int index = 0;
+  char currentChar;
+  bool result = true;
+  while (currentChar = *(string + index)) {
+    if (currentChar < '0' || currentChar > '9') {
+      result = false;
+      break;
+    }
+    index++;
+  }
+  return result;
+}
 
 // To compile and run the program: ./perft <depth>
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
@@ -69,14 +80,17 @@ int main(int argc, char* argv[]) {
   if (argc == 1) {
     printf("Usage: ./%s <depth (num)> [position (fen string)] [mode (debug or time)]\n", argv[0]);
     printf("Note that order does not matter for `position` and `mode` arguments, and they are optional\n");
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
-  maximumDepth = atoi(argv[1]);
-
+  if (isStringValidPerftNumber(argv[1])) {
+    maximumDepth = atoi(argv[1]);
+  } else {
+    printf("Argument %s is not a valid digit\n", argv[1]);
+  } 
   if (maximumDepth <= 0) {
     printf("Invalid depth %d\n", maximumDepth);
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
   // The default is the starting fen string
@@ -107,7 +121,7 @@ int main(int argc, char* argv[]) {
   
   if (!setGameStateFromFenString(fenString, &startingState)) {
     printf("The fen string \"%s\" is invalid!\n", fenString);
-    return 1;
+    exit(EXIT_FAILURE);
   }
 
   achievedStates[0] = startingState;

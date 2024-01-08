@@ -15,3 +15,12 @@ void printBitBoard(u64 bitboard) {
         }
     }
 }
+
+void printBin(const u64 num) {
+    printf("0b");
+    for (int i = 63; i >= 0; i--) {
+        printf("%lu", (num >> i) & 1);
+    }
+    printf("\n");
+}
+

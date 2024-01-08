@@ -316,7 +316,7 @@ int main(int argc, char const *argv[]) {
 
     // Bishop magics/shifts array
     for (int i = 0; i < BOARD_SIZE; i++) {
-        MagicData bishopData = bestRookMagicData[i];
+        MagicData bishopData = bestBishopMagicData[i];
         if (bishopData.magic == 0UL) {
             MagicResult result = singleThreadApproach(i, BISHOP);
             bishopData = result.data;

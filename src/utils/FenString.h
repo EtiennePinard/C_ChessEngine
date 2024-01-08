@@ -1,8 +1,9 @@
 #ifndef FEN_STRING_H
 #define FEN_STRING_H
 
+#include <stdbool.h>
 #include "../state/GameState.h"
 
-void setGameStateFromFenString(char* fenString, GameState* result);
+bool setGameStateFromFenString(char* fenString, GameState* result);
 
 #endif

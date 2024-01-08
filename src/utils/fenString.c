@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include "FenString.h"
@@ -89,11 +89,15 @@ int convertSquareToIndex(char* square) {
 #define splitString \
 do { \
     split = strtok(NULL, " "); \
-    if (split == NULL) { printf("Invalid fen string!\n"); return; } \
+    if (split == NULL) { return false; } \
 } while (0);
 
-void setGameStateFromFenString(char *fen, GameState* result) {
-    if (result == NULL) { return; }
+/**
+ * Populates a GameState struct from a fen string.
+ * Returns false if the fen string is invalid
+*/
+bool setGameStateFromFenString(char *fen, GameState* result) {
+    if (result == NULL) { return false; }
     char copy[100]; // Could have potential buffer overflow
     strcpy(copy, fen);
     char* split = strtok(copy, " ");
@@ -115,4 +119,5 @@ void setGameStateFromFenString(char *fen, GameState* result) {
     result->turnsForFiftyRule = (int) strtol(split, NULL, 10);
     splitString;
     result->nbMoves = (int) strtol(split, NULL, 10);
+    return true;
 }

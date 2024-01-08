@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
 #include <time.h>
 #include "../src/magicBitBoard/MagicBitBoard.h"
@@ -8,11 +9,14 @@
 #include "../src/ChessGameEmulator.h"
 #include "LogChessStructs.h"
 
-#define TEST_ITERATION 1
+#define TEST_ITERATION 100
 
 int maximumDepth;
+GameState* achievedStates;
 
-u64 perft(int depth, GameState* achievedStates) {
+bool debug = true;
+
+u64 perft(int depth) {
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
@@ -32,7 +36,7 @@ u64 perft(int depth, GameState* achievedStates) {
     }
   }
 
-  if (depth == 1) {
+  if (!debug && depth == 1) {
     return nbOfMoves;
   }
 
@@ -46,8 +50,8 @@ u64 perft(int depth, GameState* achievedStates) {
       achievedStates[nbMoveMade + 1] = newState;
     }
 
-    u64 moveOutput = perft(depth - 1, achievedStates); // We generate the moves for the next perft
-    if (depth == maximumDepth) {
+    u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
+    if (debug && depth == maximumDepth) {
       printMoveToAlgebraic(move);
       printf(": %lu\n", moveOutput);
     }
@@ -57,13 +61,14 @@ u64 perft(int depth, GameState* achievedStates) {
   return nodes;
 }
 
-char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+// "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"
 
 // To compile and run the program: ./perft <depth>
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    printf("Usage: ./%s <depth>\n", argv[0]);
+    printf("Usage: ./%s <depth (num)> [position (fen string)] [mode (debug or time)]\n", argv[0]);
+    printf("Note that order does not matter for `position` and `mode` arguments, and they are optional\n");
     return 0;
   }
 
@@ -74,32 +79,58 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  magicBitBoardInitialize();
+  // The default is the starting fen string
+  char* fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  // Handling position and debug
+  if (argc >= 3) {
+    char* secondArg = argv[2];
+    if (strcmp(secondArg, "time") == 0) {
+      debug = false;
+    } else if (strcmp(secondArg, "debug")) {
+      fenString = secondArg;
+    }
+  }
+  if (argc >= 4) {
+    char* secondArg = argv[3];
+    if (strcmp(secondArg, "time") == 0) {
+      debug = false;
+    } else if (strcmp(secondArg, "debug")) {
+      fenString = secondArg;
+    }
+  }
 
-  GameState* achievedStates = malloc(sizeof(GameState) * maximumDepth);
+  magicBitBoardInitialize();
+  
+  achievedStates = malloc(sizeof(GameState) * maximumDepth);
   
   GameState startingState = { 0 }; 
   
-  setGameStateFromFenString(
-    startingFenString
-    ,&startingState);
+  if (!setGameStateFromFenString(fenString, &startingState)) {
+    printf("The fen string \"%s\" is invalid!\n", fenString);
+    return 1;
+  }
 
   achievedStates[0] = startingState;
 
-  double averageExecutionTime = 0;
-  clock_t begin, end;
   u64 perftResult;
 
-  for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
-    begin = clock();
-    perftResult = perft(maximumDepth, achievedStates);
-    end = clock();
-    double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
-    averageExecutionTime += timeSpent;
-    printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
+  if (debug) {
+    perftResult = perft(maximumDepth);
+    printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
+  } else {
+    double averageExecutionTime = 0;
+    clock_t begin, end;
+    for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
+      begin = clock();
+      perftResult = perft(maximumDepth);
+      end = clock();
+      double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
+      averageExecutionTime += timeSpent;
+      printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
+    }
+    averageExecutionTime /= TEST_ITERATION;
+    printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
   }
-  averageExecutionTime /= TEST_ITERATION;
-  printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
   free(achievedStates);
   magicBitBoardTerminate();
   return 0;

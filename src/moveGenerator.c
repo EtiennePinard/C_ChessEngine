@@ -36,6 +36,12 @@ typedef struct intList {
     size_t capacity;
 } IntList;
 
+GameState currentState;
+
+Move* validMoves;
+int currentMoveIndex;
+
+
 int opponentColor;
 int friendlyKingIndex;
 
@@ -55,10 +61,7 @@ bool inCheck;
 u64 checkBitBoard;
 u64 pinMasks[BOARD_SIZE];
 
-Move* validMoves;
-int currentMoveIndex;
-
-void init(GameState currentState) {
+void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
     friendlyKingIndex = -1;
     inCheck = false;
@@ -76,7 +79,7 @@ void init(GameState currentState) {
     }
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
-    memset(pinMasks, 255, sizeof(u64) * BOARD_SIZE);
+    memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
 }
 
 void resetRayResult(int ray[BOARD_LENGTH]) {
@@ -105,7 +108,7 @@ void appendMove(int startSquare, int targetSquare, int flag) {
     (currentMoveIndex)++;
 }
 
-void getTopRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex - 7; i >= 0; i -= 7) {
@@ -120,7 +123,7 @@ void getTopRightNetRay(GameState currentState, int currentIndex, int colorToNotI
     return;
 }
 
-void getTopLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return; 
     int count = 0;
     for (int i = currentIndex - 9; i >= 0; i -= 9) {
@@ -135,7 +138,7 @@ void getTopLeftNetRay(GameState currentState, int currentIndex, int colorToNotIn
     return;
 }
 
-void getBottomLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return;
     int count = 0;
     for (int i = currentIndex + 7; i <= 63; i += 7) {
@@ -150,7 +153,7 @@ void getBottomLeftNetRay(GameState currentState, int currentIndex, int colorToNo
     return;
 }
 
-void getBottomRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 9; i <= 63; i += 9) {
@@ -165,7 +168,7 @@ void getBottomRightNetRay(GameState currentState, int currentIndex, int colorToN
     return;
 }
 
-void getTopNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex / 8 == 0) return;
     int count = 0;
     for (int i = currentIndex - 8; i >= 0; i -= 8) {
@@ -180,7 +183,7 @@ void getTopNetRay(GameState currentState, int currentIndex, int colorToNotInclud
     return;
 }
 
-void getBottomNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex / 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 8; i <= 63; i += 8) {
@@ -195,7 +198,7 @@ void getBottomNetRay(GameState currentState, int currentIndex, int colorToNotInc
     return;
 }
 
-void getRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 1; i <= 63; i++) {
@@ -210,7 +213,7 @@ void getRightNetRay(GameState currentState, int currentIndex, int colorToNotIncl
     return;
 }
 
-void getLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return;
     int count = 0;
     for (int i = currentIndex - 1; i >= 0; i--) {
@@ -293,9 +296,8 @@ void getKnightPseudoLegalMoves(GameState currentState, int currentIndex, int res
 } 
 
 void extendRayIfCheckKing(
-    GameState currentState,
     int ray[BOARD_LENGTH], 
-    void (*getRay)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH])) {
+    void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH])) {
     if (ray[0] == 0) return;
     int lastIndex = -1;
     for (int i = 0; i < 8; i++) {
@@ -309,11 +311,11 @@ void extendRayIfCheckKing(
     if (lastIndexPiece != (currentState.colorToGo | KING)) return;
     // King is in check by this piece and we need to generate the square behind the king
     int newRay[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getRay(currentState, lastIndex, 0, newRay);
+    getRay(lastIndex, 0, newRay);
     appendIntListToAttackedSquare(newRay);
 }
 
-void calculateAttackSquares(GameState currentState) {
+void calculateAttackSquares() {
     int attackingSquares[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
 
@@ -328,86 +330,86 @@ void calculateAttackSquares(GameState currentState) {
         switch (pieceType(piece)) {
         // Note: The 0 means that if the ray stops at a piece it will include it, regarless of its color
         case ROOK: 
-            getTopNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopNetRay);
+            getTopNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomNetRay);
+            getBottomNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getRightNetRay);
+            getRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getLeftNetRay);
+            getLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
         
         case BISHOP:
-            getTopRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopRightNetRay);
+            getTopRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopLeftNetRay);
+            getTopLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomRightNetRay);
+            getBottomRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomLeftNetRay);
+            getBottomLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
         case QUEEN:
-            getTopNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopNetRay);
+            getTopNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             
-            getBottomNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomNetRay);
+            getBottomNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getRightNetRay);
+            getRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getLeftNetRay);
+            getLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopRightNetRay);
+            getTopRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getTopLeftNetRay);
+            getTopLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getTopLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomRightNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomRightNetRay);
+            getBottomRightNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomLeftNetRay(currentState, currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(currentState, attackingSquares, getBottomLeftNetRay);
+            getBottomLeftNetRay(currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(attackingSquares, getBottomLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
@@ -438,9 +440,9 @@ bool isKingIndexLegal(GameState currentState, int targetSquare) {
         pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-int addSlidingPiecePinned(GameState currentState, void (*getRay)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
+int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
     int rayToFriendlyBlockingPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getRay(currentState, friendlyKingIndex, 0, rayToFriendlyBlockingPiece);
+    getRay(friendlyKingIndex, 0, rayToFriendlyBlockingPiece);
     if (rayToFriendlyBlockingPiece[0] == -1) { 
         return -1; 
     }
@@ -460,7 +462,7 @@ int addSlidingPiecePinned(GameState currentState, void (*getRay)(GameState curre
     if (pieceColor(firstLastSquareContent) == currentState.colorToGo) {
         // This piece may be pinned
         int rayFromFriendlyBlockingToDangerousPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        getRay(currentState, firstLastSquare, 0, rayFromFriendlyBlockingToDangerousPiece);
+        getRay(firstLastSquare, 0, rayFromFriendlyBlockingToDangerousPiece);
         if (rayFromFriendlyBlockingToDangerousPiece[0] == -1) { 
             return -1; 
         }
@@ -557,7 +559,7 @@ void generateCastle(GameState currentState) {
     }
 }
 
-void generateKingMoves(GameState currentState) {
+void generateKingMoves() {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; }
     if (doubleAttackedSquares[friendlyKingIndex]) { inDoubleCheck = true; }
 
@@ -574,26 +576,26 @@ void generateKingMoves(GameState currentState) {
     // Pinning own color pieces    
     // Checking for attacking sliding pieces
     int checkingPieceIndex = -1;
-    void (*checkingPieceDirection)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]) = NULL;
+    void (*checkingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]) = NULL;
     // Note: Could refactor all the function pointer into an array and iterate over them
     // Unfortunatly, I have better things to do for now
 
-    if (addSlidingPiecePinned(currentState, getTopNetRay, opponentColor | ROOK) != -1)
+    if (addSlidingPiecePinned(getTopNetRay, opponentColor | ROOK) != -1)
         checkingPieceDirection = getTopNetRay; 
-    if (addSlidingPiecePinned(currentState, getBottomNetRay, opponentColor | ROOK) != -1) 
+    if (addSlidingPiecePinned(getBottomNetRay, opponentColor | ROOK) != -1) 
         checkingPieceDirection = getBottomNetRay; 
-    if (addSlidingPiecePinned(currentState, getRightNetRay, opponentColor | ROOK) != -1)
+    if (addSlidingPiecePinned(getRightNetRay, opponentColor | ROOK) != -1)
         checkingPieceDirection = getRightNetRay; 
-    if (addSlidingPiecePinned(currentState, getLeftNetRay, opponentColor | ROOK) != -1) 
+    if (addSlidingPiecePinned(getLeftNetRay, opponentColor | ROOK) != -1) 
         checkingPieceDirection = getLeftNetRay; 
     
-    if (addSlidingPiecePinned(currentState, getTopRightNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(getTopRightNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getTopRightNetRay; 
-    if (addSlidingPiecePinned(currentState, getTopLeftNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(getTopLeftNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getTopLeftNetRay; 
-    if (addSlidingPiecePinned(currentState, getBottomRightNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(getBottomRightNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getBottomRightNetRay;
-    if (addSlidingPiecePinned(currentState, getBottomLeftNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(getBottomLeftNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getBottomLeftNetRay;
 
     if (!inCheck || inDoubleCheck) { return; } // Either the king is safe or only king moves are valid
@@ -603,7 +605,7 @@ void generateKingMoves(GameState currentState) {
     if (checkingPieceDirection != NULL) {
         // A sliding piece is checking the king
         int result[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        checkingPieceDirection(currentState, friendlyKingIndex, 0, result);
+        checkingPieceDirection(friendlyKingIndex, 0, result);
 
         for (int i = 0; i < BOARD_LENGTH; i++) {
             if (result[i] != -1) {
@@ -663,8 +665,8 @@ void checkUnPinnedEnPassant(GameState currentState, int from) {
         currentState.enPassantTargetSquare + 8;
     int leftRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     int rightRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getLeftNetRay(currentState, squareInFromOfEnPassant, 0, leftRow);
-    getRightNetRay(currentState, squareInFromOfEnPassant, 0, rightRow);
+    getLeftNetRay(squareInFromOfEnPassant, 0, leftRow);
+    getRightNetRay(squareInFromOfEnPassant, 0, rightRow);
 
     int lastLeftRow = -1;
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -690,7 +692,7 @@ void checkUnPinnedEnPassant(GameState currentState, int from) {
     // There are two cases of en passant pinned
     // Either the pawn that just double moved is between the from pawn and the king
     // or this pawn is between the from pawn and the attacking pieces
-    void (*attackingPieceDirection)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]);
+    void (*attackingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]);
     int indexToCalculateAttackingPiece;
     if (lastRightRow == friendlyKingIndex || lastLeftRow == friendlyKingIndex) {
         // First case
@@ -704,10 +706,10 @@ void checkUnPinnedEnPassant(GameState currentState, int from) {
         int squareAfterPawn[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
         if (lastLeftRow == from) {
             attackingPieceDirection = getRightNetRay;
-            getLeftNetRay(currentState, from, 0, squareAfterPawn);
+            getLeftNetRay(from, 0, squareAfterPawn);
         } else {
             attackingPieceDirection = getLeftNetRay;
-            getRightNetRay(currentState, from, 0, squareAfterPawn);
+            getRightNetRay(from, 0, squareAfterPawn);
         }
 
         int potentialKingIndex = -1;
@@ -727,7 +729,7 @@ void checkUnPinnedEnPassant(GameState currentState, int from) {
     } 
 
     int potentialAttackingPieceIndex[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    attackingPieceDirection(currentState, indexToCalculateAttackingPiece, 0, potentialAttackingPieceIndex);
+    attackingPieceDirection(indexToCalculateAttackingPiece, 0, potentialAttackingPieceIndex);
 
     int lastPotentialAttackingPiece = -1;
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -989,7 +991,7 @@ void getPawnPseudoLegalMoveIndex(GameState currentState, int index, bool result[
 }
 
 // TODO: Make every piece use bitboards to remove the call to the badly written addLegalMovesFromPseudoLegalMoves function
-void generateSupportingPiecesMoves(GameState currentState) {
+void generateSupportingPiecesMoves() {
     int rays[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
         const int piece = pieceAtIndex(currentState.board, currentIndex);
@@ -1036,7 +1038,7 @@ bool compareGameStateForRepetition(const GameState state, const GameState gameSt
         state.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(const GameState currentState, const GameState* previousStates) {
+bool isThereThreeFoldRepetition(const GameState* previousStates) {
     if (previousStates == NULL) { 
         return false;
     }
@@ -1080,23 +1082,23 @@ void noMemoryLeaksPlease() {
     free(isPieceAtLocationPinned);
 }
 
-// TODO: Find a way to not pass the Move* result and int* currentIndex variable around to every function
 // TODO: Find a way to make accessible the GameState currentState variable to every function without having to pass it in arguments
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GameState* previousStates) {
+void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
+    currentState = currentGameState;
 
     validMoves = results;
     currentMoveIndex = 0;
     
-    if (isThereThreeFoldRepetition(currentState, previousStates) || (currentState.turnsForFiftyRule >= 50)) {
+    if (isThereThreeFoldRepetition(previousStates) || (currentState.turnsForFiftyRule >= 50)) {
         appendMove(0, 0, DRAW); // This is the `draw` move
 
         // We assume that the array is 0 initialized, so we do not need to add a 0 entry
         return; 
     }
 
-    init(currentState);
-    calculateAttackSquares(currentState);
-    generateKingMoves(currentState);
+    init();
+    calculateAttackSquares();
+    generateKingMoves();
 
     if (inDoubleCheck) { 
         // Only king moves are valid when in double check
@@ -1110,7 +1112,7 @@ void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentSta
         return;
     }
     
-    generateSupportingPiecesMoves(currentState);
+    generateSupportingPiecesMoves();
     
     if (currentMoveIndex == 0) {
         // There is no valid move

@@ -16,3 +16,4 @@ testBoard
 magicGeneration/chessWikiMethod.c
 magicGeneration/generateMagic
 magicGeneration/output.txt
+diffPerft.bash

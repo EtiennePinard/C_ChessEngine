@@ -47,10 +47,10 @@ u64 perft(int depth, GameState* achievedStates) {
     }
 
     u64 moveOutput = perft(depth - 1, achievedStates); // We generate the moves for the next perft
-    // if (depth == maximumDepth) {
-    //   printMoveToAlgebraic(move);
-    //   printf(": %lu\n", moveOutput);
-    // }
+    if (depth == maximumDepth) {
+      printMoveToAlgebraic(move);
+      printf(": %lu\n", moveOutput);
+    }
     nodes += moveOutput;
   }
   
@@ -81,7 +81,8 @@ int main(int argc, char* argv[]) {
   GameState startingState = { 0 }; 
   
   setGameStateFromFenString(
-    startingFenString, &startingState);
+    startingFenString
+    ,&startingState);
 
   achievedStates[0] = startingState;
 

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Run this bash file with ./perft <depth> to compile and run the perft functionality of this chess engine
+
+# Check if one argument is provided
+if [ "$#" -lt 1 ]; then
+    printf "Usage: $0 <depth (num)> (optional)<position (fen string)> (optional)<debug (boolean)>\n"
+    printf "\tNote that order does not matter for 'position' and 'mode' arguments, and they are optional\n"
+    exit 1
+fi
+
+# Check if the depth argument is a number
+if ! [[ "$1" =~ ^[0-9]+$ ]]; then
+    printf "Error: '$1' is not a valid number.\n"
+    exit 1
+fi
+
+gcc -g -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/utils/utils.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c src/magicBitBoard/magicBitBoard.c src/magicBitBoard/rook.c src/magicBitBoard/bishop.c 
+
+if [ "$#" -eq 3 ]; then
+    ./perftTesting "$1" "$2" "$3"
+elif [ "$#" -eq 2 ]; then
+    ./perftTesting "$1" "$2"
+else
+    ./perftTesting "$1"
+fi

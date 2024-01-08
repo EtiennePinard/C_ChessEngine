@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include "fenString.h"
+#include "FenString.h"
 
 int getCastlingPermFromFenString(char* fen) {
     int result = 0;
@@ -22,7 +22,7 @@ int getCastlingPermFromFenString(char* fen) {
     return result;
 }
 
-void setBoardArrayFromFenString(char *fen, int *board) {
+void setBoardArrayFromFenString(char* fen, Piece* board) {
   int row = 0, col = 0;
   for (int i = 0; i < strlen(fen); i++) {
     char fenChar = fen[i];
@@ -32,7 +32,7 @@ void setBoardArrayFromFenString(char *fen, int *board) {
     } else if (fenChar >= '1' && fenChar <= '8') {
       int emptySquares = fenChar - '0';
       for (int j = 0; j < emptySquares; j++) {
-        board[row * 8 + col] = NONE;
+        board[row * 8 + col] = NOPIECE;
         col++;
       }
     } else {
@@ -80,7 +80,7 @@ void setBoardArrayFromFenString(char *fen, int *board) {
 }
 
 int convertSquareToIndex(char* square) {
-    if (strcmp(square,"-") == 0) return -1;
+    if (strcmp(square,"-") == 0) { return -1; }
     int file = square[0] - 'a';
     int rank = 8 - (square[1] - '0');
     return rank * 8 + file;
@@ -89,19 +89,27 @@ int convertSquareToIndex(char* square) {
 #define splitString \
 do { \
     split = strtok(NULL, " "); \
-    if (split == NULL) { printf("Invalid fen string!\n"); return NULL; } \
+    if (split == NULL) { return false; } \
 } while (0);
 
-GameState* setGameStateFromFenString(char *fen, GameState* result) {
-    if (result == NULL) result = malloc(sizeof(GameState));
-    assert(result != NULL && "Malloc failed so buy more RAM lol");
+/**
+ * Populates a GameState struct from a fen string.
+ * Returns false if the fen string is invalid
+*/
+bool setGameStateFromFenString(char *fen, GameState* result) {
+    if (result == NULL) { return false; }
     char copy[100]; // Could have potential buffer overflow
     strcpy(copy, fen);
     char* split = strtok(copy, " ");
-    int* boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE);
+
+    Piece boardArray[BOARD_SIZE] = { 0 };
     setBoardArrayFromFenString(split, boardArray);
-    result->boardArray = boardArray; 
+
+    Board board = { 0 };
+    fromArray(&board, boardArray);
+    result->board = board;
     splitString;
+    
     result->colorToGo = (strcmp(split, "w") == 0) ? WHITE : BLACK;
     splitString;
     result->castlingPerm = getCastlingPermFromFenString(split);
@@ -111,5 +119,5 @@ GameState* setGameStateFromFenString(char *fen, GameState* result) {
     result->turnsForFiftyRule = (int) strtol(split, NULL, 10);
     splitString;
     result->nbMoves = (int) strtol(split, NULL, 10);
-    return result;
+    return true;
 }

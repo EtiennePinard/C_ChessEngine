@@ -2,17 +2,18 @@
 #define LOGCHESSSTRCUTS_H
 
 #include <stdio.h>
-#include "../src/moveGenerator.h"
+#include "../src/state/Move.h"
+#include "../src/state/Board.h"
 
 void printMove(Move move);
 
 void printMoveToAlgebraic(Move move);
 
-void printBoard(int board[64]);
+void printBoard(Board board);
 
 void writeMoveToFile(Move move, FILE *file);
 
 void writeMoveToAlgebraicToFile(Move move, FILE *file);
 
-void writeBoardToFile(int board[64], FILE *file);
+void writeBoardToFile(Board board, FILE *file);
 #endif

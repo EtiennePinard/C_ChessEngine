@@ -1,7 +1,8 @@
 #ifndef CHESS_GAME_EMLATOR_H
 #define CHESS_GAME_EMLATOR_H
 
-#include "moveGenerator.h"
+#include "state/GameState.h"
+#include "state/Move.h"
 
 void makeMove(Move move, GameState* state);
 

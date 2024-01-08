@@ -13,8 +13,7 @@ cmake_minimum_required(VERSION 3.7 FATAL_ERROR)
 project(chess_engine VERSION 1.0.0 LANGUAGES C)
 add_library(chess_engine SHARED 
     src/moveGenerator.c
-    src/fenString.c
-    src/chessComputer.c
+    src/utils/fenString.c
     src/chessGameEmulator.c
     )
 

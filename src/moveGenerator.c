@@ -7,9 +7,24 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "moveGenerator.h"
+#include "MoveGenerator.h"
+#include "magicBitBoard/MagicBitBoard.h"
 
-#define BOARD_LENGTH 8
+/**
+ * Macro that you use to append items to your dynamic array.
+ * Copy and pasted from https://github.com/tsoding/ded/blob/master/src/common.h#L45
+*/
+#define DA_INIT_CAP 256
+#define da_append(da, item)                                                          \
+    do {                                                                             \
+        if ((da)->count >= (da)->capacity) {                                         \
+            (da)->capacity = (da)->capacity == 0 ? DA_INIT_CAP : (da)->capacity*2;   \
+            (da)->items = realloc((da)->items, (da)->capacity*sizeof(*(da)->items)); \
+            assert((da)->items != NULL && "Buy more RAM lol");                       \
+        }                                                                            \
+                                                                                     \
+        (da)->items[(da)->count++] = (item);                                         \
+    } while (0)
 
 /**
 * This is a dynamic array of integers. You can use the 
@@ -21,28 +36,12 @@ typedef struct intList {
     size_t capacity;
 } IntList;
 
-GameState copyState(GameState from) {
-  GameState to = {
-    .boardArray = (int*) malloc(sizeof(int) * BOARD_SIZE),
-    .castlingPerm = from.castlingPerm,
-    .colorToGo = from.colorToGo,
-    .enPassantTargetSquare = from.enPassantTargetSquare,
-    .nbMoves = from.nbMoves,
-    .turnsForFiftyRule = from.turnsForFiftyRule
-  };
-  for (int i = 0; i < BOARD_SIZE; i++) {
-    to.boardArray[i] = from.boardArray[i];
-  }
-  return to;
-}
-
-const GameState* state;
-
 int opponentColor;
 int friendlyKingIndex;
 
 // For O(1) .contains call
 // Global variables are zero initialize so no need for {0}
+// TODO: Convert these bool* arrays to u64
 bool* attackedSquares;
 bool* doubleAttackedSquares;
 bool* protectKingSquares;
@@ -53,28 +52,28 @@ IntList** isPieceAtLocationPinned;
 bool inDoubleCheck;
 bool inCheck;
 
-GameState* createState(
-    int *boardArray,
-    int colorToGo, 
-    int castlingPerm, 
-    int enPassantTargetSquare, 
-    int turnsForFiftyRule, 
-    int nbMoves
-) {
-    GameState* result = malloc(sizeof(GameState));
-    assert(result != NULL && "Malloc failed so buy more RAM lol");
-    result->boardArray = malloc(sizeof(int) * BOARD_SIZE);
-    assert(boardArray != NULL && "Malloc failed so buy more RAM lol");
+u64 checkBitBoard;
+u64 pinMasks[BOARD_SIZE];
 
+void init(GameState currentState) {
+    opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
+    friendlyKingIndex = -1;
+    inCheck = false;
+    inDoubleCheck = false;
+    attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
+    doubleAttackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
+    protectKingSquares = malloc(sizeof(bool) * BOARD_SIZE);
+    isPieceAtLocationPinned = malloc(sizeof(IntList*) * BOARD_SIZE);
+
+    memset(attackedSquares, false, sizeof(bool) * BOARD_SIZE);
+    memset(doubleAttackedSquares, false, sizeof(bool) * BOARD_SIZE);
+    memset(protectKingSquares, false, sizeof(bool) * BOARD_SIZE);
     for (int i = 0; i < BOARD_SIZE; i++) {
-        result->boardArray[i] = boardArray[i];
+        isPieceAtLocationPinned[i] = NULL;
     }
-    result->castlingPerm = castlingPerm;
-    result->colorToGo = colorToGo;
-    result->enPassantTargetSquare = enPassantTargetSquare;
-    result->nbMoves = nbMoves;
-    result->turnsForFiftyRule = turnsForFiftyRule;
-    return result;
+
+    checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
+    memset(pinMasks, 255, sizeof(u64) * BOARD_SIZE);
 }
 
 void resetRayResult(int ray[BOARD_LENGTH]) {
@@ -95,20 +94,21 @@ void appendIntListToAttackedSquare(int src[BOARD_LENGTH]) {
     }
 }
 
-void appendMove(int startSquare, int targetSquare, int flag, Moves* validMoves) {
+void appendMove(Move* validMoves, int* currentIndex, int startSquare, int targetSquare, int flag) {
     Move move = startSquare;
     move |= (targetSquare << 6);
     move |= (flag << 12);
-    da_append(validMoves, move);
+    validMoves[*currentIndex] = move;
+    (*currentIndex)++;
 }
 
-void getTopRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex - 7; i >= 0; i -= 7) {
         result[count++] = i;
-        if (i % 8 == 7 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 7 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && (pieceColor(pieceAtIndex(currentState.board, i))) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }
             return; // We are at the right end of the board
@@ -117,13 +117,13 @@ void getTopRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD
     return;
 }
 
-void getTopLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return; 
     int count = 0;
     for (int i = currentIndex - 9; i >= 0; i -= 9) {
         result[count++] = i;
-        if (i % 8 == 0 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 0 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }
             break; // We are at the left end of the board or hit an ennemy piece
@@ -132,13 +132,13 @@ void getTopLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_
     return;
 }
 
-void getBottomLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return;
     int count = 0;
     for (int i = currentIndex + 7; i <= 63; i += 7) {
         result[count++] = i;
-        if (i % 8 == 0 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 0 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }
             break; // We are at the left end of the board or hit an ennemy piece
@@ -147,13 +147,13 @@ void getBottomLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOA
     return;
 }
 
-void getBottomRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 9; i <= 63; i += 9) {
         result[count++] = i;
-        if (i % 8 == 7 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 7 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }
             break; // We are at the right end of the board of hit an ennemy piece
@@ -162,13 +162,13 @@ void getBottomRightNetRay(int currentIndex, int colorToNotInclude, int result[BO
     return;
 }
 
-void getTopNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getTopNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex / 8 == 0) return;
     int count = 0;
     for (int i = currentIndex - 8; i >= 0; i -= 8) {
         result[count++] = i;
-        if (i / 8 == 0 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i / 8 == 0 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }    
             break; // We are at the beginning row of the board of hit an ennemy piece
@@ -177,13 +177,13 @@ void getTopNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENG
     return;
 }
 
-void getBottomNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getBottomNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex / 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 8; i <= 63; i += 8) {
         result[count++] = i;
-        if (i / 8 == 7 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i / 8 == 7 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }  
             break; // We are at the end row of the board of hit an ennemy piece
@@ -192,13 +192,13 @@ void getBottomNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_L
     return;
 }
 
-void getRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getRightNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 7) return;
     int count = 0;
     for (int i = currentIndex + 1; i <= 63; i++) {
         result[count++] = i;
-        if (i % 8 == 7 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 7 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }  
             break; // We are at the right end of the board of hit an ennemy piece
@@ -207,13 +207,13 @@ void getRightNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LE
     return;
 }
 
-void getLeftNetRay(int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
+void getLeftNetRay(GameState currentState, int currentIndex, int colorToNotInclude, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 == 0) return;
     int count = 0;
     for (int i = currentIndex - 1; i >= 0; i--) {
         result[count++] = i;
-        if (i % 8 == 0 || state->boardArray[i] != NONE) {
-            if (colorToNotInclude != 0 && (state->boardArray[i] & pieceColorBitMask) == colorToNotInclude) {
+        if (i % 8 == 0 || pieceAtIndex(currentState.board, i) != NOPIECE) {
+            if (colorToNotInclude != 0 && pieceColor(pieceAtIndex(currentState.board, i)) == colorToNotInclude) {
                 result[count - 1] = -1; // This is remove the last item of the array
             }  
             break; // We are at the left end of the board of hit an ennemy piece
@@ -256,7 +256,7 @@ int* getPawnAttackingSquares(int currentIndex, int color, int result[2]) {
     return result;
 }
 
-int* getKingMoves(int currentIndex, int result[BOARD_LENGTH]) {
+void getKingMoves(int currentIndex, int result[BOARD_LENGTH]) {
     int counter = 0;
     if (currentIndex % 8 != 0 && currentIndex / 8 != 0) { result[counter++] = currentIndex - 9; }
     if (currentIndex / 8 != 0                         ) { result[counter++] = currentIndex - 8; }
@@ -268,47 +268,31 @@ int* getKingMoves(int currentIndex, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 != 7 && currentIndex / 8 != 7) { result[counter++] = currentIndex + 9; }
 }
 
-bool isIndexPseudoLegalForKnight(int currentIndex, int targetSquare, bool goDownOne) {
+bool isIndexPseudoLegalForKnight(GameState currentState, int currentIndex, int targetSquare, bool goDownOne) {
     int y = targetSquare / 8;
     bool wrappingCondition = (goDownOne) ? 
         abs(currentIndex / 8 - y) == 1 : 
         abs(currentIndex / 8 - y) == 2;
     if (targetSquare < 0 || targetSquare > 63 || !wrappingCondition) return false;
-    return (state->boardArray[targetSquare] & pieceColorBitMask) != state->colorToGo;
+    return pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-void getKnightPseudoLegalMoves(int currentIndex, int result[BOARD_LENGTH]) {
+void getKnightPseudoLegalMoves(GameState currentState, int currentIndex, int result[BOARD_LENGTH]) {
     int counter = 0;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 15, false)) result[counter++] = currentIndex - 15;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 10, true )) result[counter++] = currentIndex - 10;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 17, false)) result[counter++] = currentIndex - 17;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 6 , true )) result[counter++] = currentIndex + 6 ;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 10, true )) result[counter++] = currentIndex + 10;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 15, false)) result[counter++] = currentIndex + 15;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 17, false)) result[counter++] = currentIndex + 17;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 15, false)) result[counter++] = currentIndex - 15;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 10, true )) result[counter++] = currentIndex - 10;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 17, false)) result[counter++] = currentIndex - 17;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 6 , true )) result[counter++] = currentIndex + 6 ;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 10, true )) result[counter++] = currentIndex + 10;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 15, false)) result[counter++] = currentIndex + 15;
+    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 17, false)) result[counter++] = currentIndex + 17;
 } 
 
-void init() {
-    opponentColor = state->colorToGo == WHITE ? BLACK : WHITE;
-    friendlyKingIndex = -1;
-    inCheck = false;
-    inDoubleCheck = false;
-    attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
-    doubleAttackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
-    protectKingSquares = malloc(sizeof(bool) * BOARD_SIZE);
-    isPieceAtLocationPinned = malloc(sizeof(IntList*) * BOARD_SIZE);
-    memset(attackedSquares, false, sizeof(bool) * BOARD_SIZE);
-    memset(doubleAttackedSquares, false, sizeof(bool) * BOARD_SIZE);
-    memset(protectKingSquares, false, sizeof(bool) * BOARD_SIZE);
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        isPieceAtLocationPinned[i] = NULL;
-    }
-}
-
 void extendRayIfCheckKing(
+    GameState currentState,
     int ray[BOARD_LENGTH], 
-    void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH])) {
+    void (*getRay)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH])) {
     if (ray[0] == 0) return;
     int lastIndex = -1;
     for (int i = 0; i < 8; i++) {
@@ -318,108 +302,109 @@ void extendRayIfCheckKing(
         }
     }
     if (lastIndex == -1) return;
-    int lastIndexPiece = state->boardArray[lastIndex];
-    if (lastIndexPiece != (state->colorToGo | KING)) return;
+    Piece lastIndexPiece = pieceAtIndex(currentState.board, lastIndex);
+    if (lastIndexPiece != (currentState.colorToGo | KING)) return;
     // King is in check by this piece and we need to generate the square behind the king
     int newRay[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getRay(lastIndex, 0, newRay);
+    getRay(currentState, lastIndex, 0, newRay);
     appendIntListToAttackedSquare(newRay);
 }
 
-void calculateAttackSquares() {
+void calculateAttackSquares(GameState currentState) {
     int attackingSquares[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const int piece = state->boardArray[currentIndex];
-        if (piece == NONE) continue;
-        if ((piece & pieceColorBitMask) != opponentColor) {
-            if ((piece & pieceTypeBitMask) == KING) {
+
+        const Piece piece = pieceAtIndex(currentState.board, currentIndex);
+        if (piece == NOPIECE) continue;
+        if (pieceColor(piece) != opponentColor) {
+            if (pieceType(piece) == KING) {
                 friendlyKingIndex = currentIndex;
             }
             continue;
         }
-        switch (piece & pieceTypeBitMask) {
+        switch (pieceType(piece)) {
         // Note: The 0 means that if the ray stops at a piece it will include it, regarless of its color
         case ROOK: 
-            getTopNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopNetRay);
+            getTopNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomNetRay);
+            getBottomNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getRightNetRay);
+            getRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getLeftNetRay);
+            getLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
         
         case BISHOP:
-            getTopRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopRightNetRay);
+            getTopRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopLeftNetRay);
+            getTopLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomRightNetRay);
+            getBottomRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomLeftNetRay);
+            getBottomLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
         case QUEEN:
-            getTopNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopNetRay);
+            getTopNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             
-            getBottomNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomNetRay);
+            getBottomNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getRightNetRay);
+            getRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getLeftNetRay);
+            getLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopRightNetRay);
+            getTopRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getTopLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getTopLeftNetRay);
+            getTopLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getTopLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomRightNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomRightNetRay);
+            getBottomRightNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomRightNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
 
-            getBottomLeftNetRay(currentIndex, 0, attackingSquares);
-            extendRayIfCheckKing(attackingSquares, getBottomLeftNetRay);
+            getBottomLeftNetRay(currentState, currentIndex, 0, attackingSquares);
+            extendRayIfCheckKing(currentState, attackingSquares, getBottomLeftNetRay);
             appendIntListToAttackedSquare(attackingSquares);
             resetRayResult(attackingSquares);
             break;
@@ -444,71 +429,79 @@ void calculateAttackSquares() {
     }
 }
 
-bool isKingIndexLegal(int targetSquare) {
+bool isKingIndexLegal(GameState currentState, int targetSquare) {
     // King does not land on a square which he will be eaten or does not eat one of his own square
     return !attackedSquares[targetSquare] && 
-        (state->boardArray[targetSquare] & pieceColorBitMask) != state->colorToGo;
+        pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
-    int firstRay[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getRay(friendlyKingIndex, 0, firstRay);
-    if (firstRay[0] == -1) { 
+int addSlidingPiecePinned(GameState currentState, void (*getRay)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
+    int rayToFriendlyBlockingPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    getRay(currentState, friendlyKingIndex, 0, rayToFriendlyBlockingPiece);
+    if (rayToFriendlyBlockingPiece[0] == -1) { 
         return -1; 
     }
 
     int firstLastSquare = -1; 
     for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (firstRay[i + 1] == -1) {
-            firstLastSquare = firstRay[i];
+        if (rayToFriendlyBlockingPiece[i + 1] == -1) {
+            firstLastSquare = rayToFriendlyBlockingPiece[i];
             break;
         }
     }
-    int firstLastSquareContent = state->boardArray[firstLastSquare];
-    if (firstLastSquareContent == NONE) { 
-        return - 1; 
+    int firstLastSquareContent = pieceAtIndex(currentState.board, firstLastSquare);
+    if (firstLastSquareContent == NOPIECE) { 
+        return -1; 
     }
 
-    if ((firstLastSquareContent & pieceColorBitMask) == state->colorToGo) {
-        int secondRay[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        getRay(firstLastSquare, 0, secondRay);
-        if (secondRay[0] == -1) { 
+    if (pieceColor(firstLastSquareContent) == currentState.colorToGo) {
+        // This piece may be pinned
+        int rayFromFriendlyBlockingToDangerousPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+        getRay(currentState, firstLastSquare, 0, rayFromFriendlyBlockingToDangerousPiece);
+        if (rayFromFriendlyBlockingToDangerousPiece[0] == -1) { 
             return -1; 
         }
         int secondLastSquare = -1; 
             for (int i = 0; i < BOARD_LENGTH; i++) {
-                if (secondRay[i + 1] == -1) {
-                    secondLastSquare = secondRay[i];
+                if (rayFromFriendlyBlockingToDangerousPiece[i + 1] == -1) {
+                    secondLastSquare = rayFromFriendlyBlockingToDangerousPiece[i];
                     break;
                 }
             }
 
-        int potentialDangerousPiece = state->boardArray[secondLastSquare];
+        int potentialDangerousPiece = pieceAtIndex(currentState.board, secondLastSquare);
         if (potentialDangerousPiece == dangerousSlidingPiece ||
-            potentialDangerousPiece == (opponentColor | QUEEN)) {
+            potentialDangerousPiece == makePiece(opponentColor, QUEEN)) {
             // The piece is pinned!
             IntList* potentialValidMoves = (IntList*) malloc(sizeof(IntList));
             potentialValidMoves->capacity = 8;
             potentialValidMoves->count = 0;
             potentialValidMoves->items = malloc(sizeof(int) * 8);
+
+            // Creating the pin mask for this square
             // Appending the first ray and second ray to potential valid moves
+            u64 pinMaskForSquare = (u64) 0;
+            u64 toggle = (u64) 1;
             for (int i = 0; i < BOARD_LENGTH; i++) {
-                if (firstRay[i] != -1) {
-                    da_append(potentialValidMoves, firstRay[i]);
+                if (rayToFriendlyBlockingPiece[i] != -1) {
+                    pinMaskForSquare |= (toggle << rayToFriendlyBlockingPiece[i]);
+                    da_append(potentialValidMoves, rayToFriendlyBlockingPiece[i]);
                 }
             }
             for (int i = 0; i < BOARD_LENGTH; i++) {
-                if (secondRay[i] != -1) {
-                    da_append(potentialValidMoves, secondRay[i]);
+                if (rayFromFriendlyBlockingToDangerousPiece[i] != -1) {
+                    pinMaskForSquare |= (toggle << rayFromFriendlyBlockingToDangerousPiece[i]);
+                    da_append(potentialValidMoves, rayFromFriendlyBlockingToDangerousPiece[i]);
                 }
             }
+            pinMasks[firstLastSquare] = pinMaskForSquare;
             isPieceAtLocationPinned[firstLastSquare] = potentialValidMoves;
         } 
     } else {
         // Piece is opponent color
         if (firstLastSquareContent == dangerousSlidingPiece ||
             firstLastSquareContent == (opponentColor | QUEEN)) {
-            // The piece is checking the piece
+            // The piece is checking the king
             return firstLastSquare;
         }  
     }
@@ -524,23 +517,23 @@ void appendIntListToBoolList(int src[BOARD_LENGTH], bool* dest) {
     }
 }
 
-void generateCastle(Moves* validMoves) {
-    const int defaultKingIndex = state->colorToGo == WHITE ? 60 : 4;
+void generateCastle(GameState currentState, Move* validMoves, int* currentIndex) {
+    const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
     if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
 
-    const int castlingBits = state->colorToGo == WHITE ? state->castlingPerm >> 2 : state-> castlingPerm & 0b11;
+    const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState. castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
         // Trusting the caller that the the king nor the rook has moved
         // Note the first check is redundant, if we assume 
         // that the caller has done some proper checks to set the castling perm, which I do not
         const int rookIndex = friendlyKingIndex + 3;
-        if (state->boardArray[rookIndex] == (state->colorToGo | ROOK) &&
+        if (pieceAtIndex(currentState.board, rookIndex) == (currentState.colorToGo | ROOK) &&
             !attackedSquares[friendlyKingIndex + 1] &&
             !attackedSquares[friendlyKingIndex + 2] &&
-            state->boardArray[friendlyKingIndex + 1] == NONE &&
-            state->boardArray[friendlyKingIndex + 2] == NONE) {
+            pieceAtIndex(currentState.board, friendlyKingIndex + 1) == NOPIECE &&
+            pieceAtIndex(currentState.board, friendlyKingIndex + 2) == NOPIECE) {
             // Castling is valid
-            appendMove(friendlyKingIndex, friendlyKingIndex + 2, KING_SIDE_CASTLING, validMoves);
+            appendMove(validMoves, currentIndex, friendlyKingIndex, friendlyKingIndex + 2, KING_SIDE_CASTLING);
         }
     }
     if (castlingBits & 1) { // Can castle queen side
@@ -548,20 +541,20 @@ void generateCastle(Moves* validMoves) {
         // Trusting the caller that the the king nor the rook has moved
         // Note the first check is redundant, if we assume 
         // that the caller has done some proper checks to set the castling perm, which I do not
-        if (state->boardArray[rookIndex] == (state->colorToGo | ROOK) &&
+        if (pieceAtIndex(currentState.board, rookIndex) == (currentState.colorToGo | ROOK) &&
             !attackedSquares[friendlyKingIndex - 1] &&
             !attackedSquares[friendlyKingIndex - 2] && 
             // The rook can pass trough an attacked square, which means that we don't need to check for the third square
-            state->boardArray[friendlyKingIndex - 1] == NONE &&
-            state->boardArray[friendlyKingIndex - 2] == NONE && 
-            state->boardArray[friendlyKingIndex - 3] == NONE) {
+            pieceAtIndex(currentState.board, friendlyKingIndex - 1) == NOPIECE &&
+            pieceAtIndex(currentState.board, friendlyKingIndex - 2) == NOPIECE && 
+            pieceAtIndex(currentState.board, friendlyKingIndex - 3) == NOPIECE) {
             // Castling is valid
-            appendMove(friendlyKingIndex, friendlyKingIndex - 2, QUEEN_SIDE_CASTLING, validMoves);
+            appendMove(validMoves, currentIndex, friendlyKingIndex, friendlyKingIndex - 2, QUEEN_SIDE_CASTLING);
         }
     }
 }
 
-void generateKingMoves(Moves* validMoves) {
+void generateKingMoves(GameState currentState, Move* validMoves, int* currentIndex) {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; }
     if (doubleAttackedSquares[friendlyKingIndex]) { inDoubleCheck = true; }
 
@@ -569,43 +562,52 @@ void generateKingMoves(Moves* validMoves) {
     getKingMoves(friendlyKingIndex, pseudoLegalMoves);
     for (int i = 0; i < 8; i++) {
         const int targetSquare = pseudoLegalMoves[i];
-        if (targetSquare != -1 && isKingIndexLegal(targetSquare)) {
-            appendMove(friendlyKingIndex, targetSquare, NOFlAG, validMoves);
+        if (targetSquare != -1 && isKingIndexLegal(currentState, targetSquare)) {
+            appendMove(validMoves, currentIndex, friendlyKingIndex, targetSquare, NOFlAG);
         }
     }
 
-    generateCastle(validMoves);
+    generateCastle(currentState, validMoves, currentIndex);
     // Pinning own color pieces    
     // Checking for attacking sliding pieces
     int checkingPieceIndex = -1;
-    void (*checkingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]) = NULL;
+    void (*checkingPieceDirection)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]) = NULL;
     // Note: Could refactor all the function pointer into an array and iterate over them
     // Unfortunatly, I have better things to do for now
 
-    if (addSlidingPiecePinned(getTopNetRay, opponentColor | ROOK) != -1)
+    if (addSlidingPiecePinned(currentState, getTopNetRay, opponentColor | ROOK) != -1)
         checkingPieceDirection = getTopNetRay; 
-    if (addSlidingPiecePinned(getBottomNetRay, opponentColor | ROOK) != -1) 
+    if (addSlidingPiecePinned(currentState, getBottomNetRay, opponentColor | ROOK) != -1) 
         checkingPieceDirection = getBottomNetRay; 
-    if (addSlidingPiecePinned(getRightNetRay, opponentColor | ROOK) != -1)
+    if (addSlidingPiecePinned(currentState, getRightNetRay, opponentColor | ROOK) != -1)
         checkingPieceDirection = getRightNetRay; 
-    if (addSlidingPiecePinned(getLeftNetRay, opponentColor | ROOK) != -1) 
+    if (addSlidingPiecePinned(currentState, getLeftNetRay, opponentColor | ROOK) != -1) 
         checkingPieceDirection = getLeftNetRay; 
     
-    if (addSlidingPiecePinned(getTopRightNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(currentState, getTopRightNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getTopRightNetRay; 
-    if (addSlidingPiecePinned(getTopLeftNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(currentState, getTopLeftNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getTopLeftNetRay; 
-    if (addSlidingPiecePinned(getBottomRightNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(currentState, getBottomRightNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getBottomRightNetRay;
-    if (addSlidingPiecePinned(getBottomLeftNetRay, opponentColor | BISHOP) != -1) 
+    if (addSlidingPiecePinned(currentState, getBottomLeftNetRay, opponentColor | BISHOP) != -1) 
         checkingPieceDirection = getBottomLeftNetRay;
 
     if (!inCheck || inDoubleCheck) { return; } // Either the king is safe or only king moves are valid
 
+    checkBitBoard = (u64) 0; // The king is in check, thus not every square is valid
+    u64 toggle = (u64) 1;
     if (checkingPieceDirection != NULL) {
         // A sliding piece is checking the king
         int result[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        checkingPieceDirection(friendlyKingIndex, 0, result);
+        checkingPieceDirection(currentState, friendlyKingIndex, 0, result);
+
+        for (int i = 0; i < BOARD_LENGTH; i++) {
+            if (result[i] != -1) {
+                checkBitBoard |= toggle << result[i];
+            }
+        }
+
         appendIntListToBoolList(result, protectKingSquares);
         return;
     }
@@ -613,12 +615,13 @@ void generateKingMoves(Moves* validMoves) {
     // The only valid moves for other pieces is to eat the checking piece
     
     // Checking for pawns
-    const int delta = state->colorToGo == WHITE ? -1 : 1;
+    const int delta = currentState.colorToGo == WHITE ? -1 : 1;
     int potentialPawn;
     // For loop is remove copy pasting. I know sometimes I copy paste a lot but I was fed up this time
     for (int i = 0; i < 2; i++) {
         potentialPawn = friendlyKingIndex + (i == 0 ? 7 : 9) * delta;
-        if (state->boardArray[potentialPawn] == (opponentColor | PAWN)) {
+        if (pieceAtIndex(currentState.board, potentialPawn) == (opponentColor | PAWN)) {
+            checkBitBoard |= toggle << potentialPawn;
             protectKingSquares[potentialPawn] = true;
             return; // Can return without checking the others since there is no double check
         }
@@ -629,35 +632,36 @@ void generateKingMoves(Moves* validMoves) {
     getKnightMoves(friendlyKingIndex, potentialKnigths);
     for (int i = 0; i < BOARD_LENGTH; i++) {
         int index = potentialKnigths[i];
-        if (index != -1 && state->boardArray[index] == (opponentColor | KNIGHT)) {
+        if (index != -1 && pieceAtIndex(currentState.board, index) == (opponentColor | KNIGHT)) {
+            checkBitBoard |= toggle << index;
             protectKingSquares[index] = true;
             return; // Can return without checking the others since there is no double check
         }
     }
 }
 
-void appendPromotionMove(int from, int to, Moves* validMoves) {
-    appendMove(from, to, PROMOTE_TO_QUEEN, validMoves);
-    appendMove(from, to, PROMOTE_TO_KNIGHT, validMoves);
-    appendMove(from, to, PROMOTE_TO_ROOK, validMoves);
-    appendMove(from, to, PROMOTE_TO_BISHOP, validMoves);
+void appendPromotionMove(int from, int to, Move* validMoves, int* currentIndex) {
+    appendMove(validMoves, currentIndex, from, to, PROMOTE_TO_QUEEN);
+    appendMove(validMoves, currentIndex, from, to, PROMOTE_TO_KNIGHT);
+    appendMove(validMoves, currentIndex, from, to, PROMOTE_TO_ROOK);
+    appendMove(validMoves, currentIndex, from, to, PROMOTE_TO_BISHOP);
 } 
 
-void checkUnPinnedEnPassant(int from, Moves* validMoves) {
+void checkUnPinnedEnPassant(GameState currentState, int from, Move* validMoves, int* currentIndex) {
     // king is in the same row of a pawn, the opponent pawn who just double pawn pushed and an attacking piece
     // Board position which satisfies these criteria: 7k/8/8/KPp4r/8/8/8/8
     if ((friendlyKingIndex / 8 ) != (from / 8)) { 
-        appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+        appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
         return; // The king is not on the same rank as the from pawn
     }
     // TODO: Make function getNextPieceInDirection
-    int squareInFromOfEnPassant = state->colorToGo == BLACK ? 
-        state->enPassantTargetSquare - 8 :
-        state->enPassantTargetSquare + 8;
+    int squareInFromOfEnPassant = currentState.colorToGo == BLACK ? 
+        currentState.enPassantTargetSquare - 8 :
+        currentState.enPassantTargetSquare + 8;
     int leftRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     int rightRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getLeftNetRay(squareInFromOfEnPassant, 0, leftRow);
-    getRightNetRay(squareInFromOfEnPassant, 0, rightRow);
+    getLeftNetRay(currentState, squareInFromOfEnPassant, 0, leftRow);
+    getRightNetRay(currentState, squareInFromOfEnPassant, 0, rightRow);
 
     int lastLeftRow = -1;
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -676,14 +680,14 @@ void checkUnPinnedEnPassant(int from, Moves* validMoves) {
 
     if (lastRightRow == -1 || lastLeftRow == -1) {
         // There is no restriction for the pawn to do en-passant
-        appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+        appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
         return;
     }
     
     // There are two cases of en passant pinned
     // Either the pawn that just double moved is between the from pawn and the king
     // or this pawn is between the from pawn and the attacking pieces
-    void (*attackingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]);
+    void (*attackingPieceDirection)(GameState currentState, int index, int colorNotToInclude, int result[BOARD_LENGTH]);
     int indexToCalculateAttackingPiece;
     if (lastRightRow == friendlyKingIndex || lastLeftRow == friendlyKingIndex) {
         // First case
@@ -697,10 +701,10 @@ void checkUnPinnedEnPassant(int from, Moves* validMoves) {
         int squareAfterPawn[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
         if (lastLeftRow == from) {
             attackingPieceDirection = getRightNetRay;
-            getLeftNetRay(from, 0, squareAfterPawn);
+            getLeftNetRay(currentState, from, 0, squareAfterPawn);
         } else {
             attackingPieceDirection = getLeftNetRay;
-            getRightNetRay(from, 0, squareAfterPawn);
+            getRightNetRay(currentState, from, 0, squareAfterPawn);
         }
 
         int potentialKingIndex = -1;
@@ -712,7 +716,7 @@ void checkUnPinnedEnPassant(int from, Moves* validMoves) {
         }
         if (potentialKingIndex != friendlyKingIndex) {
             // There is a piece between the king and the from pawn removing the en passant pinned
-            appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+            appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
             return;
         }
 
@@ -720,7 +724,7 @@ void checkUnPinnedEnPassant(int from, Moves* validMoves) {
     } 
 
     int potentialAttackingPieceIndex[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    attackingPieceDirection(indexToCalculateAttackingPiece, 0, potentialAttackingPieceIndex);
+    attackingPieceDirection(currentState, indexToCalculateAttackingPiece, 0, potentialAttackingPieceIndex);
 
     int lastPotentialAttackingPiece = -1;
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -730,17 +734,17 @@ void checkUnPinnedEnPassant(int from, Moves* validMoves) {
         }
     }
     
-    if (state->boardArray[lastPotentialAttackingPiece] != (opponentColor | ROOK) && 
-        state->boardArray[lastPotentialAttackingPiece] != (opponentColor | QUEEN)) {
+    if (pieceAtIndex(currentState.board, lastPotentialAttackingPiece) != (opponentColor | ROOK) && 
+        pieceAtIndex(currentState.board, lastPotentialAttackingPiece) != (opponentColor | QUEEN)) {
         // The pawn is not en-passant pinned!
-        appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+        appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
     }
 
 }
 
-void generateEnPassant(int from, Moves* validMoves) {
-    if (state->boardArray[state->enPassantTargetSquare] != NONE) { return; }
-    int difference = state->colorToGo == WHITE ? from - state->enPassantTargetSquare : state->enPassantTargetSquare - from;
+void generateEnPassant(GameState currentState, int from, Move* validMoves, int* currentIndex) {
+    if (pieceAtIndex(currentState.board, currentState.enPassantTargetSquare) != NOPIECE) { return; }
+    int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
     // If the pawn is "en-passant pinned"
     IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
@@ -749,92 +753,203 @@ void generateEnPassant(int from, Moves* validMoves) {
         return;
     } 
     if (pinnedLegalMoves == NULL && !inCheck) {
-        checkUnPinnedEnPassant(from, validMoves);
+        checkUnPinnedEnPassant(currentState, from, validMoves, currentIndex);
     } else if (pinnedLegalMoves != NULL && !inCheck) {
         for (int i = 0; i < pinnedLegalMoves->count; i++) {
-            if (state->enPassantTargetSquare == pinnedLegalMoves->items[i]) {
-                appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+            if (currentState.enPassantTargetSquare == pinnedLegalMoves->items[i]) {
+                appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
                 return;
             }
         }
     } else if (pinnedLegalMoves == NULL && inCheck) {
         // If the en-passant piece is checking the king 
-        int squareInFrontOfEnPassantPawn = state->colorToGo == WHITE ? 
-            state->enPassantTargetSquare + 16 :
-            state->enPassantTargetSquare - 16;
+        int squareInFrontOfEnPassantPawn = currentState.colorToGo == WHITE ? 
+            currentState.enPassantTargetSquare + 16 :
+            currentState.enPassantTargetSquare - 16;
         int attackedSquare1 = squareInFrontOfEnPassantPawn + 1;
         int attackedSquare2 = squareInFrontOfEnPassantPawn - 1;
 
         if (attackedSquare1 == friendlyKingIndex || attackedSquare2 == friendlyKingIndex) {
-            appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
-        } else if (protectKingSquares[state->enPassantTargetSquare]) {
-            appendMove(from, state->enPassantTargetSquare, EN_PASSANT, validMoves);
+            appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
+        } else if (protectKingSquares[currentState.enPassantTargetSquare]) {
+            appendMove(validMoves, currentIndex, from, currentState.enPassantTargetSquare, EN_PASSANT);
         }
     }
 }
 
-void generatePawnDoublePush(int from, int increment, Moves* validMoves) {
-    if (state->boardArray[from + increment] != NONE ||
-        state->boardArray[from + 2 * increment] != NONE) { return; }
+void generatePawnDoublePush(GameState currentState, int from, int increment, Move* validMoves, int* currentIndex) {
+    if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
+        pieceAtIndex(currentState.board, from + 2 * increment) != NOPIECE) { return; }
     IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
     if (pinnedLegalMoves != NULL && inCheck) {
         // Pawn is pinned and the king is checked
         return;
     } 
     if (pinnedLegalMoves == NULL && !inCheck) {
-        appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH, validMoves);
+        appendMove(validMoves, currentIndex, from, from + 2 * increment, DOUBLE_PAWN_PUSH);
     } else if (pinnedLegalMoves != NULL && !inCheck) {
         for (int i = 0; i < pinnedLegalMoves->count; i++) {
             if ((from + 2 * increment) == pinnedLegalMoves->items[i]) {
-                appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH, validMoves);
+                appendMove(validMoves, currentIndex, from, from + 2 * increment, DOUBLE_PAWN_PUSH);
                 return;
             }
         }
     } else if (pinnedLegalMoves == NULL && inCheck) {
         if (protectKingSquares[from + 2 * increment]) {
-            appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH, validMoves);
+            appendMove(validMoves, currentIndex, from, from + 2 * increment, DOUBLE_PAWN_PUSH);
         }
     }
 
 }
 
-void generateAddionnalPawnMoves(int from, bool pseudoLegalMoves[BOARD_SIZE], Moves* validMoves) {
-    int increment = state->colorToGo == WHITE ? -8 : 8;
-    bool pawnCanEnPassant = state->colorToGo == WHITE ? 
+void generateAddionnalPawnMoves(GameState currentState, int from, bool pseudoLegalMoves[BOARD_SIZE], Move* validMoves, int* currentIndex) {
+    int increment = currentState.colorToGo == WHITE ? -8 : 8;
+    bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
         from / 8 == 3 : 
         from / 8 == 4;
-    bool pawnCanDoublePush = state->colorToGo == WHITE ? 
+    bool pawnCanDoublePush = currentState.colorToGo == WHITE ? 
         from / 8 == 6 : 
         from / 8 == 1;
-    if (pawnCanEnPassant && state->enPassantTargetSquare != -1) { 
-        generateEnPassant(from, validMoves); 
+    if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
+        generateEnPassant(currentState, from, validMoves, currentIndex); 
     } else if (pawnCanDoublePush) {
-        generatePawnDoublePush(from, increment, validMoves);
+        generatePawnDoublePush(currentState, from, increment, validMoves, currentIndex);
+    }
+}
+
+// Function from https://youtu.be/_vqlIPDR2TU?si=J2UVpgrqJQ3gzqCT&t=2314
+// I loved Sebastian Lague!
+void rookMoves(GameState currentState, int from, Move* validMoves, int* currentIndex) {
+    // Obtaining the blockingBitBoard
+    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 blockingBitBoard = (allPieceBB & rookMovementMask[from]);
+
+    // Getting the pseudo legal moves bitboard from the array
+    u64 movesBitBoard = getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
+
+    // Accounting for friendly pieces
+    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
+    if (currentState.colorToGo == WHITE) {
+        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
+    } else { 
+        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
+    }
+    movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
+    
+    // Accounting for pins
+    movesBitBoard &= pinMasks[from];
+
+    // Accounting for checks
+    movesBitBoard &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (movesBitBoard) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(movesBitBoard);
+        
+        appendMove(validMoves, currentIndex, from, to, NOFlAG);
+        
+        // Clearing the least significant bit to get the position of the next bit
+        movesBitBoard &= movesBitBoard - 1;
+    }
+}
+
+void bishopMoves(GameState currentState, int from, Move* validMoves, int* currentIndex) {
+    // Obtaining the blockingBitBoard
+    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 blockingBitBoard = (allPieceBB & bishopMovementMask[from]);
+    // Getting the pseudo legal moves bitboard from the array
+    u64 movesBitBoard = getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
+
+    // Accounting for friendly pieces
+    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
+    if (currentState.colorToGo == WHITE) {
+        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
+    } else { 
+        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
+    }
+    movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
+    
+    // Accounting for pins
+    movesBitBoard &= pinMasks[from];
+
+    // Accounting for checks
+    movesBitBoard &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (movesBitBoard) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(movesBitBoard);
+        
+        appendMove(validMoves, currentIndex, from, to, NOFlAG);
+        
+        // Clearing the least significant bit to get the position of the next bit
+        movesBitBoard &= movesBitBoard - 1;
+    }
+}
+
+void queenMoves(GameState currentState, int from, Move* validMoves, int* currentIndex) {
+    // Obtaining the blockingBitBoard
+    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 rookBlockingBitBoard = (allPieceBB & rookMovementMask[from]);
+    u64 bishopBlockingBitBoard = (allPieceBB & bishopMovementMask[from]);
+
+    // Getting the pseudo legal moves bitboard from the array
+    u64 rookMovesBitBoard = getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
+    u64 bishopMovesBitBoard = getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
+    u64 movesBitBoard = rookMovesBitBoard | bishopMovesBitBoard;
+
+    // Accounting for friendly pieces
+    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
+    if (currentState.colorToGo == WHITE) {
+        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
+    } else { 
+        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
+    }
+    movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
+    
+    // Accounting for pins
+    movesBitBoard &= pinMasks[from];
+
+    // Accounting for checks
+    movesBitBoard &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (movesBitBoard) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(movesBitBoard);
+        
+        appendMove(validMoves, currentIndex, from, to, NOFlAG);
+        
+        // Clearing the least significant bit to get the position of the next bit
+        movesBitBoard &= movesBitBoard - 1;
     }
 }
 
 void addLegalMovesFromPseudoLegalMoves(
+    GameState currentState,
     int from, 
     bool pseudoLegalMoves[BOARD_SIZE], 
     bool isPawn, 
     bool pawnBeforePromotion,
-    Moves* validMoves) {
-    if (isPawn) generateAddionnalPawnMoves(from, pseudoLegalMoves, validMoves);
+    Move* validMoves,
+    int* currentIndex) {
+    if (isPawn) generateAddionnalPawnMoves(currentState, from, pseudoLegalMoves, validMoves, currentIndex);
     IntList* validSquaresIfPinned = isPieceAtLocationPinned[from];
     if (!inCheck && validSquaresIfPinned == NULL) {
         // King is not checked nor is the piece pinned
         for (int i = 0; i < BOARD_SIZE; i++) {
             if (pseudoLegalMoves[i]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, i, validMoves); }
-                else { appendMove(from, i, NOFlAG, validMoves); }
+                if (pawnBeforePromotion) { appendPromotionMove(from, i, validMoves, currentIndex); }
+                else { appendMove(validMoves, currentIndex, from, i, NOFlAG); }
             }
         }
     } else if (inCheck && validSquaresIfPinned == NULL) {
         // The king is checked although the piece is not pinned
         for (int i = 0; i < BOARD_SIZE; i++) {
             if (protectKingSquares[i] && pseudoLegalMoves[i]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, i, validMoves); }
-                else { appendMove(from, i, NOFlAG, validMoves); }
+                if (pawnBeforePromotion) { appendPromotionMove(from, i, validMoves, currentIndex); }
+                else { appendMove(validMoves, currentIndex, from, i, NOFlAG); }
             }
         }
     } else if (inCheck && validSquaresIfPinned != NULL) {
@@ -842,8 +957,8 @@ void addLegalMovesFromPseudoLegalMoves(
         for (int i = 0; i < validSquaresIfPinned->count; i++) {
             int index = validSquaresIfPinned->items[i];
             if (protectKingSquares[index] && pseudoLegalMoves[index]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, index, validMoves); }
-                else { appendMove(from, index, NOFlAG, validMoves); }
+                if (pawnBeforePromotion) { appendPromotionMove(from, index, validMoves, currentIndex); }
+                else { appendMove(validMoves, currentIndex, from, index, NOFlAG); }
             }
         }
     // Note: Kinda redundant if statement since this is the only valid option but I kept it for clarity
@@ -852,123 +967,59 @@ void addLegalMovesFromPseudoLegalMoves(
         for (int i = 0; i < validSquaresIfPinned->count; i++) {
             int index = validSquaresIfPinned->items[i];
             if (pseudoLegalMoves[index]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, index, validMoves); }
-                else { appendMove(from, index, NOFlAG, validMoves); }
+                if (pawnBeforePromotion) { appendPromotionMove(from, index, validMoves, currentIndex); }
+                else { appendMove(validMoves, currentIndex, from, index, NOFlAG); }
             }
         }
     }
 }
 
-void getPawnPseudoLegalMoveIndex(int index, bool result[BOARD_SIZE]) {
-    int potentialNeutralMove = state->colorToGo == WHITE ? index - 8 : index + 8;
+void getPawnPseudoLegalMoveIndex(GameState currentState, int index, bool result[BOARD_SIZE]) {
+    int potentialNeutralMove = currentState.colorToGo == WHITE ? index - 8 : index + 8;
     if (potentialNeutralMove < 0 && potentialNeutralMove > 63) {
         return;
     }
-    if (state->boardArray[potentialNeutralMove] == NONE) {
+    if (pieceAtIndex(currentState.board, potentialNeutralMove) == NOPIECE) {
         result[potentialNeutralMove] = true;
     }
     int attacks[2] = { -1, -1 };
-    getPawnAttackingSquares(index, state->colorToGo, attacks);
+    getPawnAttackingSquares(index, currentState.colorToGo, attacks);
     for (int i = 0; i < 2; i++) {
         int potentialAttackMove = attacks[i];
-        if (potentialAttackMove != -1 && (state->boardArray[potentialAttackMove] & pieceColorBitMask) == opponentColor) {
+        if (potentialAttackMove != -1 && pieceColor(pieceAtIndex(currentState.board, potentialAttackMove)) == opponentColor) {
             result[potentialAttackMove] = true;
         }
     }
 }
 
-void generateSupportingPiecesMoves(Moves* validMoves) {
+void generateSupportingPiecesMoves(GameState currentState, Move* validMoves, int* currentMoveIndex) {
     int rays[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const int piece = state->boardArray[currentIndex];
-        if (piece == NONE) continue;
-        if ((piece & pieceColorBitMask) == opponentColor) continue;
+        const int piece = pieceAtIndex(currentState.board, currentIndex);
+        if (piece == NOPIECE) continue;
+        if (pieceColor(piece) == opponentColor) continue;
         bool pseudoLegalMoves[BOARD_SIZE] = { false };
-        switch (piece & pieceTypeBitMask) {
+        switch (pieceType(piece)) {
         case ROOK: 
-            getTopNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-
-            getBottomNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-            
-            getRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-            
-            getLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false, validMoves);
+            rookMoves(currentState, currentIndex, validMoves, currentMoveIndex);
         break;
         case BISHOP:
-            getTopRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-            
-            getTopLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-            
-            getBottomRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-            
-            getBottomLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);   
-            resetRayResult(rays);
-
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false, validMoves);
+            bishopMoves(currentState, currentIndex, validMoves, currentMoveIndex);
         break;
         case QUEEN:
-            getTopNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getTopRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getTopLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomRightNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomLeftNetRay(currentIndex, state->colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false, validMoves);
+            queenMoves(currentState, currentIndex, validMoves, currentMoveIndex);
         break;
         case KNIGHT:
-            getKnightPseudoLegalMoves(currentIndex, rays);
+            getKnightPseudoLegalMoves(currentState, currentIndex, rays);
             appendIntListToBoolList(rays, pseudoLegalMoves);
             resetRayResult(rays);
 
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false, validMoves);
+            addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, false, false, validMoves, currentMoveIndex);
         break;
         case PAWN:
-            getPawnPseudoLegalMoveIndex(currentIndex, pseudoLegalMoves);
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, true, 
-                state->colorToGo == WHITE ? currentIndex / 8 == 1 : currentIndex / 8 == 6, validMoves);
+            getPawnPseudoLegalMoveIndex(currentState, currentIndex, pseudoLegalMoves);
+            addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, true, 
+                currentState.colorToGo == WHITE ? currentIndex / 8 == 1 : currentIndex / 8 == 6, validMoves, currentMoveIndex);
             break;
         default:
             break;
@@ -976,36 +1027,46 @@ void generateSupportingPiecesMoves(Moves* validMoves) {
     }
 }
 
-bool compareGameStateForRepetition(GameState gameStateToCompare) {
+bool compareGameStateForRepetition(const GameState state, const GameState gameStateToCompare) {
     // Comparing boards
     for (int i = 0; i < BOARD_SIZE; i++) {
-        if (state->boardArray[i] != gameStateToCompare.boardArray[i]) {
+        if (pieceAtIndex(state.board, i) != pieceAtIndex(gameStateToCompare.board, i)) {
             return false;
         }
     }
-    return state->castlingPerm == gameStateToCompare.castlingPerm &&
-        state->colorToGo == gameStateToCompare.colorToGo &&
-        state->enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
+    return state.castlingPerm == gameStateToCompare.castlingPerm &&
+        state.colorToGo == gameStateToCompare.colorToGo &&
+        state.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
-bool isThereThreeFoldRepetition(const GameStates* previousStates) {
-    if ((previousStates == NULL) || 
-        (previousStates->items == NULL) || 
-        (previousStates->capacity == 0)) { 
+bool isThereThreeFoldRepetition(const GameState currentState, const GameState* previousStates) {
+    if (previousStates == NULL) { 
         return false;
     }
     bool hasOneDuplicate = false;
-    for (int i = 0; i < previousStates->count; i++) {
-        if (compareGameStateForRepetition(previousStates->items[i])) {
+    int index = 0;
+    bool result = false;
+    GameState previousState;
+    // If colorToGo == 0 then it is not a valid state
+    while (true) {
+
+        previousState = previousStates[index];
+        if (previousState.colorToGo == 0) {
+            break;
+        }
+
+        if (compareGameStateForRepetition(currentState, previousState)) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
                 // Already has a duplicate, this is the third repetition
-                return true;
+                result = true;
+                break;
             }
         }
+        index++;
     }
-    return false;
+    return result;
 }
 
 void noMemoryLeaksPlease() {
@@ -1022,53 +1083,44 @@ void noMemoryLeaksPlease() {
     free(isPieceAtLocationPinned);
 }
 
-Moves* simplifyMoves(Moves og) {
-    Moves* result = malloc(sizeof(Moves));
-    result->capacity = og.count;
-    result->count = og.count;
-    result->items = malloc(sizeof(Move) * result->capacity);
-    for (int i = 0; i < result->count; i++) {
-        result->items[i] = og.items[i];
-    }
-    free(og.items);
-    return result;
-}
-
-Moves* getValidMoves(const GameState *gameState, const GameStates* previousStates) {
-    Moves validMoves = { 0 };
-    state = gameState;
+// TODO: Find a way to not pass the Move* result and int* currentIndex variable around to every function
+// TODO: Find a way to make accessible the GameState currentState variable to every function without having to pass it in arguments
+void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentState, const GameState* previousStates) {
+    int currentIndex = 0;
     
-    if (isThereThreeFoldRepetition(previousStates) || (state->turnsForFiftyRule >= 50)) {
-        appendMove(0, 0, DRAW, &validMoves); // This is the `draw` move
-        return simplifyMoves(validMoves);
+    if (isThereThreeFoldRepetition(currentState, previousStates) || (currentState.turnsForFiftyRule >= 50)) {
+        appendMove(results, &currentIndex, 0, 0, DRAW); // This is the `draw` move
+
+        appendMove(results, &currentIndex, 0, 0, 0); // This is to indicate the length of the array
+        return; 
     }
 
-    init();
-    calculateAttackSquares();
-    generateKingMoves(&validMoves);
+    init(currentState);
+    calculateAttackSquares(currentState);
+    generateKingMoves(currentState, results, &currentIndex);
 
     if (inDoubleCheck) { 
         // Only king moves are valid when in double check
-        if (validMoves.count == 0) {
+        if (currentIndex == 0) { // Is there any king moves?
             // A pretty cool double checkmate
-            appendMove(0, 0, CHECKMATE, &validMoves); // This is the `checkmate` move
+            appendMove(results, &currentIndex, 0, 0, CHECKMATE); // This is the `checkmate` move
         }
 
         noMemoryLeaksPlease();
-        return simplifyMoves(validMoves);
+        // We assume that the array is 0 initialized, so we do not need to add a 0 entry
+        return;
     }
     
-    generateSupportingPiecesMoves(&validMoves);
+    generateSupportingPiecesMoves(currentState, results, &currentIndex);
     
-    if (validMoves.count == 0) {
+    if (currentIndex == 0) {
         // There is no valid move
         if (inCheck) {
-            appendMove(0, 0, CHECKMATE, &validMoves); // This is the `checkmate` move
+            appendMove(results, &currentIndex, 0, 0, CHECKMATE); // This is the `checkmate` move
         } else {
-            appendMove(0, 0, STALEMATE, &validMoves); // This is the `draw` move
+            appendMove(results, &currentIndex, 0, 0, STALEMATE); // This is the `stalemate` move
         }
     }
-
     noMemoryLeaksPlease();
-    return simplifyMoves(validMoves);
+    // We assume that the array is 0 initialized, so we do not need to add a 0 entry
 }

@@ -1,105 +1,138 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdbool.h>
-#include "../src/moveGenerator.h"
-#include "../src/fenString.h"
-#include "../src/chessGameEmulator.h"
-#include "logChessStructs.h"
+#include <time.h>
+#include "../src/magicBitBoard/MagicBitBoard.h"
+#include "../src/MoveGenerator.h"
+#include "../src/utils/FenString.h"
+#include "../src/ChessGameEmulator.h"
+#include "LogChessStructs.h"
 
-typedef unsigned long long u64;
+#define TEST_ITERATION 100
 
-u64 perft(int depth, GameState* achievedStates, int maximumDepth, bool firstMoveOfMaxDepth) {
+int maximumDepth;
+GameState* achievedStates;
+
+bool debug = true;
+
+u64 perft(int depth) {
   if (depth == 0) { return 1; }
   int nbMoveMade = maximumDepth - depth;
   GameState previousState = achievedStates[nbMoveMade];
-  GameStates previousStates = { 0 };
-  Moves* move_list = getValidMoves(&previousState, &previousStates); // We do not care about draw by repetition
-  int n_moves, i;
-  u64 nodes = 0;
+  GameState previousStates[1] = { 0 };
+  
+  Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
 
-  n_moves = move_list->count;
-  if (n_moves == 1) {
-    if (move_list->items[0] >> 12 == DRAW) {
-      printf("You just encounted a draw\nThis is not supposed to happen\nDid you hit the fifty move rule?\n");
-      free(move_list->items);
-      free(move_list);
+  getValidMoves(moves, previousState, previousStates); // We do not care about draw by repetition
+  int nbOfMoves, i;
+  u64 nodes = 0;
+  nbOfMoves = nbMovesInArray(moves);
+  if (nbOfMoves == 1) {
+    int flag = flagFromMove(moves[0]);
+    if (flag == DRAW || flag == STALEMATE || flag == CHECKMATE) {
+      // Game is finished, continuing to next move
       return 0;
     }
-
-    if ((move_list->items[0] >> 12) == STALEMATE || 
-        (move_list->items[0] >> 12) == CHECKMATE) {
-          // Game is finished, continuing to next move
-          free(move_list->items);
-          free(move_list);
-          return 0;
-        }
   }
 
-  if (depth == 1) {
-    free(move_list->items);
-    free(move_list);
-    return n_moves;
+  if (!debug && depth == 1) {
+    return nbOfMoves;
   }
 
-  for (i = 0; i < n_moves; i++) {
-    if (depth != 1) { // So that if we want to check moves at depth 1 with don't get memory leaks
-      GameState newState = copyState(previousState);
-      makeMove(move_list->items[i], &newState); // Move is made
+  for (i = 0; i < nbOfMoves; i++) {
 
-      if (i != 0 || !firstMoveOfMaxDepth) { // When it is the first time we have reached this depth, the next state is not stored
-        // If it is not the first iteration of this perft, then there is something stored at this location
-        free(achievedStates[nbMoveMade + 1].boardArray);
-      }
-
+    GameState newState = previousState;
+    Move move = moves[i];
+    makeMove(move, &newState); // Move is made
+    
+    if (depth != 1) { // when depth == 1 it would write to invalid indices
       achievedStates[nbMoveMade + 1] = newState;
     }
 
-    u64 moveOutput = perft(depth - 1, achievedStates, maximumDepth, firstMoveOfMaxDepth && i == 0); // We generate the moves for the next perft
-    if (depth == maximumDepth) {
-      printMoveToAlgebraic(move_list->items[i]);
-      printf(": %lld\n", moveOutput);
+    u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
+    if (debug && depth == maximumDepth) {
+      printMoveToAlgebraic(move);
+      printf(": %lu\n", moveOutput);
     }
     nodes += moveOutput;
   }
-
-  free(move_list->items);
-  free(move_list);
   
   return nodes;
 }
 
-char* startingFenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+// "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"
 
-// To compile the perft program: gcc -g -o perft testing/perft.c src/chessGameEmulator.c testing/logChessStructs.c src/fenString.c src/moveGenerator.c
-// To run the compiled program: ./perft <depth>
-// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes ./perft <depth>
+// To compile and run the program: ./perft <depth>
+// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    printf("Usage: ./perft <depth>\n");
+    printf("Usage: ./%s <depth (num)> [position (fen string)] [mode (debug or time)]\n", argv[0]);
+    printf("Note that order does not matter for `position` and `mode` arguments, and they are optional\n");
     return 0;
   }
 
-  int maximumDepth = atoi(argv[1]);
+  maximumDepth = atoi(argv[1]);
 
   if (maximumDepth <= 0) {
     printf("Invalid depth %d\n", maximumDepth);
     return 0;
   }
 
-  GameState achievedStates[maximumDepth];
-  
-  GameState* startingState = setGameStateFromFenString(
-    startingFenString
-    , NULL);
-
-  achievedStates[0] = *startingState;
-  free(startingState);
-
-  u64 totalNumberOfMoves = perft(maximumDepth, achievedStates, maximumDepth, true);
-  printf("Total moves made for perft %d is %llu\n", maximumDepth, totalNumberOfMoves);
-  for (int i = 0; i < maximumDepth; i++) {
-    free(achievedStates[i].boardArray);
+  // The default is the starting fen string
+  char* fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  // Handling position and debug
+  if (argc >= 3) {
+    char* secondArg = argv[2];
+    if (strcmp(secondArg, "time") == 0) {
+      debug = false;
+    } else if (strcmp(secondArg, "debug")) {
+      fenString = secondArg;
+    }
   }
+  if (argc >= 4) {
+    char* secondArg = argv[3];
+    if (strcmp(secondArg, "time") == 0) {
+      debug = false;
+    } else if (strcmp(secondArg, "debug")) {
+      fenString = secondArg;
+    }
+  }
+
+  magicBitBoardInitialize();
+  
+  achievedStates = malloc(sizeof(GameState) * maximumDepth);
+  
+  GameState startingState = { 0 }; 
+  
+  if (!setGameStateFromFenString(fenString, &startingState)) {
+    printf("The fen string \"%s\" is invalid!\n", fenString);
+    return 1;
+  }
+
+  achievedStates[0] = startingState;
+
+  u64 perftResult;
+
+  if (debug) {
+    perftResult = perft(maximumDepth);
+    printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
+  } else {
+    double averageExecutionTime = 0;
+    clock_t begin, end;
+    for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
+      begin = clock();
+      perftResult = perft(maximumDepth);
+      end = clock();
+      double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
+      averageExecutionTime += timeSpent;
+      printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
+    }
+    averageExecutionTime /= TEST_ITERATION;
+    printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
+  }
+  free(achievedStates);
+  magicBitBoardTerminate();
   return 0;
 }
 

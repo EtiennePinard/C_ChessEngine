@@ -888,6 +888,44 @@ void bishopMoves(GameState currentState, int from, Move* validMoves, int* curren
     }
 }
 
+void queenMoves(GameState currentState, int from, Move* validMoves, int* currentIndex) {
+    // Obtaining the blockingBitBoard
+    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 rookBlockingBitBoard = (allPieceBB & rookMovementMask[from]);
+    u64 bishopBlockingBitBoard = (allPieceBB & bishopMovementMask[from]);
+
+    // Getting the pseudo legal moves bitboard from the array
+    u64 rookMovesBitBoard = getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
+    u64 bishopMovesBitBoard = getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
+    u64 movesBitBoard = rookMovesBitBoard | bishopMovesBitBoard;
+
+    // Accounting for friendly pieces
+    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
+    if (currentState.colorToGo == WHITE) {
+        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
+    } else { 
+        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
+    }
+    movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
+    
+    // Accounting for pins
+    movesBitBoard &= pinMasks[from];
+
+    // Accounting for checks
+    movesBitBoard &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (movesBitBoard) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(movesBitBoard);
+        
+        appendMove(validMoves, currentIndex, from, to, NOFlAG);
+        
+        // Clearing the least significant bit to get the position of the next bit
+        movesBitBoard &= movesBitBoard - 1;
+    }
+}
+
 void addLegalMovesFromPseudoLegalMoves(
     GameState currentState,
     int from, 
@@ -963,63 +1001,13 @@ void generateSupportingPiecesMoves(GameState currentState, Move* validMoves, int
         bool pseudoLegalMoves[BOARD_SIZE] = { false };
         switch (pieceType(piece)) {
         case ROOK: 
-            // Magic BitBoard for the win!
             rookMoves(currentState, currentIndex, validMoves, currentMoveIndex);
         break;
         case BISHOP:
             bishopMoves(currentState, currentIndex, validMoves, currentMoveIndex);
-            // getTopRightNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            // appendIntListToBoolList(rays, pseudoLegalMoves);
-            // resetRayResult(rays);
-            
-            // getTopLeftNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            // appendIntListToBoolList(rays, pseudoLegalMoves);
-            // resetRayResult(rays);
-            
-            // getBottomRightNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            // appendIntListToBoolList(rays, pseudoLegalMoves);
-            // resetRayResult(rays);
-            
-            // getBottomLeftNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            // appendIntListToBoolList(rays, pseudoLegalMoves);   
-            // resetRayResult(rays);
-
-            // addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, false, false, validMoves, currentMoveIndex);
         break;
         case QUEEN:
-            getTopNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getRightNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getLeftNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getTopRightNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getTopLeftNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomRightNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);            
-            
-            getBottomLeftNetRay(currentState, currentIndex, currentState.colorToGo, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-
-            addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, false, false, validMoves, currentMoveIndex);
+            queenMoves(currentState, currentIndex, validMoves, currentMoveIndex);
         break;
         case KNIGHT:
             getKnightPseudoLegalMoves(currentState, currentIndex, rays);

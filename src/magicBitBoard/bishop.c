@@ -47,28 +47,28 @@ u64 bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(int position, u64 blockin
     // 4 loops for 4 directions
     u64 mask = (u64) 1;
 
-    for (int x = ogX + 1, y = ogY + 1; x <= 6 && y <= 6; x++, y++) {
+    for (int x = ogX + 1, y = ogY + 1; x <= 7 && y <= 7; x++, y++) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX - 1, y = ogY + 1; x >= 1 && y <= 6; x--, y++) {
+    for (int x = ogX - 1, y = ogY + 1; x >= 0 && y <= 7; x--, y++) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX + 1, y = ogY - 1; x <= 6 && y >= 1; x++, y--) {
+    for (int x = ogX + 1, y = ogY - 1; x <= 7 && y >= 0; x++, y--) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX - 1, y = ogY - 1; x >= 1 && y >= 1; x--, y--) {
+    for (int x = ogX - 1, y = ogY - 1; x >= 0 && y >= 0; x--, y--) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
@@ -96,6 +96,6 @@ void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blocki
     u64 movementMask = bishopMovementMaskFromPosition(position);
     for (int i = 0; i < nbBlockingBitBoard; i++) {
         blockingBitBoards[i] = generateBlockingBitBoardFromIndex(position, i, nbValidSquareForBishop, movementMask);
-        blockingBitBoardToPseudoLegalmoves[i] = bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);;
+        blockingBitBoardToPseudoLegalmoves[i] = bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);
     }
 }

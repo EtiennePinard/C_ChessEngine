@@ -38,6 +38,7 @@ u64 bishopMovementMaskFromPosition(int position) {
     return result;
 }
 
+
 u64 bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(int position, u64 blockingBitBoard) {
     u64 result = (u64) 0;
     
@@ -47,28 +48,28 @@ u64 bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(int position, u64 blockin
     // 4 loops for 4 directions
     u64 mask = (u64) 1;
 
-    for (int x = ogX + 1, y = ogY + 1; x <= 6 && y <= 6; x++, y++) {
+    for (int x = ogX + 1, y = ogY + 1; x <= 7 && y <= 7; x++, y++) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX - 1, y = ogY + 1; x >= 1 && y <= 6; x--, y++) {
+    for (int x = ogX - 1, y = ogY + 1; x >= 0 && y <= 7; x--, y++) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX + 1, y = ogY - 1; x <= 6 && y >= 1; x++, y--) {
+    for (int x = ogX + 1, y = ogY - 1; x <= 7 && y >= 0; x++, y--) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;
         }
     }
 
-    for (int x = ogX - 1, y = ogY - 1; x >= 1 && y >= 1; x--, y--) {
+    for (int x = ogX - 1, y = ogY - 1; x >= 0 && y >= 0; x--, y--) {
         result |= mask << (x + y * 8);
         if ((blockingBitBoard >> (x + y * 8)) & 1) {
             break;

@@ -283,6 +283,20 @@ bool isIndexPseudoLegalForKnight(int currentIndex, int targetSquare, bool goDown
     return pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
+u64 getKnightPseudoLegalMovesBitBoard(int currentIndex) {
+    u64 result = (u64) 0;
+    u64 toggle = (u64) 1;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 6 , true )) result ^= toggle << (currentIndex - 6 );
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 15, false)) result ^= toggle << (currentIndex - 15);
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 10, true )) result ^= toggle << (currentIndex - 10);
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 17, false)) result ^= toggle << (currentIndex - 17);
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 6 , true )) result ^= toggle << (currentIndex + 6 );
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 10, true )) result ^= toggle << (currentIndex + 10);
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 15, false)) result ^= toggle << (currentIndex + 15);
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 17, false)) result ^= toggle << (currentIndex + 17);
+    return result;
+}
+
 void getKnightPseudoLegalMoves(int currentIndex, int result[BOARD_LENGTH]) {
     int counter = 0;
     if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
@@ -572,7 +586,7 @@ void generateKingMoves() {
         }
     }
 
-    generateCastle(currentState);
+    generateCastle();
     // Pinning own color pieces    
     // Checking for attacking sliding pieces
     int checkingPieceIndex = -1;
@@ -822,6 +836,25 @@ void generateAddionnalPawnMoves(int from, bool pseudoLegalMoves[BOARD_SIZE]) {
     }
 }
 
+void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves) {
+    // Accounting for pins
+    pseudoLegalMoves &= pinMasks[from];
+
+    // Accounting for checks
+    pseudoLegalMoves &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (pseudoLegalMoves) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(pseudoLegalMoves);
+        
+        appendMove(from, to, NOFlAG);
+        
+        // Clearing the least significant bit to get the position of the next bit
+        pseudoLegalMoves &= pseudoLegalMoves - 1;
+    }
+}
+
 // Function from https://youtu.be/_vqlIPDR2TU?si=J2UVpgrqJQ3gzqCT&t=2314
 // I loved Sebastian Lague!
 void rookMoves(int from) {
@@ -841,22 +874,7 @@ void rookMoves(int from) {
     }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
-    // Accounting for pins
-    movesBitBoard &= pinMasks[from];
-
-    // Accounting for checks
-    movesBitBoard &= checkBitBoard;
-
-    // Turning the bitboard into our move objects
-    while (movesBitBoard) {
-        // Extract the position of the least significant bit
-        int to = trailingZeros_64(movesBitBoard);
-        
-        appendMove(from, to, NOFlAG);
-        
-        // Clearing the least significant bit to get the position of the next bit
-        movesBitBoard &= movesBitBoard - 1;
-    }
+    appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
 }
 
 void bishopMoves(int from) {
@@ -875,22 +893,7 @@ void bishopMoves(int from) {
     }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
-    // Accounting for pins
-    movesBitBoard &= pinMasks[from];
-
-    // Accounting for checks
-    movesBitBoard &= checkBitBoard;
-
-    // Turning the bitboard into our move objects
-    while (movesBitBoard) {
-        // Extract the position of the least significant bit
-        int to = trailingZeros_64(movesBitBoard);
-        
-        appendMove(from, to, NOFlAG);
-        
-        // Clearing the least significant bit to get the position of the next bit
-        movesBitBoard &= movesBitBoard - 1;
-    }
+    appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
 }
 
 void queenMoves(int from) {
@@ -913,22 +916,7 @@ void queenMoves(int from) {
     }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
-    // Accounting for pins
-    movesBitBoard &= pinMasks[from];
-
-    // Accounting for checks
-    movesBitBoard &= checkBitBoard;
-
-    // Turning the bitboard into our move objects
-    while (movesBitBoard) {
-        // Extract the position of the least significant bit
-        int to = trailingZeros_64(movesBitBoard);
-        
-        appendMove(from, to, NOFlAG);
-        
-        // Clearing the least significant bit to get the position of the next bit
-        movesBitBoard &= movesBitBoard - 1;
-    }
+    appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
 }
 
 void addLegalMovesFromPseudoLegalMoves(int from, bool pseudoLegalMoves[BOARD_SIZE], bool isPawn, bool pawnBeforePromotion) {
@@ -993,6 +981,7 @@ void getPawnPseudoLegalMoveIndex(int index, bool result[BOARD_SIZE]) {
 // TODO: Make every piece use bitboards to remove the call to the badly written addLegalMovesFromPseudoLegalMoves function
 void generateSupportingPiecesMoves() {
     int rays[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    u64 pseudoLegalMovesBitBoard;
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
         const int piece = pieceAtIndex(currentState.board, currentIndex);
         if (piece == NOPIECE) continue;
@@ -1009,11 +998,8 @@ void generateSupportingPiecesMoves() {
             queenMoves(currentIndex);
         break;
         case KNIGHT:
-            getKnightPseudoLegalMoves(currentIndex, rays);
-            appendIntListToBoolList(rays, pseudoLegalMoves);
-            resetRayResult(rays);
-
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false);
+            pseudoLegalMovesBitBoard = getKnightPseudoLegalMovesBitBoard(currentIndex);
+            appendLegalMovesFromPseudoLegalMovesBitBoard(currentIndex, pseudoLegalMovesBitBoard);
         break;
         case PAWN:
             getPawnPseudoLegalMoveIndex(currentIndex, pseudoLegalMoves);

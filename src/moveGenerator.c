@@ -522,7 +522,7 @@ void appendIntListToBoolList(int src[BOARD_LENGTH], bool* dest) {
     }
 }
 
-void generateCastle(GameState currentState) {
+void generateCastle() {
     const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
     if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
 

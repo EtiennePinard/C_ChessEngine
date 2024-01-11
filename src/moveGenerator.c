@@ -274,7 +274,7 @@ void getKingMoves(int currentIndex, int result[BOARD_LENGTH]) {
     if (currentIndex % 8 != 7 && currentIndex / 8 != 7) { result[counter++] = currentIndex + 9; }
 }
 
-bool isIndexPseudoLegalForKnight(GameState currentState, int currentIndex, int targetSquare, bool goDownOne) {
+bool isIndexPseudoLegalForKnight(int currentIndex, int targetSquare, bool goDownOne) {
     int y = targetSquare / 8;
     bool wrappingCondition = (goDownOne) ? 
         abs(currentIndex / 8 - y) == 1 : 
@@ -283,17 +283,17 @@ bool isIndexPseudoLegalForKnight(GameState currentState, int currentIndex, int t
     return pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-void getKnightPseudoLegalMoves(GameState currentState, int currentIndex, int result[BOARD_LENGTH]) {
+void getKnightPseudoLegalMoves(int currentIndex, int result[BOARD_LENGTH]) {
     int counter = 0;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 15, false)) result[counter++] = currentIndex - 15;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 10, true )) result[counter++] = currentIndex - 10;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex - 17, false)) result[counter++] = currentIndex - 17;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 6 , true )) result[counter++] = currentIndex + 6 ;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 10, true )) result[counter++] = currentIndex + 10;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 15, false)) result[counter++] = currentIndex + 15;
-    if (isIndexPseudoLegalForKnight(currentState, currentIndex, currentIndex + 17, false)) result[counter++] = currentIndex + 17;
-} 
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 15, false)) result[counter++] = currentIndex - 15;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 10, true )) result[counter++] = currentIndex - 10;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 17, false)) result[counter++] = currentIndex - 17;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 6 , true )) result[counter++] = currentIndex + 6 ;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 10, true )) result[counter++] = currentIndex + 10;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 15, false)) result[counter++] = currentIndex + 15;
+    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 17, false)) result[counter++] = currentIndex + 17;
+}
 
 void extendRayIfCheckKing(
     int ray[BOARD_LENGTH], 
@@ -434,7 +434,7 @@ void calculateAttackSquares() {
     }
 }
 
-bool isKingIndexLegal(GameState currentState, int targetSquare) {
+bool isKingIndexLegal(int targetSquare) {
     // King does not land on a square which he will be eaten or does not eat one of his own square
     return !attackedSquares[targetSquare] && 
         pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
@@ -567,7 +567,7 @@ void generateKingMoves() {
     getKingMoves(friendlyKingIndex, pseudoLegalMoves);
     for (int i = 0; i < 8; i++) {
         const int targetSquare = pseudoLegalMoves[i];
-        if (targetSquare != -1 && isKingIndexLegal(currentState, targetSquare)) {
+        if (targetSquare != -1 && isKingIndexLegal(targetSquare)) {
             appendMove(friendlyKingIndex, targetSquare, NOFlAG);
         }
     }
@@ -652,7 +652,7 @@ void appendPromotionMove(int from, int to) {
     appendMove(from, to, PROMOTE_TO_BISHOP);
 } 
 
-void checkUnPinnedEnPassant(GameState currentState, int from) {
+void checkUnPinnedEnPassant(int from) {
     // king is in the same row of a pawn, the opponent pawn who just double pawn pushed and an attacking piece
     // Board position which satisfies these criteria: 7k/8/8/KPp4r/8/8/8/8
     if ((friendlyKingIndex / 8 ) != (from / 8)) { 
@@ -747,7 +747,7 @@ void checkUnPinnedEnPassant(GameState currentState, int from) {
 
 }
 
-void generateEnPassant(GameState currentState, int from) {
+void generateEnPassant(int from) {
     if (pieceAtIndex(currentState.board, currentState.enPassantTargetSquare) != NOPIECE) { return; }
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
@@ -758,7 +758,7 @@ void generateEnPassant(GameState currentState, int from) {
         return;
     } 
     if (pinnedLegalMoves == NULL && !inCheck) {
-        checkUnPinnedEnPassant(currentState, from);
+        checkUnPinnedEnPassant(from);
     } else if (pinnedLegalMoves != NULL && !inCheck) {
         for (int i = 0; i < pinnedLegalMoves->count; i++) {
             if (currentState.enPassantTargetSquare == pinnedLegalMoves->items[i]) {
@@ -782,7 +782,7 @@ void generateEnPassant(GameState currentState, int from) {
     }
 }
 
-void generatePawnDoublePush(GameState currentState, int from, int increment) {
+void generatePawnDoublePush(int from, int increment) {
     if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
         pieceAtIndex(currentState.board, from + 2 * increment) != NOPIECE) { return; }
     IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
@@ -807,7 +807,7 @@ void generatePawnDoublePush(GameState currentState, int from, int increment) {
 
 }
 
-void generateAddionnalPawnMoves(GameState currentState, int from, bool pseudoLegalMoves[BOARD_SIZE]) {
+void generateAddionnalPawnMoves(int from, bool pseudoLegalMoves[BOARD_SIZE]) {
     int increment = currentState.colorToGo == WHITE ? -8 : 8;
     bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
         from / 8 == 3 : 
@@ -816,15 +816,15 @@ void generateAddionnalPawnMoves(GameState currentState, int from, bool pseudoLeg
         from / 8 == 6 : 
         from / 8 == 1;
     if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
-        generateEnPassant(currentState, from); 
+        generateEnPassant(from); 
     } else if (pawnCanDoublePush) {
-        generatePawnDoublePush(currentState, from, increment);
+        generatePawnDoublePush(from, increment);
     }
 }
 
 // Function from https://youtu.be/_vqlIPDR2TU?si=J2UVpgrqJQ3gzqCT&t=2314
 // I loved Sebastian Lague!
-void rookMoves(GameState currentState, int from) {
+void rookMoves(int from) {
     // Obtaining the blockingBitBoard
     u64 allPieceBB = allPiecesBitBoard(currentState.board);
     u64 blockingBitBoard = (allPieceBB & rookMovementMask[from]);
@@ -859,7 +859,7 @@ void rookMoves(GameState currentState, int from) {
     }
 }
 
-void bishopMoves(GameState currentState, int from) {
+void bishopMoves(int from) {
     // Obtaining the blockingBitBoard
     u64 allPieceBB = allPiecesBitBoard(currentState.board);
     u64 blockingBitBoard = (allPieceBB & bishopMovementMask[from]);
@@ -893,7 +893,7 @@ void bishopMoves(GameState currentState, int from) {
     }
 }
 
-void queenMoves(GameState currentState, int from) {
+void queenMoves(int from) {
     // Obtaining the blockingBitBoard
     u64 allPieceBB = allPiecesBitBoard(currentState.board);
     u64 rookBlockingBitBoard = (allPieceBB & rookMovementMask[from]);
@@ -931,8 +931,8 @@ void queenMoves(GameState currentState, int from) {
     }
 }
 
-void addLegalMovesFromPseudoLegalMoves(GameState currentState, int from, bool pseudoLegalMoves[BOARD_SIZE], bool isPawn, bool pawnBeforePromotion) {
-    if (isPawn) generateAddionnalPawnMoves(currentState, from, pseudoLegalMoves);
+void addLegalMovesFromPseudoLegalMoves(int from, bool pseudoLegalMoves[BOARD_SIZE], bool isPawn, bool pawnBeforePromotion) {
+    if (isPawn) generateAddionnalPawnMoves(from, pseudoLegalMoves);
     IntList* validSquaresIfPinned = isPieceAtLocationPinned[from];
     if (!inCheck && validSquaresIfPinned == NULL) {
         // King is not checked nor is the piece pinned
@@ -972,7 +972,7 @@ void addLegalMovesFromPseudoLegalMoves(GameState currentState, int from, bool ps
     }
 }
 
-void getPawnPseudoLegalMoveIndex(GameState currentState, int index, bool result[BOARD_SIZE]) {
+void getPawnPseudoLegalMoveIndex(int index, bool result[BOARD_SIZE]) {
     int potentialNeutralMove = currentState.colorToGo == WHITE ? index - 8 : index + 8;
     if (potentialNeutralMove < 0 && potentialNeutralMove > 63) {
         return;
@@ -1000,25 +1000,25 @@ void generateSupportingPiecesMoves() {
         bool pseudoLegalMoves[BOARD_SIZE] = { false };
         switch (pieceType(piece)) {
         case ROOK: 
-            rookMoves(currentState, currentIndex);
+            rookMoves(currentIndex);
         break;
         case BISHOP:
-            bishopMoves(currentState, currentIndex);
+            bishopMoves(currentIndex);
         break;
         case QUEEN:
-            queenMoves(currentState, currentIndex);
+            queenMoves(currentIndex);
         break;
         case KNIGHT:
-            getKnightPseudoLegalMoves(currentState, currentIndex, rays);
+            getKnightPseudoLegalMoves(currentIndex, rays);
             appendIntListToBoolList(rays, pseudoLegalMoves);
             resetRayResult(rays);
 
-            addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, false, false);
+            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, false, false);
         break;
         case PAWN:
-            getPawnPseudoLegalMoveIndex(currentState, currentIndex, pseudoLegalMoves);
+            getPawnPseudoLegalMoveIndex(currentIndex, pseudoLegalMoves);
             bool isPawnBeforePromotion = currentState.colorToGo == WHITE ? currentIndex / 8 == 1 : currentIndex / 8 == 6;
-            addLegalMovesFromPseudoLegalMoves(currentState, currentIndex, pseudoLegalMoves, true, isPawnBeforePromotion);
+            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, true, isPawnBeforePromotion);
             break;
         default:
             break;
@@ -1026,16 +1026,16 @@ void generateSupportingPiecesMoves() {
     }
 }
 
-bool compareGameStateForRepetition(const GameState state, const GameState gameStateToCompare) {
+bool compareGameStateForRepetition(const GameState gameStateToCompare) {
     // Comparing boards
     for (int i = 0; i < BOARD_SIZE; i++) {
-        if (pieceAtIndex(state.board, i) != pieceAtIndex(gameStateToCompare.board, i)) {
+        if (pieceAtIndex(currentState.board, i) != pieceAtIndex(gameStateToCompare.board, i)) {
             return false;
         }
     }
-    return state.castlingPerm == gameStateToCompare.castlingPerm &&
-        state.colorToGo == gameStateToCompare.colorToGo &&
-        state.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
+    return currentState.castlingPerm == gameStateToCompare.castlingPerm &&
+        currentState.colorToGo == gameStateToCompare.colorToGo &&
+        currentState.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
 }
 
 bool isThereThreeFoldRepetition(const GameState* previousStates) {
@@ -1054,7 +1054,7 @@ bool isThereThreeFoldRepetition(const GameState* previousStates) {
             break;
         }
 
-        if (compareGameStateForRepetition(currentState, previousState)) {
+        if (compareGameStateForRepetition(previousState)) {
             if (!hasOneDuplicate) {
                 hasOneDuplicate = true;
             } else {
@@ -1082,7 +1082,6 @@ void noMemoryLeaksPlease() {
     free(isPieceAtLocationPinned);
 }
 
-// TODO: Find a way to make accessible the GameState currentState variable to every function without having to pass it in arguments
 void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
     currentState = currentGameState;
 

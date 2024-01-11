@@ -329,6 +329,7 @@ void extendRayIfCheckKing(
     appendIntListToAttackedSquare(newRay);
 }
 
+// TODO: Use bitboards for the pieces in this function
 void calculateAttackSquares() {
     int attackingSquares[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
@@ -761,10 +762,12 @@ void checkUnPinnedEnPassant(int from) {
 
 }
 
+// TODO: Make this function use bitboards
 void generateEnPassant(int from) {
     if (pieceAtIndex(currentState.board, currentState.enPassantTargetSquare) != NOPIECE) { return; }
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
+
     // If the pawn is "en-passant pinned"
     IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
     if (pinnedLegalMoves != NULL && inCheck) {
@@ -796,6 +799,7 @@ void generateEnPassant(int from) {
     }
 }
 
+// TODO: Make this function use bitboards
 void generatePawnDoublePush(int from, int increment) {
     if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
         pieceAtIndex(currentState.board, from + 2 * increment) != NOPIECE) { return; }
@@ -919,95 +923,90 @@ void queenMoves(int from) {
     appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
 }
 
-void addLegalMovesFromPseudoLegalMoves(int from, bool pseudoLegalMoves[BOARD_SIZE], bool isPawn, bool pawnBeforePromotion) {
-    if (isPawn) generateAddionnalPawnMoves(from, pseudoLegalMoves);
-    IntList* validSquaresIfPinned = isPieceAtLocationPinned[from];
-    if (!inCheck && validSquaresIfPinned == NULL) {
-        // King is not checked nor is the piece pinned
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            if (pseudoLegalMoves[i]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, i); }
-                else { appendMove(from, i, NOFlAG); }
-            }
+void pawnMoves(int from) {
+    bool isPawnBeforePromotion = currentState.colorToGo == WHITE ? 
+        from / 8 == 1 : 
+        from / 8 == 6;
+    bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
+        from / 8 == 3 : 
+        from / 8 == 4;
+    bool pawnCanDoublePush = currentState.colorToGo == WHITE ? 
+        from / 8 == 6 : 
+        from / 8 == 1;
+    int increment = currentState.colorToGo == WHITE ? -8 : 8;
+
+    u64 pseudoLegalMoves = (u64) 0;
+    u64 toggle = (u64) 1;
+    
+    int forwardIndex = from + increment;
+
+    if (forwardIndex >= 0 && forwardIndex <= 63) {
+        if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) {
+            pseudoLegalMoves ^= toggle << forwardIndex;
         }
-    } else if (inCheck && validSquaresIfPinned == NULL) {
-        // The king is checked although the piece is not pinned
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            if (protectKingSquares[i] && pseudoLegalMoves[i]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, i); }
-                else { appendMove(from, i, NOFlAG); }
-            }
+
+        if (forwardIndex % 8 != 7 && pieceColor(pieceAtIndex(currentState.board, forwardIndex + 1)) == opponentColor) {
+            pseudoLegalMoves ^= toggle << (forwardIndex + 1);
         }
-    } else if (inCheck && validSquaresIfPinned != NULL) {
-        // The king is checked and the piece is pinned
-        for (int i = 0; i < validSquaresIfPinned->count; i++) {
-            int index = validSquaresIfPinned->items[i];
-            if (protectKingSquares[index] && pseudoLegalMoves[index]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, index); }
-                else { appendMove(from, index, NOFlAG); }
-            }
+
+        if (forwardIndex % 8 != 0 && pieceColor(pieceAtIndex(currentState.board, forwardIndex - 1)) == opponentColor) {
+            pseudoLegalMoves ^= toggle << (forwardIndex - 1);
         }
-    // Note: Kinda redundant if statement since this is the only valid option but I kept it for clarity
-    } else if (!inCheck && isPieceAtLocationPinned[from] != NULL) {
-        // The king is not checked but the piece is pinned
-        for (int i = 0; i < validSquaresIfPinned->count; i++) {
-            int index = validSquaresIfPinned->items[i];
-            if (pseudoLegalMoves[index]) {
-                if (pawnBeforePromotion) { appendPromotionMove(from, index); }
-                else { appendMove(from, index, NOFlAG); }
-            }
+    }
+
+    if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
+        generateEnPassant(from); 
+    } else if (pawnCanDoublePush) {
+        generatePawnDoublePush(from, increment);
+    }
+
+    // Accounting for pins
+    pseudoLegalMoves &= pinMasks[from];
+
+    // Accounting for checks
+    pseudoLegalMoves &= checkBitBoard;
+
+    // Turning the bitboard into our move objects
+    while (pseudoLegalMoves) {
+        // Extract the position of the least significant bit
+        int to = trailingZeros_64(pseudoLegalMoves);
+        
+        if (isPawnBeforePromotion) {
+            appendPromotionMove(from, to);
+        } else {
+            appendMove(from, to, NOFlAG);
         }
+        
+        // Clearing the least significant bit to get the position of the next bit
+        pseudoLegalMoves &= pseudoLegalMoves - 1;
     }
 }
 
-void getPawnPseudoLegalMoveIndex(int index, bool result[BOARD_SIZE]) {
-    int potentialNeutralMove = currentState.colorToGo == WHITE ? index - 8 : index + 8;
-    if (potentialNeutralMove < 0 && potentialNeutralMove > 63) {
-        return;
-    }
-    if (pieceAtIndex(currentState.board, potentialNeutralMove) == NOPIECE) {
-        result[potentialNeutralMove] = true;
-    }
-    int attacks[2] = { -1, -1 };
-    getPawnAttackingSquares(index, currentState.colorToGo, attacks);
-    for (int i = 0; i < 2; i++) {
-        int potentialAttackMove = attacks[i];
-        if (potentialAttackMove != -1 && pieceColor(pieceAtIndex(currentState.board, potentialAttackMove)) == opponentColor) {
-            result[potentialAttackMove] = true;
-        }
-    }
-}
-
-// TODO: Make every piece use bitboards to remove the call to the badly written addLegalMovesFromPseudoLegalMoves function
 void generateSupportingPiecesMoves() {
-    int rays[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    u64 pseudoLegalMovesBitBoard;
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
         const int piece = pieceAtIndex(currentState.board, currentIndex);
-        if (piece == NOPIECE) continue;
-        if (pieceColor(piece) == opponentColor) continue;
-        bool pseudoLegalMoves[BOARD_SIZE] = { false };
+        if (piece == NOPIECE || pieceColor(piece) == opponentColor) { continue; }
+        
+        u64 pseudoLegalMovesBitBoard;
         switch (pieceType(piece)) {
-        case ROOK: 
-            rookMoves(currentIndex);
-        break;
-        case BISHOP:
-            bishopMoves(currentIndex);
-        break;
-        case QUEEN:
-            queenMoves(currentIndex);
-        break;
-        case KNIGHT:
-            pseudoLegalMovesBitBoard = getKnightPseudoLegalMovesBitBoard(currentIndex);
-            appendLegalMovesFromPseudoLegalMovesBitBoard(currentIndex, pseudoLegalMovesBitBoard);
-        break;
-        case PAWN:
-            getPawnPseudoLegalMoveIndex(currentIndex, pseudoLegalMoves);
-            bool isPawnBeforePromotion = currentState.colorToGo == WHITE ? currentIndex / 8 == 1 : currentIndex / 8 == 6;
-            addLegalMovesFromPseudoLegalMoves(currentIndex, pseudoLegalMoves, true, isPawnBeforePromotion);
-            break;
-        default:
-            break;
+            case ROOK: 
+                rookMoves(currentIndex);
+                break;
+            case BISHOP:
+                bishopMoves(currentIndex);
+                break;
+            case QUEEN:
+                queenMoves(currentIndex);
+                break;
+            case KNIGHT:
+                pseudoLegalMovesBitBoard = getKnightPseudoLegalMovesBitBoard(currentIndex);
+                appendLegalMovesFromPseudoLegalMovesBitBoard(currentIndex, pseudoLegalMovesBitBoard);
+                break;
+            case PAWN:
+                pawnMoves(currentIndex);
+                break;
+            default:
+                break;
         }
     }
 }

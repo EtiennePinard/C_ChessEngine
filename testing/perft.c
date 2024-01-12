@@ -74,6 +74,12 @@ bool isStringValidPerftNumber(char* string) {
   return result;
 }
 
+// k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1 (Normal en-passant)
+// r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
+// r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
+// k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
+// k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
+// TODO: Add a test functionnality for the perft program
 // To compile and run the program: ./perft <depth>
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
@@ -129,6 +135,7 @@ int main(int argc, char* argv[]) {
   u64 perftResult;
 
   if (debug) {
+    printBoard(startingState.board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
   } else {

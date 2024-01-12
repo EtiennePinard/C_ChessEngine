@@ -46,7 +46,6 @@ int opponentColor;
 int friendlyKingIndex;
 
 // For O(1) .contains call
-// Global variables are zero initialize so no need for {0}
 // TODO: Convert these bool* arrays to u64
 bool* attackedSquares;
 bool* doubleAttackedSquares;
@@ -57,6 +56,7 @@ IntList** isPieceAtLocationPinned;
 
 bool inDoubleCheck;
 bool inCheck;
+bool enPassantWillRemoveTheCheck;
 
 u64 checkBitBoard;
 u64 pinMasks[BOARD_SIZE];
@@ -66,6 +66,7 @@ void init() {
     friendlyKingIndex = -1;
     inCheck = false;
     inDoubleCheck = false;
+    enPassantWillRemoveTheCheck = false;
     attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
     doubleAttackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
     protectKingSquares = malloc(sizeof(bool) * BOARD_SIZE);
@@ -234,11 +235,6 @@ bool isIndexValidForKnight(int currentIndex, int targetSquare, bool goDownOne) {
         abs(currentIndex / 8 - y) == 1 : 
         abs(currentIndex / 8 - y) == 2;
     return targetSquare >= 0 && targetSquare <= 63 && wrappingCondition;
-}
-
-void appendIntToList(IntList* list, int item) {
-    list->count++;
-    list->items[list->count] = item;
 }
 
 int* getKnightMoves(int currentIndex, int result[BOARD_LENGTH]) {
@@ -642,6 +638,14 @@ void generateKingMoves() {
         potentialPawn = friendlyKingIndex + (i == 0 ? 7 : 9) * delta;
         if (pieceAtIndex(currentState.board, potentialPawn) == (opponentColor | PAWN)) {
             checkBitBoard |= toggle << potentialPawn;
+
+            // Adding this condition if en-passant were to remove the check
+            if (potentialPawn + 8 * delta == currentState.enPassantTargetSquare) {
+                // Eating this pawn by en-passant would remove the check
+                // I cannot add this to the checkBitBoard else other pieces than pawns would try to do "en-passant"
+                enPassantWillRemoveTheCheck = true;
+            }
+
             protectKingSquares[potentialPawn] = true;
             return; // Can return without checking the others since there is no double check
         }
@@ -660,142 +664,63 @@ void generateKingMoves() {
     }
 }
 
-void appendPromotionMove(int from, int to) {
-    appendMove(from, to, PROMOTE_TO_QUEEN);
-    appendMove(from, to, PROMOTE_TO_KNIGHT);
-    appendMove(from, to, PROMOTE_TO_ROOK);
-    appendMove(from, to, PROMOTE_TO_BISHOP);
-} 
-
-void checkUnPinnedEnPassant(int from) {
-    // king is in the same row of a pawn, the opponent pawn who just double pawn pushed and an attacking piece
-    // Board position which satisfies these criteria: 7k/8/8/KPp4r/8/8/8/8
-    if ((friendlyKingIndex / 8 ) != (from / 8)) { 
-        appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-        return; // The king is not on the same rank as the from pawn
+u64 checkEnPassantPinned(int from, u64 bitBoard) {
+    if (!bitBoard) {
+        // Piece is pinned and it cannot do en-passant
+        return bitBoard;
     }
-    // TODO: Make function getNextPieceInDirection
-    int squareInFromOfEnPassant = currentState.colorToGo == BLACK ? 
-        currentState.enPassantTargetSquare - 8 :
-        currentState.enPassantTargetSquare + 8;
-    int leftRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    int rightRow[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getLeftNetRay(squareInFromOfEnPassant, 0, leftRow);
-    getRightNetRay(squareInFromOfEnPassant, 0, rightRow);
-
-    int lastLeftRow = -1;
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (leftRow[i + 1] == -1) {
-            lastLeftRow = leftRow[i];
-            break;
-        }
-    }
-    int lastRightRow = -1;
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (rightRow[i + 1] == -1) {
-            lastRightRow = rightRow[i];
-            break;
-        }
+    int enPassantRank = from / 8;
+    if ((friendlyKingIndex / 8 ) != enPassantRank) { 
+        return bitBoard; // The king is not on the same rank as the from pawn, so oawn cannot be en-passant pinned
     }
 
-    if (lastRightRow == -1 || lastLeftRow == -1) {
-        // There is no restriction for the pawn to do en-passant
-        appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-        return;
+    // To determine the correct direction to look for pinned en-passant
+    int increment = friendlyKingIndex > from ? -1 : 1;
+
+    int currentIndex;
+    int enPassantIndex = opponentColor == BLACK ? currentState.enPassantTargetSquare + 8 : currentState.enPassantTargetSquare - 8;
+    if (friendlyKingIndex > from) { // This condition is true is the position: 8/8/8/r1pP1K2/8/8/8/8 w
+        currentIndex = from < enPassantIndex ? from : enPassantIndex;
+    } else { // This else is true is the position 8/8/8/K1Pp1r2/8/8/8/8 w
+        currentIndex = from > enPassantIndex ? from : enPassantIndex;
     }
+
+    PieceCharacteristics threateningPiece;
+    do {
+        currentIndex += increment;
+        threateningPiece = pieceAtIndex(currentState.board, currentIndex);
+    } while (threateningPiece == NOPIECE && currentIndex / 8 == enPassantRank);
     
-    // There are two cases of en passant pinned
-    // Either the pawn that just double moved is between the from pawn and the king
-    // or this pawn is between the from pawn and the attacking pieces
-    void (*attackingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]);
-    int indexToCalculateAttackingPiece;
-    if (lastRightRow == friendlyKingIndex || lastLeftRow == friendlyKingIndex) {
-        // First case
-        attackingPieceDirection = lastLeftRow == from ? getLeftNetRay : getRightNetRay;
-        indexToCalculateAttackingPiece = from;
-
+    if (threateningPiece == makePiece(opponentColor, ROOK) || 
+        threateningPiece == makePiece(opponentColor, QUEEN)) {
+            return (u64) 0;
     } else {
-        // second case
-        // Note: Already checked if the king is on the same line in the first condition
-        
-        int squareAfterPawn[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        if (lastLeftRow == from) {
-            attackingPieceDirection = getRightNetRay;
-            getLeftNetRay(from, 0, squareAfterPawn);
-        } else {
-            attackingPieceDirection = getLeftNetRay;
-            getRightNetRay(from, 0, squareAfterPawn);
-        }
-
-        int potentialKingIndex = -1;
-        for (int i = 0; i < BOARD_LENGTH; i++) {
-            if (squareAfterPawn[i + 1] == -1) {
-                potentialKingIndex = squareAfterPawn[i];
-                break;
-            }
-        }
-        if (potentialKingIndex != friendlyKingIndex) {
-            // There is a piece between the king and the from pawn removing the en passant pinned
-            appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-            return;
-        }
-
-        indexToCalculateAttackingPiece = squareInFromOfEnPassant;
-    } 
-
-    int potentialAttackingPieceIndex[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    attackingPieceDirection(indexToCalculateAttackingPiece, 0, potentialAttackingPieceIndex);
-
-    int lastPotentialAttackingPiece = -1;
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (potentialAttackingPieceIndex[i + 1] == -1) {
-            lastPotentialAttackingPiece = potentialAttackingPieceIndex[i];
-            break;
-        }
+        return bitBoard;
     }
-    
-    if (pieceAtIndex(currentState.board, lastPotentialAttackingPiece) != (opponentColor | ROOK) && 
-        pieceAtIndex(currentState.board, lastPotentialAttackingPiece) != (opponentColor | QUEEN)) {
-        // The pawn is not en-passant pinned!
-        appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-    }
-
 }
 
-// TODO: Make this function use bitboards
 void generateEnPassant(int from) {
-    if (pieceAtIndex(currentState.board, currentState.enPassantTargetSquare) != NOPIECE) { return; }
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
 
-    // If the pawn is "en-passant pinned"
-    IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
-    if (pinnedLegalMoves != NULL && inCheck) {
-        // Pawn is pinned and the king is checked
-        return;
-    } 
-    if (pinnedLegalMoves == NULL && !inCheck) {
-        checkUnPinnedEnPassant(from);
-    } else if (pinnedLegalMoves != NULL && !inCheck) {
-        for (int i = 0; i < pinnedLegalMoves->count; i++) {
-            if (currentState.enPassantTargetSquare == pinnedLegalMoves->items[i]) {
-                appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-                return;
-            }
-        }
-    } else if (pinnedLegalMoves == NULL && inCheck) {
-        // If the en-passant piece is checking the king 
-        int squareInFrontOfEnPassantPawn = currentState.colorToGo == WHITE ? 
-            currentState.enPassantTargetSquare + 16 :
-            currentState.enPassantTargetSquare - 16;
-        int attackedSquare1 = squareInFrontOfEnPassantPawn + 1;
-        int attackedSquare2 = squareInFrontOfEnPassantPawn - 1;
+    // Note that canEnPasant is never 0, because so can only en passant on the third or fourth rank
+    u64 toggle = ((u64) 1) << currentState.enPassantTargetSquare;
+    u64 canEnPassant = toggle;
+    
+    // Accounting for pins
+    canEnPassant &= pinMasks[from];
 
-        if (attackedSquare1 == friendlyKingIndex || attackedSquare2 == friendlyKingIndex) {
-            appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
-        } else if (protectKingSquares[currentState.enPassantTargetSquare]) {
-            appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
+    // Need to account for enPassantWillRemoveTheCheck if inCheck == true
+    if (inCheck) {
+        if (!enPassantWillRemoveTheCheck) {
+            canEnPassant &= ~toggle; // I need to invert the bits to not undo what the pinmask AND did
         }
+    } else {
+        canEnPassant = checkEnPassantPinned(from, canEnPassant);
+    }
+
+    if (canEnPassant) {
+        appendMove(from, currentState.enPassantTargetSquare, EN_PASSANT);
     }
 }
 
@@ -823,21 +748,6 @@ void generatePawnDoublePush(int from, int increment) {
         }
     }
 
-}
-
-void generateAddionnalPawnMoves(int from, bool pseudoLegalMoves[BOARD_SIZE]) {
-    int increment = currentState.colorToGo == WHITE ? -8 : 8;
-    bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
-        from / 8 == 3 : 
-        from / 8 == 4;
-    bool pawnCanDoublePush = currentState.colorToGo == WHITE ? 
-        from / 8 == 6 : 
-        from / 8 == 1;
-    if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
-        generateEnPassant(from); 
-    } else if (pawnCanDoublePush) {
-        generatePawnDoublePush(from, increment);
-    }
 }
 
 void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves) {
@@ -972,7 +882,10 @@ void pawnMoves(int from) {
         int to = trailingZeros_64(pseudoLegalMoves);
         
         if (isPawnBeforePromotion) {
-            appendPromotionMove(from, to);
+            appendMove(from, to, PROMOTE_TO_QUEEN);
+            appendMove(from, to, PROMOTE_TO_KNIGHT);
+            appendMove(from, to, PROMOTE_TO_ROOK);
+            appendMove(from, to, PROMOTE_TO_BISHOP);
         } else {
             appendMove(from, to, NOFlAG);
         }

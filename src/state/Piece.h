@@ -11,14 +11,17 @@
 */
 typedef char Piece;
 
-// First 2 bits are for the color
-// Last 3 bits are for the type
+/**
+ * Note that the order of the pieces are not a coincidence
+ * The pawn, rook and queen follow one another to use a clever trick
+ * in the checkEnPassantPinned function in moveGenerator.c
+*/
 typedef enum PieceCharacteristics {
     NOPIECE = 0, 
     KING    = 1, 
-    QUEEN   = 2, 
-    KNIGHT  = 3, 
-    BISHOP  = 4, 
+    KNIGHT  = 2, 
+    BISHOP  = 3, 
+    QUEEN   = 4, 
     ROOK    = 5, 
     PAWN    = 6, 
             

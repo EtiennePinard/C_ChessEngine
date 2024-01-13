@@ -90,6 +90,8 @@ r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
 r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
 k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
 k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
+8/8/3p4/KPp4r/1R2PpPk/8/8/ b - e3 0 1 (Pawn looks like it is en-passant pinned but it isn't) (ans: 16)
+8/8/8/KPpP3r/1R3p1k/8/6P1/ w - c6 1 3 (Two pawns look en-passant pinned but both can do en-passant) (ans: 17)
 
 */
 

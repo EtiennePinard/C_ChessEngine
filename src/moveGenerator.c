@@ -69,12 +69,10 @@ void init() {
     enPassantWillRemoveTheCheck = false;
     attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
     doubleAttackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
-    protectKingSquares = malloc(sizeof(bool) * BOARD_SIZE);
     isPieceAtLocationPinned = malloc(sizeof(IntList*) * BOARD_SIZE);
 
     memset(attackedSquares, false, sizeof(bool) * BOARD_SIZE);
     memset(doubleAttackedSquares, false, sizeof(bool) * BOARD_SIZE);
-    memset(protectKingSquares, false, sizeof(bool) * BOARD_SIZE);
     for (int i = 0; i < BOARD_SIZE; i++) {
         isPieceAtLocationPinned[i] = NULL;
     }
@@ -624,7 +622,6 @@ void generateKingMoves() {
             }
         }
 
-        appendIntListToBoolList(result, protectKingSquares);
         return;
     }
     // It is a pawn or a knight who is checking the king
@@ -646,7 +643,6 @@ void generateKingMoves() {
                 enPassantWillRemoveTheCheck = true;
             }
 
-            protectKingSquares[potentialPawn] = true;
             return; // Can return without checking the others since there is no double check
         }
     }
@@ -658,7 +654,6 @@ void generateKingMoves() {
         int index = potentialKnigths[i];
         if (index != -1 && pieceAtIndex(currentState.board, index) == (opponentColor | KNIGHT)) {
             checkBitBoard |= toggle << index;
-            protectKingSquares[index] = true;
             return; // Can return without checking the others since there is no double check
         }
     }
@@ -670,26 +665,50 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
         return bitBoard;
     }
     int enPassantRank = from / 8;
-    if ((friendlyKingIndex / 8 ) != enPassantRank) { 
+    if ((friendlyKingIndex / 8 )!= enPassantRank) { 
         return bitBoard; // The king is not on the same rank as the from pawn, so oawn cannot be en-passant pinned
     }
 
     // To determine the correct direction to look for pinned en-passant
     int increment = friendlyKingIndex > from ? -1 : 1;
 
-    int currentIndex;
+    // Messy logic to determine the starting index to check if the pawn is en-passant pinned
+    int indexToSearchForThreateningPiece;
+    int indexToCheckIfNoPieceIsBetweenKingAndPawn;
     int enPassantIndex = opponentColor == BLACK ? currentState.enPassantTargetSquare + 8 : currentState.enPassantTargetSquare - 8;
     if (friendlyKingIndex > from) { // This condition is true is the position: 8/8/8/r1pP1K2/8/8/8/8 w
-        currentIndex = from < enPassantIndex ? from : enPassantIndex;
+        if (from < enPassantIndex) {
+            indexToSearchForThreateningPiece = from;
+            indexToCheckIfNoPieceIsBetweenKingAndPawn = enPassantIndex;
+        } else {
+            indexToSearchForThreateningPiece = enPassantIndex;
+            indexToCheckIfNoPieceIsBetweenKingAndPawn = from;
+        }
     } else { // This else is true is the position 8/8/8/K1Pp1r2/8/8/8/8 w
-        currentIndex = from > enPassantIndex ? from : enPassantIndex;
+        if (from > enPassantIndex) {
+            indexToSearchForThreateningPiece = from;
+            indexToCheckIfNoPieceIsBetweenKingAndPawn = enPassantIndex;
+        } else {
+            indexToSearchForThreateningPiece = enPassantIndex;
+            indexToCheckIfNoPieceIsBetweenKingAndPawn = from;
+        }
     }
 
+    // Checking that there is not any piece between the pawn trying to do en-passant and king
+    indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment; // I do a minus cause I want to go in the opposite direction
+    while (indexToCheckIfNoPieceIsBetweenKingAndPawn != friendlyKingIndex) {
+        if (pieceAtIndex(currentState.board, indexToCheckIfNoPieceIsBetweenKingAndPawn) == NOPIECE) {
+            indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment;
+        } else {
+            // There is a piece between king and pawn, so pawn is not en-passant pinned
+            return bitBoard;
+        }
+    }
     PieceCharacteristics threateningPiece;
     do {
-        currentIndex += increment;
-        threateningPiece = pieceAtIndex(currentState.board, currentIndex);
-    } while (threateningPiece == NOPIECE && currentIndex / 8 == enPassantRank);
+        indexToSearchForThreateningPiece += increment;
+        threateningPiece = pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
+    } while (threateningPiece == NOPIECE && indexToSearchForThreateningPiece / 8 == enPassantRank);
     
     if (threateningPiece == makePiece(opponentColor, ROOK) || 
         threateningPiece == makePiece(opponentColor, QUEEN)) {
@@ -724,7 +743,6 @@ void generateEnPassant(int from) {
     }
 }
 
-// TODO: Make this function use bitboards
 void generatePawnDoublePush(int from, int increment) {
     int toSquareFromDoublePush = from + 2 * increment;
     if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
@@ -963,7 +981,6 @@ bool isThereThreeFoldRepetition(const GameState* previousStates) {
 void noMemoryLeaksPlease() {
     free(attackedSquares);
     free(doubleAttackedSquares);
-    free(protectKingSquares);
     for (int i = 0; i < BOARD_SIZE; i++) {
         IntList* piecePinnedAtLocation = isPieceAtLocationPinned[i];
         if (piecePinnedAtLocation != NULL) {

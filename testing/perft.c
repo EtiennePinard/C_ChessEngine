@@ -74,13 +74,27 @@ bool isStringValidPerftNumber(char* string) {
   return result;
 }
 
-// k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1 (Normal en-passant)
-// r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
-// r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
-// k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
-// k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
+/* Testing all the double pawn push case
+
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 (Normal double pawn push) (ans: 20)
+2r4k/8/8/8/3p4/8/2P5/2K5 w - - 0 1 (Pawn is pinned but still can double pawn push) (ans: 6)
+7k/8/8/8/3p4/8/r1P1K3/8 w - - 0 1 (Pawn is pinned and cannot double pawn push) (ans: 7)
+7k/8/8/4b3/8/8/3P4/K7 w - - 0 1 (King is in check and pawn can double push to get out of check) (ans: 3)
+
+*/
+
+/* Testing all the en-passant case
+
+k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1 (Normal en-passant)
+r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
+r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
+k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
+k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
+
+*/
+
 // TODO: Add a test functionnality for the perft program
-// To compile and run the program: ./perft <depth>
+// To compile and run the program: ./perft
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
@@ -111,11 +125,11 @@ int main(int argc, char* argv[]) {
     }
   }
   if (argc >= 4) {
-    char* secondArg = argv[3];
-    if (strcmp(secondArg, "time") == 0) {
+    char* thirdArg = argv[3];
+    if (strcmp(thirdArg, "time") == 0) {
       debug = false;
-    } else if (strcmp(secondArg, "debug")) {
-      fenString = secondArg;
+    } else if (strcmp(thirdArg, "debug")) {
+      fenString = thirdArg;
     }
   }
 

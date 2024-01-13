@@ -726,28 +726,22 @@ void generateEnPassant(int from) {
 
 // TODO: Make this function use bitboards
 void generatePawnDoublePush(int from, int increment) {
+    int toSquareFromDoublePush = from + 2 * increment;
     if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
-        pieceAtIndex(currentState.board, from + 2 * increment) != NOPIECE) { return; }
-    IntList* pinnedLegalMoves = isPieceAtLocationPinned[from];
-    if (pinnedLegalMoves != NULL && inCheck) {
-        // Pawn is pinned and the king is checked
-        return;
-    } 
-    if (pinnedLegalMoves == NULL && !inCheck) {
-        appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH);
-    } else if (pinnedLegalMoves != NULL && !inCheck) {
-        for (int i = 0; i < pinnedLegalMoves->count; i++) {
-            if ((from + 2 * increment) == pinnedLegalMoves->items[i]) {
-                appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH);
-                return;
-            }
-        }
-    } else if (pinnedLegalMoves == NULL && inCheck) {
-        if (protectKingSquares[from + 2 * increment]) {
-            appendMove(from, from + 2 * increment, DOUBLE_PAWN_PUSH);
-        }
-    }
+        pieceAtIndex(currentState.board, toSquareFromDoublePush) != NOPIECE) { return; }
+    
+    u64 canDoublePawnPush = (u64) 1;
+    canDoublePawnPush <<= toSquareFromDoublePush;
 
+    // Accounting for pins
+    canDoublePawnPush &= pinMasks[from];
+
+    // Accounting for checks
+    canDoublePawnPush &= checkBitBoard;
+
+    if (canDoublePawnPush) {
+        appendMove(from, toSquareFromDoublePush, DOUBLE_PAWN_PUSH);
+    }
 }
 
 void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves) {

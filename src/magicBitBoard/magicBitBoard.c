@@ -63,8 +63,6 @@ void magicBitBoardInitialize() {
             u64 key = (blockingBitBoard * magic) >> shift;
             u64 indexIntoPseudoLegalMovesArray = offset + key;
 
-            u64 nextIndex = position == 63 ? ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE : rookIndexOffset[position + 1];
-
             rookPseudoLegalMovesBitBoard[indexIntoPseudoLegalMovesArray] = pseudoLegalMovesBitBoard;
         }
     }

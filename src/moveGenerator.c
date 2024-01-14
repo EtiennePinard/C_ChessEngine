@@ -10,32 +10,6 @@
 #include "MoveGenerator.h"
 #include "magicBitBoard/MagicBitBoard.h"
 
-/**
- * Macro that you use to append items to your dynamic array.
- * Copy and pasted from https://github.com/tsoding/ded/blob/master/src/common.h#L45
-*/
-#define DA_INIT_CAP 256
-#define da_append(da, item)                                                          \
-    do {                                                                             \
-        if ((da)->count >= (da)->capacity) {                                         \
-            (da)->capacity = (da)->capacity == 0 ? DA_INIT_CAP : (da)->capacity*2;   \
-            (da)->items = realloc((da)->items, (da)->capacity*sizeof(*(da)->items)); \
-            assert((da)->items != NULL && "Buy more RAM lol");                       \
-        }                                                                            \
-                                                                                     \
-        (da)->items[(da)->count++] = (item);                                         \
-    } while (0)
-
-/**
-* This is a dynamic array of integers. You can use the 
-* da_append macro to append integer to this list
-*/
-typedef struct intList {
-    int* items;
-    size_t count;
-    size_t capacity;
-} IntList;
-
 GameState currentState;
 
 Move* validMoves;
@@ -49,10 +23,6 @@ int friendlyKingIndex;
 // TODO: Convert these bool* arrays to u64
 bool* attackedSquares;
 bool* doubleAttackedSquares;
-bool* protectKingSquares;
-
-// So that we don't need to recalculate the piece potential valid moves
-IntList** isPieceAtLocationPinned;
 
 bool inDoubleCheck;
 bool inCheck;
@@ -69,13 +39,9 @@ void init() {
     enPassantWillRemoveTheCheck = false;
     attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
     doubleAttackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
-    isPieceAtLocationPinned = malloc(sizeof(IntList*) * BOARD_SIZE);
 
     memset(attackedSquares, false, sizeof(bool) * BOARD_SIZE);
     memset(doubleAttackedSquares, false, sizeof(bool) * BOARD_SIZE);
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        isPieceAtLocationPinned[i] = NULL;
-    }
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
@@ -449,6 +415,8 @@ bool isKingIndexLegal(int targetSquare) {
         pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
+// TODO: Make this function use the increment method instead of function pointer for directions (which is cringe)
+// TODO: Make this function return either 0, if the king is not in check, or return the increment if the king is in check
 int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
     int rayToFriendlyBlockingPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
     getRay(friendlyKingIndex, 0, rayToFriendlyBlockingPiece);
@@ -487,29 +455,20 @@ int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int r
         if (potentialDangerousPiece == dangerousSlidingPiece ||
             potentialDangerousPiece == makePiece(opponentColor, QUEEN)) {
             // The piece is pinned!
-            IntList* potentialValidMoves = (IntList*) malloc(sizeof(IntList));
-            potentialValidMoves->capacity = 8;
-            potentialValidMoves->count = 0;
-            potentialValidMoves->items = malloc(sizeof(int) * 8);
-
             // Creating the pin mask for this square
-            // Appending the first ray and second ray to potential valid moves
             u64 pinMaskForSquare = (u64) 0;
             u64 toggle = (u64) 1;
+            
             for (int i = 0; i < BOARD_LENGTH; i++) {
                 if (rayToFriendlyBlockingPiece[i] != -1) {
                     pinMaskForSquare |= (toggle << rayToFriendlyBlockingPiece[i]);
-                    da_append(potentialValidMoves, rayToFriendlyBlockingPiece[i]);
                 }
-            }
-            for (int i = 0; i < BOARD_LENGTH; i++) {
                 if (rayFromFriendlyBlockingToDangerousPiece[i] != -1) {
                     pinMaskForSquare |= (toggle << rayFromFriendlyBlockingToDangerousPiece[i]);
-                    da_append(potentialValidMoves, rayFromFriendlyBlockingToDangerousPiece[i]);
                 }
             }
+
             pinMasks[firstLastSquare] = pinMaskForSquare;
-            isPieceAtLocationPinned[firstLastSquare] = potentialValidMoves;
         } 
     } else {
         // Piece is opponent color
@@ -522,25 +481,16 @@ int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int r
     return -1;
 }
 
-void appendIntListToBoolList(int src[BOARD_LENGTH], bool* dest) {
-    // Assuming that the items of the src are in the range of the index of the dest
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (src[i] != -1) {
-            dest[src[i]] = true;
-        }
-    }
-}
-
 void generateCastle() {
     const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
     if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
 
     const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState. castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
+        const int rookIndex = friendlyKingIndex + 3;
         // Trusting the caller that the the king nor the rook has moved
         // Note the first check is redundant, if we assume 
         // that the caller has done some proper checks to set the castling perm, which I do not
-        const int rookIndex = friendlyKingIndex + 3;
         if (pieceAtIndex(currentState.board, rookIndex) == (currentState.colorToGo | ROOK) &&
             !attackedSquares[friendlyKingIndex + 1] &&
             !attackedSquares[friendlyKingIndex + 2] &&
@@ -552,9 +502,6 @@ void generateCastle() {
     }
     if (castlingBits & 1) { // Can castle queen side
         const int rookIndex = friendlyKingIndex - 4;
-        // Trusting the caller that the the king nor the rook has moved
-        // Note the first check is redundant, if we assume 
-        // that the caller has done some proper checks to set the castling perm, which I do not
         if (pieceAtIndex(currentState.board, rookIndex) == (currentState.colorToGo | ROOK) &&
             !attackedSquares[friendlyKingIndex - 1] &&
             !attackedSquares[friendlyKingIndex - 2] && 
@@ -580,6 +527,8 @@ void generateKingMoves() {
             appendMove(friendlyKingIndex, targetSquare, NOFlAG);
         }
     }
+
+    // Note: Could exit here if there is a double check, since castling is disallowed and only the king can move, thus being pinned is irrelavant
 
     generateCastle();
     // Pinning own color pieces    
@@ -981,14 +930,6 @@ bool isThereThreeFoldRepetition(const GameState* previousStates) {
 void noMemoryLeaksPlease() {
     free(attackedSquares);
     free(doubleAttackedSquares);
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        IntList* piecePinnedAtLocation = isPieceAtLocationPinned[i];
-        if (piecePinnedAtLocation != NULL) {
-            free(piecePinnedAtLocation->items);
-            free(piecePinnedAtLocation);
-        }
-    }
-    free(isPieceAtLocationPinned);
 }
 
 void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {

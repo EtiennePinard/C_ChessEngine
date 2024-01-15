@@ -1,5 +1,5 @@
 // This file is a port to C of this file from Sebastian Lague
-// https://github.com/SebLague/Chess-AI/blob/main/Assets/Scripts/Core/MoveGenerator.cs
+// https://github.com/SebLague/Chess-Coding-Adventure/blob/Chess-V2-UCI/Chess-Coding-Adventure/src/Core/Move%20Generation/MoveGenerator.cs
 #include <math.h>
 #include <assert.h>
 #include <string.h>
@@ -14,7 +14,6 @@ GameState currentState;
 
 Move* validMoves;
 int currentMoveIndex;
-
 
 int opponentColor;
 int friendlyKingIndex;
@@ -415,77 +414,88 @@ bool isKingIndexLegal(int targetSquare) {
         pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-// TODO: Make this function use the increment method instead of function pointer for directions (which is cringe)
-// TODO: Make this function return either 0, if the king is not in check, or return the increment if the king is in check
-int addSlidingPiecePinned(void (*getRay)(int index, int colorNotToInclude, int result[BOARD_LENGTH]), int dangerousSlidingPiece) {
-    int rayToFriendlyBlockingPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getRay(friendlyKingIndex, 0, rayToFriendlyBlockingPiece);
-    if (rayToFriendlyBlockingPiece[0] == -1) { 
-        return -1; 
-    }
+// I am aware and I do not like the 6 deep indentation in this function. Will refactor later (lol)
+void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharacteristics dangerousSlidingPiece) {
+    // Note that we are guaranteed to not be at a square where adding the increment would give an invalid square in the direction
+    Piece firstPiece = NOPIECE;
+    int firstPieceIndex;
+    Piece secondPiece = NOPIECE;
 
-    int firstLastSquare = -1; 
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (rayToFriendlyBlockingPiece[i + 1] == -1) {
-            firstLastSquare = rayToFriendlyBlockingPiece[i];
-            break;
-        }
-    }
-    int firstLastSquareContent = pieceAtIndex(currentState.board, firstLastSquare);
-    if (firstLastSquareContent == NOPIECE) { 
-        return -1; 
-    }
+    u64 toggle = (u64) 1;
+    u64 rayMask = (u64) 0;
+    bool hitEdge = false;
+    int currentIndex = friendlyKingIndex + increment;
 
-    if (pieceColor(firstLastSquareContent) == currentState.colorToGo) {
-        // This piece may be pinned
-        int rayFromFriendlyBlockingToDangerousPiece[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        getRay(firstLastSquare, 0, rayFromFriendlyBlockingToDangerousPiece);
-        if (rayFromFriendlyBlockingToDangerousPiece[0] == -1) { 
-            return -1; 
+    // I need to do this hitEdge shenanigans to avoid to pass a "predicate" in the arguments
+    // The last valid square in each direction is not set in the directionMask
+    // We can then know that we are on the edge of the direction when we hit that unset bit
+    // We then set hitEdge to true and do one last pass, which we know is valid
+    // If we did not have this feature, we could potentialy include invalid squares for the direction that we are handling
+    while (true) {
+        if (((directionMask >> currentIndex) & 1) == 0) {
+            hitEdge = true;
         }
-        int secondLastSquare = -1; 
-            for (int i = 0; i < BOARD_LENGTH; i++) {
-                if (rayFromFriendlyBlockingToDangerousPiece[i + 1] == -1) {
-                    secondLastSquare = rayFromFriendlyBlockingToDangerousPiece[i];
+
+        rayMask ^= toggle << currentIndex;
+
+        if (firstPiece == NOPIECE) {
+            if (pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+                firstPiece = pieceAtIndex(currentState.board, currentIndex);
+                firstPieceIndex = currentIndex;
+
+                if (pieceColor(firstPiece) == opponentColor) {
+                    if (pieceType(firstPiece) == dangerousSlidingPiece || pieceType(firstPiece) == QUEEN) {
+                        // This piece is checking the king
+                        checkBitBoard |= rayMask;
+                    }
+
                     break;
                 }
             }
+        } else if (secondPiece == NOPIECE) {
 
-        int potentialDangerousPiece = pieceAtIndex(currentState.board, secondLastSquare);
-        if (potentialDangerousPiece == dangerousSlidingPiece ||
-            potentialDangerousPiece == makePiece(opponentColor, QUEEN)) {
-            // The piece is pinned!
-            // Creating the pin mask for this square
-            u64 pinMaskForSquare = (u64) 0;
-            u64 toggle = (u64) 1;
-            
-            for (int i = 0; i < BOARD_LENGTH; i++) {
-                if (rayToFriendlyBlockingPiece[i] != -1) {
-                    pinMaskForSquare |= (toggle << rayToFriendlyBlockingPiece[i]);
+            if (pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+                secondPiece = pieceAtIndex(currentState.board, currentIndex);
+
+                if (secondPiece == makePiece(opponentColor, dangerousSlidingPiece) || secondPiece == makePiece(opponentColor, QUEEN)) {
+                    // The first piece is pinned!
+                    // Creating the pin mask for this square
+                    pinMasks[firstPieceIndex] = rayMask;
                 }
-                if (rayFromFriendlyBlockingToDangerousPiece[i] != -1) {
-                    pinMaskForSquare |= (toggle << rayFromFriendlyBlockingToDangerousPiece[i]);
-                }
+                break;
             }
+        }
 
-            pinMasks[firstLastSquare] = pinMaskForSquare;
-        } 
-    } else {
-        // Piece is opponent color
-        if (firstLastSquareContent == dangerousSlidingPiece ||
-            firstLastSquareContent == (opponentColor | QUEEN)) {
-            // The piece is checking the king
-            return firstLastSquare;
-        }  
+        if (hitEdge) {
+            break;
+        }
+        currentIndex += increment;
     }
-    return -1;
+}
+
+int handlePinsAndChecksFromSlidingPieces() {
+    int kingX = friendlyKingIndex % 8;
+    int kingY = friendlyKingIndex / 8;
+    // Doing another implementation of this function using precomputed bitboards
+    // Here a "hack" is used to get a bitboard that has the "edge" bits set
+    u64 orthogonalMask = rookMovementMask[friendlyKingIndex];
+    if (kingX < 7) handlePinAndCheckForDirection(1, orthogonalMask, ROOK);
+    if (kingX > 0) handlePinAndCheckForDirection(-1, orthogonalMask, ROOK);
+    if (kingY < 7) handlePinAndCheckForDirection(8, orthogonalMask, ROOK);
+    if (kingY > 0) handlePinAndCheckForDirection(-8, orthogonalMask, ROOK);
+    
+    u64 diagonalMask = bishopMovementMask[friendlyKingIndex];
+    if (kingX < 7 && kingY < 7) handlePinAndCheckForDirection(9, diagonalMask, BISHOP);
+    if (kingX > 0 && kingY > 0) handlePinAndCheckForDirection(-9, diagonalMask, BISHOP);
+    if (kingX > 0 && kingY < 7) handlePinAndCheckForDirection(7, diagonalMask, BISHOP);
+    if (kingX < 7 && kingY > 0) handlePinAndCheckForDirection(-7, diagonalMask, BISHOP);
 }
 
 void generateCastle() {
     const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
     if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
 
-    const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState. castlingPerm & 0b11;
+    const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState.castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
         const int rookIndex = friendlyKingIndex + 3;
         // Trusting the caller that the the king nor the rook has moved
@@ -516,7 +526,7 @@ void generateCastle() {
 }
 
 void generateKingMoves() {
-    if (attackedSquares[friendlyKingIndex]) { inCheck = true; }
+    if (attackedSquares[friendlyKingIndex]) { inCheck = true; checkBitBoard = (u64) 0; }
     if (doubleAttackedSquares[friendlyKingIndex]) { inDoubleCheck = true; }
 
     int pseudoLegalMoves[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
@@ -528,55 +538,13 @@ void generateKingMoves() {
         }
     }
 
-    // Note: Could exit here if there is a double check, since castling is disallowed and only the king can move, thus being pinned is irrelavant
-
+    if (inDoubleCheck) { return; } // Only king moves are valid
+    
     generateCastle();
-    // Pinning own color pieces    
-    // Checking for attacking sliding pieces
-    int checkingPieceIndex = -1;
-    void (*checkingPieceDirection)(int index, int colorNotToInclude, int result[BOARD_LENGTH]) = NULL;
-    // Note: Could refactor all the function pointer into an array and iterate over them
-    // Unfortunatly, I have better things to do for now
+    handlePinsAndChecksFromSlidingPieces();
 
-    if (addSlidingPiecePinned(getTopNetRay, opponentColor | ROOK) != -1)
-        checkingPieceDirection = getTopNetRay; 
-    if (addSlidingPiecePinned(getBottomNetRay, opponentColor | ROOK) != -1) 
-        checkingPieceDirection = getBottomNetRay; 
-    if (addSlidingPiecePinned(getRightNetRay, opponentColor | ROOK) != -1)
-        checkingPieceDirection = getRightNetRay; 
-    if (addSlidingPiecePinned(getLeftNetRay, opponentColor | ROOK) != -1) 
-        checkingPieceDirection = getLeftNetRay; 
-    
-    if (addSlidingPiecePinned(getTopRightNetRay, opponentColor | BISHOP) != -1) 
-        checkingPieceDirection = getTopRightNetRay; 
-    if (addSlidingPiecePinned(getTopLeftNetRay, opponentColor | BISHOP) != -1) 
-        checkingPieceDirection = getTopLeftNetRay; 
-    if (addSlidingPiecePinned(getBottomRightNetRay, opponentColor | BISHOP) != -1) 
-        checkingPieceDirection = getBottomRightNetRay;
-    if (addSlidingPiecePinned(getBottomLeftNetRay, opponentColor | BISHOP) != -1) 
-        checkingPieceDirection = getBottomLeftNetRay;
-
-    if (!inCheck || inDoubleCheck) { return; } // Either the king is safe or only king moves are valid
-
-    checkBitBoard = (u64) 0; // The king is in check, thus not every square is valid
     u64 toggle = (u64) 1;
-    if (checkingPieceDirection != NULL) {
-        // A sliding piece is checking the king
-        int result[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-        checkingPieceDirection(friendlyKingIndex, 0, result);
-
-        for (int i = 0; i < BOARD_LENGTH; i++) {
-            if (result[i] != -1) {
-                checkBitBoard |= toggle << result[i];
-            }
-        }
-
-        return;
-    }
-    // It is a pawn or a knight who is checking the king
-    // The only valid moves for other pieces is to eat the checking piece
-    
-    // Checking for pawns
+    // Handling checks from pawns and knights
     const int delta = currentState.colorToGo == WHITE ? -1 : 1;
     int potentialPawn;
     // For loop is remove copy pasting. I know sometimes I copy paste a lot but I was fed up this time
@@ -588,7 +556,7 @@ void generateKingMoves() {
             // Adding this condition if en-passant were to remove the check
             if (potentialPawn + 8 * delta == currentState.enPassantTargetSquare) {
                 // Eating this pawn by en-passant would remove the check
-                // I cannot add this to the checkBitBoard else other pieces than pawns would try to do "en-passant"
+                // I cannot set the en-passant bit in the checkBitBoard else non-pawn pieces would try to do en-passant
                 enPassantWillRemoveTheCheck = true;
             }
 
@@ -681,7 +649,7 @@ void generateEnPassant(int from) {
     // Need to account for enPassantWillRemoveTheCheck if inCheck == true
     if (inCheck) {
         if (!enPassantWillRemoveTheCheck) {
-            canEnPassant &= ~toggle; // I need to invert the bits to not undo what the pinmask AND did
+            canEnPassant &= ~toggle; // The bits are inverted to set the enPassant bit to 0
         }
     } else {
         canEnPassant = checkEnPassantPinned(from, canEnPassant);

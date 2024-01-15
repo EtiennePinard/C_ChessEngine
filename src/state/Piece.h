@@ -6,16 +6,11 @@
  * The piece type is in the first 3 least significant bits.
  * The piece color is the next 2 bits that follow the piece type bits
  * The first 3 most significant bits of the char are unused.
- * Use the pieceColor function or pieceType function to extract those information
- * Use the makePiece(color, type) macro to create a valid Piece
+ * Use the pieceColor(piece) function or pieceType(piece) function to extract those information
+ * Use the makePiece(color, type) function to create a valid Piece
 */
 typedef char Piece;
 
-/**
- * Note that the order of the pieces are not a coincidence
- * The pawn, rook and queen follow one another to use a clever trick
- * in the checkEnPassantPinned function in moveGenerator.c
-*/
 typedef enum PieceCharacteristics {
     NOPIECE = 0, 
     KING    = 1, 

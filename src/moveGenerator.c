@@ -19,8 +19,7 @@ PieceCharacteristics opponentColor;
 int friendlyKingIndex;
 
 // For O(1) .contains call
-// TODO: Convert these functions to local arrays
-bool* attackedSquares;
+bool attackedSquares[BOARD_SIZE];
 
 bool inDoubleCheck;
 bool inCheck;
@@ -35,30 +34,11 @@ void init() {
     inCheck = false;
     inDoubleCheck = false;
     enPassantWillRemoveTheCheck = false;
-    attackedSquares = malloc(sizeof(bool) * BOARD_SIZE);
 
     memset(attackedSquares, false, sizeof(bool) * BOARD_SIZE);
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
-}
-
-void resetRayResult(int ray[BOARD_LENGTH]) {
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        ray[i] = -1;
-    }
-}
-
-void appendIntListToAttackedSquare(int src[BOARD_LENGTH]) {
-    // Assuming that the items of the src are in the range of the index of the dest
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        int square = src[i];
-        if (square == -1) { continue; }
-        if (attackedSquares[square] && square == friendlyKingIndex) {
-            inDoubleCheck = true;
-        }
-        attackedSquares[square] = true;
-    }
 }
 
 void appendMove(int startSquare, int targetSquare, int flag) {
@@ -81,16 +61,18 @@ bool isIndexPseudoLegalForKnight(int currentIndex, int targetSquare, bool goDown
     return isIndexValidForKnight(currentIndex, targetSquare, goDownOne) && pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
-void getKnightMoves(int currentIndex, int result[BOARD_LENGTH]) {
-    int counter = 0;
-    if (isIndexValidForKnight(currentIndex, currentIndex - 6 , true )) result[counter++] = currentIndex - 6 ;
-    if (isIndexValidForKnight(currentIndex, currentIndex - 10, true )) result[counter++] = currentIndex - 10;
-    if (isIndexValidForKnight(currentIndex, currentIndex - 15, false)) result[counter++] = currentIndex - 15;
-    if (isIndexValidForKnight(currentIndex, currentIndex - 17, false)) result[counter++] = currentIndex - 17;
-    if (isIndexValidForKnight(currentIndex, currentIndex + 6 , true )) result[counter++] = currentIndex + 6 ;
-    if (isIndexValidForKnight(currentIndex, currentIndex + 10, true )) result[counter++] = currentIndex + 10;
-    if (isIndexValidForKnight(currentIndex, currentIndex + 15, false)) result[counter++] = currentIndex + 15;
-    if (isIndexValidForKnight(currentIndex, currentIndex + 17, false)) result[counter++] = currentIndex + 17;
+u64 getKnightValidMovesBitBoard(int currentIndex) {
+    u64 result = (u64) 0;
+    u64 toggle = (u64) 1;
+    if (isIndexValidForKnight(currentIndex, currentIndex - 6 , true )) result ^= toggle << (currentIndex - 6 );
+    if (isIndexValidForKnight(currentIndex, currentIndex - 15, false)) result ^= toggle << (currentIndex - 15);
+    if (isIndexValidForKnight(currentIndex, currentIndex - 10, true )) result ^= toggle << (currentIndex - 10);
+    if (isIndexValidForKnight(currentIndex, currentIndex - 17, false)) result ^= toggle << (currentIndex - 17);
+    if (isIndexValidForKnight(currentIndex, currentIndex + 6 , true )) result ^= toggle << (currentIndex + 6 );
+    if (isIndexValidForKnight(currentIndex, currentIndex + 10, true )) result ^= toggle << (currentIndex + 10);
+    if (isIndexValidForKnight(currentIndex, currentIndex + 15, false)) result ^= toggle << (currentIndex + 15);
+    if (isIndexValidForKnight(currentIndex, currentIndex + 17, false)) result ^= toggle << (currentIndex + 17);
+    return result;
 }
  
 u64 getKnightPseudoLegalMovesBitBoard(int currentIndex) {
@@ -107,28 +89,19 @@ u64 getKnightPseudoLegalMovesBitBoard(int currentIndex) {
     return result;
 }
 
-int* getPawnAttackingSquares(int currentIndex, int color, int result[2]) {
-    int counter = 0;
-    int forwardIndex = color == WHITE ? currentIndex - 8 : currentIndex + 8;
-    if (forwardIndex < 0 || forwardIndex > 63) { return result; }
-    if (forwardIndex % 8 != 7) { result[counter++] = forwardIndex + 1; }
-    if (forwardIndex % 8 != 0) { result[counter++] = forwardIndex - 1; }
+u64 getKingMoves(int currentIndex) {
+    u64 result = (u64) 0;
+    u64 toggle = (u64) 1;
+    if (currentIndex % 8 != 0 && currentIndex / 8 != 0) { result ^= toggle << (currentIndex - 9); }
+    if (currentIndex / 8 != 0                         ) { result ^= toggle << (currentIndex - 8); }
+    if (currentIndex % 8 != 7 && currentIndex / 8 != 0) { result ^= toggle << (currentIndex - 7); }
+    if (currentIndex % 8 != 0                         ) { result ^= toggle << (currentIndex - 1); }
+    if (currentIndex % 8 != 7                         ) { result ^= toggle << (currentIndex + 1); }
+    if (currentIndex % 8 != 0 && currentIndex / 8 != 7) { result ^= toggle << (currentIndex + 7); }
+    if (currentIndex / 8 != 7                         ) { result ^= toggle << (currentIndex + 8); }
+    if (currentIndex % 8 != 7 && currentIndex / 8 != 7) { result ^= toggle << (currentIndex + 9); }
     return result;
 }
-
-void getKingMoves(int currentIndex, int result[BOARD_LENGTH]) {
-    int counter = 0;
-    if (currentIndex % 8 != 0 && currentIndex / 8 != 0) { result[counter++] = currentIndex - 9; }
-    if (currentIndex / 8 != 0                         ) { result[counter++] = currentIndex - 8; }
-    if (currentIndex % 8 != 7 && currentIndex / 8 != 0) { result[counter++] = currentIndex - 7; }
-    if (currentIndex % 8 != 0                         ) { result[counter++] = currentIndex - 1; }
-    if (currentIndex % 8 != 7                         ) { result[counter++] = currentIndex + 1; }
-    if (currentIndex % 8 != 0 && currentIndex / 8 != 7) { result[counter++] = currentIndex + 7; }
-    if (currentIndex / 8 != 7                         ) { result[counter++] = currentIndex + 8; }
-    if (currentIndex % 8 != 7 && currentIndex / 8 != 7) { result[counter++] = currentIndex + 9; }
-}
-
-
 
 void addBitBoardToAttackedSquares(u64 bitBoard) {
     // Turning the bitboard into our move objects
@@ -181,9 +154,27 @@ void queenAttackedSquares(int from) {
     addBitBoardToAttackedSquares(attackedBitBoard);
 }
 
-// TODO: Use bitboards for the pieces in this function
+void pawnAttackingSquares(int from) {
+    int forwardIndex = opponentColor == WHITE ? from - 8 : from + 8;
+    // The forward index is always valid because no pawn can be on the first or last rank (they get promoted)
+    if (forwardIndex % 8 != 7) {
+        int square = forwardIndex + 1;
+        if (attackedSquares[square] && square == friendlyKingIndex) {
+            inDoubleCheck = true;
+        }
+        attackedSquares[square] = true;
+    }
+    if (forwardIndex % 8 != 0) { 
+        int square = forwardIndex - 1; 
+        if (attackedSquares[square] && square == friendlyKingIndex) {
+            inDoubleCheck = true;
+        }
+        attackedSquares[square] = true;
+    }
+}
+
 void calculateAttackSquares() {
-    int attackingSquares[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+    u64 bitBoard;
     for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
         const Piece piece = pieceAtIndex(currentState.board, currentIndex);
         if (piece == NOPIECE || pieceColor(piece) != opponentColor) continue;
@@ -198,19 +189,15 @@ void calculateAttackSquares() {
             queenAttackedSquares(currentIndex);
             break;
         case KNIGHT:
-            getKnightMoves(currentIndex, attackingSquares);
-            appendIntListToAttackedSquare(attackingSquares);
-            resetRayResult(attackingSquares);
+            bitBoard = getKnightValidMovesBitBoard(currentIndex);
+            addBitBoardToAttackedSquares(bitBoard);
             break;
         case PAWN:
-            getPawnAttackingSquares(currentIndex, opponentColor, attackingSquares);
-            appendIntListToAttackedSquare(attackingSquares);
-            resetRayResult(attackingSquares);
+            pawnAttackingSquares(currentIndex);
             break;
         case KING:
-            getKingMoves(currentIndex, attackingSquares);
-            appendIntListToAttackedSquare(attackingSquares);
-            resetRayResult(attackingSquares);
+            bitBoard = getKingMoves(currentIndex);
+            addBitBoardToAttackedSquares(bitBoard);
             break;
         default:
             break;
@@ -337,13 +324,14 @@ void generateCastle() {
 void generateKingMoves() {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; checkBitBoard = (u64) 0; }
 
-    int pseudoLegalMoves[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getKingMoves(friendlyKingIndex, pseudoLegalMoves);
-    for (int i = 0; i < 8; i++) {
-        const int targetSquare = pseudoLegalMoves[i];
-        if (targetSquare != -1 && isKingIndexLegal(targetSquare)) {
+    u64 bitboard;
+    bitboard = getKingMoves(friendlyKingIndex);
+    while (bitboard) {
+        int targetSquare = trailingZeros_64(bitboard);
+        if (isKingIndexLegal(targetSquare)) {
             appendMove(friendlyKingIndex, targetSquare, NOFlAG);
         }
+        bitboard &= bitboard - 1;
     }
 
     if (inDoubleCheck) { return; } // Only king moves are valid
@@ -373,14 +361,14 @@ void generateKingMoves() {
     }
     
     // Checking for knights 
-    int potentialKnigths[BOARD_LENGTH] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-    getKnightMoves(friendlyKingIndex, potentialKnigths);
-    for (int i = 0; i < BOARD_LENGTH; i++) {
-        int index = potentialKnigths[i];
-        if (index != -1 && pieceAtIndex(currentState.board, index) == makePiece(opponentColor, KNIGHT)) {
+    bitboard = getKnightValidMovesBitBoard(friendlyKingIndex);
+    while (bitboard) {
+        int index = trailingZeros_64(bitboard);
+        if (pieceAtIndex(currentState.board, index) == makePiece(opponentColor, KNIGHT)) {
             checkBitBoard |= toggle << index;
             return; // Can return without checking the others since there is no double check
         }
+        bitboard &= bitboard - 1;
     }
 }
 
@@ -703,10 +691,6 @@ bool isThereThreeFoldRepetition(const GameState* previousStates) {
     return result;
 }
 
-void noMemoryLeaksPlease() {
-    free(attackedSquares);
-}
-
 void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
     currentState = currentGameState;
 
@@ -731,7 +715,6 @@ void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGam
             appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
         }
 
-        noMemoryLeaksPlease();
         // We assume that the array is 0 initialized, so we do not need to add a 0 entry
         return;
     }
@@ -746,6 +729,5 @@ void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGam
             appendMove(0, 0, STALEMATE); // This is the `stalemate` move
         }
     }
-    noMemoryLeaksPlease();
     // We assume that the array is 0 initialized, so we do not need to add a 0 entry
 }

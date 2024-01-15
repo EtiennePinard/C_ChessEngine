@@ -79,7 +79,7 @@ u64 bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(int position, u64 blockin
     return result;
 }
 
-static inline u64 generateBlockingBitBoardFromIndex(int position, int index, int nbValidSquareForPiece, u64 movementMask) {
+static inline u64 generateBlockingBitBoardFromIndex(int index, int nbValidSquareForPiece, u64 movementMask) {
     u64 result = (u64) 0;
     for (int i = 0; i < nbValidSquareForPiece; i++) {
         u64 bitToShift = (u64) ((index >> i) & 1);
@@ -95,7 +95,7 @@ void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blocki
     int nbBlockingBitBoard = 1 << nbValidSquareForBishop;
     u64 movementMask = bishopMovementMaskFromPosition(position);
     for (int i = 0; i < nbBlockingBitBoard; i++) {
-        blockingBitBoards[i] = generateBlockingBitBoardFromIndex(position, i, nbValidSquareForBishop, movementMask);
+        blockingBitBoards[i] = generateBlockingBitBoardFromIndex(i, nbValidSquareForBishop, movementMask);
         blockingBitBoardToPseudoLegalmoves[i] = bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);
     }
 }

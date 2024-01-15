@@ -6,8 +6,8 @@
 
 int getCastlingPermFromFenString(char* fen) {
     int result = 0;
-    if (strcmp(fen,"-") == 0) return result;
-    for (int i = 0; i < strlen(fen); i++) {
+    if (strcmp(fen, "-") == 0) return result;
+    for (size_t i = 0; i < strlen(fen); i++) {
         char c = fen[i];
         if (c == 'K') {
             result |= (1 << 3);
@@ -24,7 +24,7 @@ int getCastlingPermFromFenString(char* fen) {
 
 void setBoardArrayFromFenString(char* fen, Piece* board) {
   int row = 0, col = 0;
-  for (int i = 0; i < strlen(fen); i++) {
+  for (size_t i = 0; i < strlen(fen); i++) {
     char fenChar = fen[i];
     if (fenChar == '/') {
       row++;
@@ -98,6 +98,10 @@ do { \
 */
 bool setGameStateFromFenString(char *fen, GameState* result) {
     if (result == NULL) { return false; }
+    if (strlen(fen) > 100) {
+      printf("The fen string length is bigger than 100, which is too long for the program\n");
+      return false;
+    }
     char copy[100]; // Could have potential buffer overflow
     strcpy(copy, fen);
     char* split = strtok(copy, " ");

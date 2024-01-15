@@ -3,21 +3,26 @@
 Piece pieceAtIndex(Board board, int index) {
 
     Piece K = ((board.bitboards[0] >> index) & 1UL) * makePiece(WHITE, KING);
-    Piece Q = ((board.bitboards[1] >> index) & 1UL) * makePiece(WHITE, QUEEN);
-    Piece N = ((board.bitboards[2] >> index) & 1UL) * makePiece(WHITE, KNIGHT);
-    Piece B = ((board.bitboards[3] >> index) & 1UL) * makePiece(WHITE, BISHOP);
+    Piece N = ((board.bitboards[1] >> index) & 1UL) * makePiece(WHITE, KNIGHT);
+    Piece B = ((board.bitboards[2] >> index) & 1UL) * makePiece(WHITE, BISHOP);
+    Piece Q = ((board.bitboards[3] >> index) & 1UL) * makePiece(WHITE, QUEEN);
     Piece R = ((board.bitboards[4] >> index) & 1UL) * makePiece(WHITE, ROOK);
     Piece P = ((board.bitboards[5] >> index) & 1UL) * makePiece(WHITE, PAWN);
 
-    Piece k = ((board.bitboards[8] >> index) & 1UL) * makePiece(BLACK, KING);
-    Piece q = ((board.bitboards[9] >> index) & 1UL) * makePiece(BLACK, QUEEN);
-    Piece n = ((board.bitboards[10] >> index) & 1UL) * makePiece(BLACK, KNIGHT);
-    Piece b = ((board.bitboards[11] >> index) & 1UL) * makePiece(BLACK, BISHOP);
+    Piece k = ((board.bitboards[8 ] >> index) & 1UL) * makePiece(BLACK, KING);
+    Piece n = ((board.bitboards[9 ] >> index) & 1UL) * makePiece(BLACK, KNIGHT);
+    Piece b = ((board.bitboards[10] >> index) & 1UL) * makePiece(BLACK, BISHOP);
+    Piece q = ((board.bitboards[11] >> index) & 1UL) * makePiece(BLACK, QUEEN);
     Piece r = ((board.bitboards[12] >> index) & 1UL) * makePiece(BLACK, ROOK);
     Piece p = ((board.bitboards[13] >> index) & 1UL) * makePiece(BLACK, PAWN);
 
     return (Piece) (K + Q + N + B + R + P +
                     k + q + n + b + r + p);
+}
+
+u64 bitBoardForPiece(Board board, Piece piece) {
+    int arrayIndex = piece - 9; // The best hash function there is!
+    return board.bitboards[arrayIndex];
 }
 
 u64 whitePiecesBitBoard(Board board) {
@@ -32,8 +37,8 @@ u64 whitePiecesBitBoard(Board board) {
 
 u64 blackPiecesBitBoard(Board board) {
     return 
-    board.bitboards[8] | 
-    board.bitboards[9] |
+    board.bitboards[8 ] | 
+    board.bitboards[9 ] |
     board.bitboards[10] | 
     board.bitboards[11] |
     board.bitboards[12] | 

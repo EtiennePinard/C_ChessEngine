@@ -23,7 +23,6 @@ u64 perft(int depth) {
   GameState previousStates[1] = { 0 };
   
   Move moves[MAX_LEGAL_MOVES + 1] = { [0 ... (MAX_LEGAL_MOVES)] = 0 };
-
   getValidMoves(moves, previousState, previousStates); // We do not care about draw by repetition
   int nbOfMoves, i;
   u64 nodes = 0;
@@ -61,22 +60,59 @@ u64 perft(int depth) {
   return nodes;
 }
 
-// "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8"
+bool isStringValidPerftNumber(char* string) {
+  int index = 0;
+  char currentChar;
+  bool result = true;
+  while ((currentChar = *(string + index))) {
+    if (currentChar < '0' || currentChar > '9') {
+      result = false;
+      break;
+    }
+    index++;
+  }
+  return result;
+}
 
-// To compile and run the program: ./perft <depth>
+/* Testing all the double pawn push case
+
+rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 (Normal double pawn push) (ans: 20)
+2r4k/8/8/8/3p4/8/2P5/2K5 w - - 0 1 (Pawn is pinned but still can double pawn push) (ans: 6)
+7k/8/8/8/3p4/8/r1P1K3/8 w - - 0 1 (Pawn is pinned and cannot double pawn push) (ans: 7)
+7k/8/8/4b3/8/8/3P4/K7 w - - 0 1 (King is in check and pawn can double push to get out of check) (ans: 3)
+
+*/
+
+/* Testing all the en-passant case
+
+k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1 (Normal en-passant)
+r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
+r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
+k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
+k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
+8/8/3p4/KPp4r/1R2PpPk/8/8/ b - e3 0 1 (Pawn looks like it is en-passant pinned but it isn't) (ans: 16)
+8/8/8/KPpP3r/1R3p1k/8/6P1/ w - c6 1 3 (Two pawns look en-passant pinned but both can do en-passant) (ans: 17)
+
+*/
+
+// TODO: Add a test functionnality for the perft program
+// To compile and run the program: ./perft
 // To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
     printf("Usage: ./%s <depth (num)> [position (fen string)] [mode (debug or time)]\n", argv[0]);
     printf("Note that order does not matter for `position` and `mode` arguments, and they are optional\n");
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
-  maximumDepth = atoi(argv[1]);
-
+  if (isStringValidPerftNumber(argv[1])) {
+    maximumDepth = atoi(argv[1]);
+  } else {
+    printf("Argument %s is not a valid digit\n", argv[1]);
+  } 
   if (maximumDepth <= 0) {
     printf("Invalid depth %d\n", maximumDepth);
-    return 0;
+    exit(EXIT_FAILURE);
   }
 
   // The default is the starting fen string
@@ -91,11 +127,11 @@ int main(int argc, char* argv[]) {
     }
   }
   if (argc >= 4) {
-    char* secondArg = argv[3];
-    if (strcmp(secondArg, "time") == 0) {
+    char* thirdArg = argv[3];
+    if (strcmp(thirdArg, "time") == 0) {
       debug = false;
-    } else if (strcmp(secondArg, "debug")) {
-      fenString = secondArg;
+    } else if (strcmp(thirdArg, "debug")) {
+      fenString = thirdArg;
     }
   }
 
@@ -107,7 +143,7 @@ int main(int argc, char* argv[]) {
   
   if (!setGameStateFromFenString(fenString, &startingState)) {
     printf("The fen string \"%s\" is invalid!\n", fenString);
-    return 1;
+    exit(EXIT_FAILURE);
   }
 
   achievedStates[0] = startingState;
@@ -115,6 +151,7 @@ int main(int argc, char* argv[]) {
   u64 perftResult;
 
   if (debug) {
+    printBoard(startingState.board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
   } else {

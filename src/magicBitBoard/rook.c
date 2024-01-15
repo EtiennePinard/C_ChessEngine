@@ -77,7 +77,7 @@ u64 rookPseudoLegalMovesBitBoardFromBlockingBitBoard(int position, u64 blockingB
     return result;
 }
 
-static inline u64 generateBlockingBitBoardFromIndex(int position, int index, int nbValidSquareForPiece, u64 movementMask) {
+static inline u64 generateBlockingBitBoardFromIndex(int index, int nbValidSquareForPiece, u64 movementMask) {
     u64 result = (u64) 0;
     for (int i = 0; i < nbValidSquareForPiece; i++) {
         u64 bitToShift = (u64) ((index >> i) & 1);
@@ -93,7 +93,7 @@ void fillRookBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blocking
     u64 movementMask = rookMovementMaskFromPosition(position);
     int nbBlockingBitBoard = 1 << nbValidSquareForRook;
     for (int i = 0; i < nbBlockingBitBoard; i++) {
-        blockingBitBoards[i] = generateBlockingBitBoardFromIndex(position, i, nbValidSquareForRook, movementMask);
+        blockingBitBoards[i] = generateBlockingBitBoardFromIndex(i, nbValidSquareForRook, movementMask);
         blockingBitBoardToPseudoLegalmoves[i] = rookPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);;
     }
 }

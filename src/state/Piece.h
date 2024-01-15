@@ -6,19 +6,17 @@
  * The piece type is in the first 3 least significant bits.
  * The piece color is the next 2 bits that follow the piece type bits
  * The first 3 most significant bits of the char are unused.
- * Use the pieceColor function or pieceType function to extract those information
- * Use the makePiece(color, type) macro to create a valid Piece
+ * Use the pieceColor(piece) function or pieceType(piece) function to extract those information
+ * Use the makePiece(color, type) function to create a valid Piece
 */
 typedef char Piece;
 
-// First 2 bits are for the color
-// Last 3 bits are for the type
 typedef enum PieceCharacteristics {
     NOPIECE = 0, 
     KING    = 1, 
-    QUEEN   = 2, 
-    KNIGHT  = 3, 
-    BISHOP  = 4, 
+    KNIGHT  = 2, 
+    BISHOP  = 3, 
+    QUEEN   = 4, 
     ROOK    = 5, 
     PAWN    = 6, 
             

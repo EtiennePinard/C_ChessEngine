@@ -14,9 +14,9 @@ typedef struct Board {
     /* Order of the bitBoard in the array 
 
     0 -> White King
-    1 -> White Queen
-    2 -> White Knight
-    3 -> White Bishop
+    1 -> White Knight
+    2 -> White Bishop
+    3 -> White Queen
     4 -> White Rook
     5 -> White Pawn
 
@@ -24,9 +24,9 @@ typedef struct Board {
     7 -> UNUSED
 
     8 -> Black King
-    9 -> Black Queen
-    10 -> Black Knight 
-    11 -> Black Bishop
+    9 -> Black Knight 
+    10 -> Black Bishop
+    11 -> Black Queen
     12 -> Black Rook
     13 -> Black Pawn
     */
@@ -38,6 +38,10 @@ typedef struct Board {
    // Thus, index 6 and 7 are invalid in the array
 } Board;
 
+/**
+ * Returns the bit board of a specific piece
+*/
+u64 bitBoardForPiece(Board board, Piece piece);
 u64 whitePiecesBitBoard(Board board);
 u64 blackPiecesBitBoard(Board board);
 u64 allPiecesBitBoard(Board board);

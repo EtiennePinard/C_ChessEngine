@@ -20,6 +20,11 @@ Piece pieceAtIndex(Board board, int index) {
                     k + q + n + b + r + p);
 }
 
+u64 bitBoardForPiece(Board board, Piece piece) {
+    int arrayIndex = piece - 9; // The best hash function there is!
+    return board.bitboards[arrayIndex];
+}
+
 u64 whitePiecesBitBoard(Board board) {
     return 
     board.bitboards[0] | 

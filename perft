@@ -15,7 +15,11 @@ if ! [[ "$1" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-gcc -g -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/utils/utils.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c src/magicBitBoard/magicBitBoard.c src/magicBitBoard/rook.c src/magicBitBoard/bishop.c 
+gcc -Wall -Wextra -Werror -Wunused -g -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/utils/utils.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c src/magicBitBoard/magicBitBoard.c src/magicBitBoard/rook.c src/magicBitBoard/bishop.c 
+
+if [ $? -ne 0 ]; then
+    exit 1
+fi
 
 if [ "$#" -eq 3 ]; then
     ./perftTesting "$1" "$2" "$3"

@@ -38,6 +38,10 @@ typedef struct Board {
    // Thus, index 6 and 7 are invalid in the array
 } Board;
 
+/**
+ * Returns the bit board of a specific piece
+*/
+u64 bitBoardForPiece(Board board, Piece piece);
 u64 whitePiecesBitBoard(Board board);
 u64 blackPiecesBitBoard(Board board);
 u64 allPiecesBitBoard(Board board);

@@ -64,7 +64,7 @@ bool isStringValidPerftNumber(char* string) {
   int index = 0;
   char currentChar;
   bool result = true;
-  while (currentChar = *(string + index)) {
+  while ((currentChar = *(string + index))) {
     if (currentChar < '0' || currentChar > '9') {
       result = false;
       break;

@@ -4,14 +4,11 @@
 
 # Check if one argument is provided
 if [ "$#" -lt 1 ]; then
-    printf "Usage: $0 <depth (num)> (optional)<position (fen string)> (optional)<debug (boolean)>\n"
-    printf "\tNote that order does not matter for 'position' and 'mode' arguments, and they are optional\n"
-    exit 1
-fi
-
-# Check if the depth argument is a number
-if ! [[ "$1" =~ ^[0-9]+$ ]]; then
-    printf "Error: '$1' is not a valid number.\n"
+    printf "Usage: ./$1 <mode (debug, time, test)> [position (fen string)] [depth (positive integer)]\n"
+    printf "The 'position' and 'depth' argument only apply for the debug and time mode\n"
+    printf "If 'mode' is not provided it will default to debug mode\n"
+    printf "If 'position' is not provided it will default to the starting position\n"
+    printf "'depth' needs to be provided\n"
     exit 1
 fi
 
@@ -21,10 +18,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "$#" -eq 3 ]; then
-    ./perftTesting "$1" "$2" "$3"
-elif [ "$#" -eq 2 ]; then
-    ./perftTesting "$1" "$2"
-else
-    ./perftTesting "$1"
-fi
+./perftTesting "$@"

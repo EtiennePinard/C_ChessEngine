@@ -95,44 +95,189 @@ k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
 
 */
 
-// TODO: Add a test functionnality for the perft program
+/**
+ * Represents a position to perform a perft test on.
+ * The nbTest parameter indicates for how many depths there is a results
+ * perftResults returns the expected number of moves for a depth (the indices of said int)
+*/
+typedef struct testPosition {
+  char* fenString;
+  int nbTest;
+  int* perftResults;
+} TestPosition;
+
+// These are the 8 ANSI color types
+#define RED   "\x1B[31m"
+#define GRN   "\x1B[32m"
+#define YEL   "\x1B[33m"
+#define BLU   "\x1B[34m"
+#define MAG   "\x1B[35m"
+#define CYN   "\x1B[36m"
+#define WHT   "\x1B[37m"
+#define RESET "\x1B[0m"
+
+#define NUM_TEST_POSITIONS 6
+
+void test() {
+  magicBitBoardInitialize();
+  int maxDepth = 5;
+  
+  int startingPosResults[6] = {1, 20, 400, 8902, 197281, 4865609};
+  TestPosition startingPosition = {
+    .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
+    .nbTest = 6, 
+    .perftResults = startingPosResults
+  };
+  
+  int pos2Result[5] = {1, 48, 2039, 97862, 4085603};
+  TestPosition pos2 = {
+    .fenString = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+    .nbTest = 5,
+    .perftResults = pos2Result
+  };
+  
+  int pos3Result[6] = {1, 14, 191, 2812, 43238, 674624};
+  TestPosition pos3 = {
+    .fenString = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+    .nbTest = 6,
+    .perftResults = pos3Result
+  };
+
+  int pos4Result[5] = {1, 6, 264, 9467, 422333};
+  TestPosition pos4 = {
+    .fenString = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+    .nbTest = 5,
+    .perftResults = pos4Result
+  };
+
+  int pos5Result[5] = {1, 44, 1486, 62379, 2103487};
+  TestPosition pos5 = {
+    .fenString = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+    .nbTest = 5,
+    .perftResults = pos5Result
+  };
+
+  int pos6Result[5] = {1, 46, 2079, 89890, 3894594};
+  TestPosition pos6 = {
+    .fenString = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+    .nbTest = 5,
+    .perftResults = pos6Result
+  };
+
+  TestPosition testPositions[NUM_TEST_POSITIONS] = { 
+    startingPosition, 
+    pos2,
+    pos3,
+    pos4,
+    pos5,
+    pos6, 
+  };
+  
+  u64 perftResult;
+  double timeSpent;
+  clock_t begin, end;
+  achievedStates = malloc(sizeof(GameState) * (maxDepth));
+  
+  char* testPassed = GRN "✓" RESET;
+  char *testFailedPrefix = RED "❌" RESET " Test failed (expected ";
+  clock_t fullTestBegin = clock();
+  
+  for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
+    TestPosition testPosition = testPositions[i];
+
+    GameState startingState = { 0 }; 
+    setGameStateFromFenString(testPosition.fenString, &startingState);
+    achievedStates[0] = startingState;
+
+    printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
+
+    for (int depth = 0; depth < testPosition.nbTest; depth++) {
+      maximumDepth = depth;
+      begin = clock();
+      perftResult = perft(depth);
+      end = clock();
+      timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
+      
+      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, timeSpent * 1000);
+      if (perftResult == (u64) testPosition.perftResults[depth]) {
+        printf("%s" RESET "\n", testPassed);
+      } else {
+        printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
+      }
+
+    }
+
+    printf("\n");
+  }
+
+  clock_t fullTestEnd = clock();
+  double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
+  printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+  free(achievedStates);
+  magicBitBoardTerminate();
+}
+
 // To compile and run the program: ./perft
-// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <depth>
+// To check for memory leaks that program: valgrind --leak-check=full --track-origins=yes -s ./perftTesting <args>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    printf("Usage: ./%s <depth (num)> [position (fen string)] [mode (debug or time)]\n", argv[0]);
-    printf("Note that order does not matter for `position` and `mode` arguments, and they are optional\n");
+    printf("Usage: ./%s <mode (debug, time, test)> [position (fen string)] [depth (positive integer)]\n", argv[0]);
+    printf("The `position` and `depth` argument only apply for the debug and time mode\n");
+    printf("If `mode` is not provided it will default to debug mode\n");
+    printf("If `position` is not provided it will default to the starting position\n");
+    printf("`depth` needs to be provided\n");
     exit(EXIT_FAILURE);
   }
 
-  if (isStringValidPerftNumber(argv[1])) {
-    maximumDepth = atoi(argv[1]);
-  } else {
-    printf("Argument %s is not a valid digit\n", argv[1]);
-  } 
-  if (maximumDepth <= 0) {
-    printf("Invalid depth %d\n", maximumDepth);
-    exit(EXIT_FAILURE);
-  }
-
-  // The default is the starting fen string
   char* fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-  // Handling position and debug
+  maximumDepth = -1;
+
+  { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
+    char* firstArg = argv[1];
+    if (strcmp(firstArg, "test") == 0) {
+      debug = false;
+      test();
+      return 0;
+    }
+    if (strcmp(firstArg, "time") == 0) {
+      debug = false;
+    } else {
+      // No parameter is provided, so it is either a fen string of a depth
+      if (isStringValidPerftNumber(firstArg)) {
+        // No fen string is provided, so the first argument is just the depth
+        maximumDepth = atoi(firstArg);
+      } else {
+        // The first argument is a fen string
+        fenString = firstArg;
+      }
+    }
+  }
+
   if (argc >= 3) {
     char* secondArg = argv[2];
-    if (strcmp(secondArg, "time") == 0) {
-      debug = false;
-    } else if (strcmp(secondArg, "debug")) {
+    if (isStringValidPerftNumber(secondArg)) {
+      // No fen string is provided, so the first argument is just the depth
+      maximumDepth = atoi(secondArg);
+    } else {
+      // The first argument is a fen string
       fenString = secondArg;
     }
   }
+
   if (argc >= 4) {
-    char* thirdArg = argv[3];
-    if (strcmp(thirdArg, "time") == 0) {
-      debug = false;
-    } else if (strcmp(thirdArg, "debug")) {
-      fenString = thirdArg;
+    char* thirdArgument = argv[3];
+    // This argument needs to be the depth
+    if (!isStringValidPerftNumber(thirdArgument)) {
+      printf("The argument %s is not a valid perft number\n", thirdArgument);
+      exit(EXIT_FAILURE);
+    } else {
+      maximumDepth = atoi(thirdArgument);
     }
+  }
+
+  if (maximumDepth < 0) {
+    printf("You did not provide a valid depth for the mode `%s`\n", debug ? "debug" : "time");
+    exit(EXIT_FAILURE);
   }
 
   magicBitBoardInitialize();
@@ -172,20 +317,3 @@ int main(int argc, char* argv[]) {
   magicBitBoardTerminate();
   return 0;
 }
-
-// Peft 5 of initial board with my engine: 4 866 385
-// Peft 5 of initial board stockfish:      4 865 609 
-
-// 4 085 603 Engine
-// 4 085 603 Actual
-// I had to remove some memory leaks, else the kernel would kill the program (it was leaking too much memory...)
-
-
-// Perft 5: 193 690 690 (Engine)
-// Perft 5: 193 690 690 (Actual)
-// I am so happy to have finally done it
-
-// On February 26th 2023, I completed the position 3 table from this page: https://www.chessprogramming.org/Perft_Results#Position_3
-// Perft 8: 3 009 794 393 (engine)
-// Perft 8: 3 009 794 393 (table)
-

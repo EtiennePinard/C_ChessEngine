@@ -1,4 +1,4 @@
-// This file is a port to C of this file from Sebastian Lague
+// This file is heavily inspired by this file from Sebastian Lague
 // https://github.com/SebLague/Chess-Coding-Adventure/blob/Chess-V2-UCI/Chess-Coding-Adventure/src/Core/Move%20Generation/MoveGenerator.cs
 #include <math.h>
 #include <assert.h>

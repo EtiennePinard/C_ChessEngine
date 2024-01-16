@@ -229,7 +229,7 @@ void verifyBestMagicValues() {
 // gcc -g -o generateMagic magicGeneration.c rook.c bishop.c logging.c utils.c && ./generateMagic
 int main(int argc, char const *argv[]) {
 
-    FILE* output = fopen("output.txt", "w");
+    FILE* output = fopen("MagicBitBoardOutput.txt", "w");
 
     // Generating the rook/bishop masks array
     u64 movementMask; 

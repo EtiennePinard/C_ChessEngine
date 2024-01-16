@@ -13,7 +13,8 @@ s.txt
 t.txt
 testing/testChessComputer.txt
 testBoard
-magicGeneration/chessWikiMethod.c
-magicGeneration/generateMagic
-magicGeneration/output.txt
+precomputedMasks/generateMagic
+precomputedMasks/generateMask
+precomputedMasks/MagicBitBoardOutput.txt
+precomputedMasks/precomputedMaskOutput.txt
 diffPerft.bash

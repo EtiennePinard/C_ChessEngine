@@ -27,6 +27,7 @@ bool enPassantWillRemoveTheCheck;
 
 u64 checkBitBoard;
 u64 pinMasks[BOARD_SIZE];
+u64 friendlyPieceBitBoard;
 
 void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
@@ -39,6 +40,7 @@ void init() {
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
+    friendlyPieceBitBoard = currentState.colorToGo == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
 }
 
 void appendMove(int startSquare, int targetSquare, int flag) {
@@ -47,60 +49,6 @@ void appendMove(int startSquare, int targetSquare, int flag) {
     move |= (flag << 12);
     validMoves[currentMoveIndex] = move;
     (currentMoveIndex)++;
-}
-
-bool isIndexValidForKnight(int currentIndex, int targetSquare, bool goDownOne) {
-    int y = targetSquare / 8;
-    bool wrappingCondition = (goDownOne) ? 
-        abs(currentIndex / 8 - y) == 1 : 
-        abs(currentIndex / 8 - y) == 2;
-    return targetSquare >= 0 && targetSquare <= 63 && wrappingCondition;
-}
-
-bool isIndexPseudoLegalForKnight(int currentIndex, int targetSquare, bool goDownOne) {
-    return isIndexValidForKnight(currentIndex, targetSquare, goDownOne) && pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
-}
-
-u64 getKnightValidMovesBitBoard(int currentIndex) {
-    u64 result = (u64) 0;
-    u64 toggle = (u64) 1;
-    if (isIndexValidForKnight(currentIndex, currentIndex - 6 , true )) result ^= toggle << (currentIndex - 6 );
-    if (isIndexValidForKnight(currentIndex, currentIndex - 15, false)) result ^= toggle << (currentIndex - 15);
-    if (isIndexValidForKnight(currentIndex, currentIndex - 10, true )) result ^= toggle << (currentIndex - 10);
-    if (isIndexValidForKnight(currentIndex, currentIndex - 17, false)) result ^= toggle << (currentIndex - 17);
-    if (isIndexValidForKnight(currentIndex, currentIndex + 6 , true )) result ^= toggle << (currentIndex + 6 );
-    if (isIndexValidForKnight(currentIndex, currentIndex + 10, true )) result ^= toggle << (currentIndex + 10);
-    if (isIndexValidForKnight(currentIndex, currentIndex + 15, false)) result ^= toggle << (currentIndex + 15);
-    if (isIndexValidForKnight(currentIndex, currentIndex + 17, false)) result ^= toggle << (currentIndex + 17);
-    return result;
-}
- 
-u64 getKnightPseudoLegalMovesBitBoard(int currentIndex) {
-    u64 result = (u64) 0;
-    u64 toggle = (u64) 1;
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 6 , true )) result ^= toggle << (currentIndex - 6 );
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 15, false)) result ^= toggle << (currentIndex - 15);
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 10, true )) result ^= toggle << (currentIndex - 10);
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex - 17, false)) result ^= toggle << (currentIndex - 17);
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 6 , true )) result ^= toggle << (currentIndex + 6 );
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 10, true )) result ^= toggle << (currentIndex + 10);
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 15, false)) result ^= toggle << (currentIndex + 15);
-    if (isIndexPseudoLegalForKnight(currentIndex, currentIndex + 17, false)) result ^= toggle << (currentIndex + 17);
-    return result;
-}
-
-u64 getKingMoves(int currentIndex) {
-    u64 result = (u64) 0;
-    u64 toggle = (u64) 1;
-    if (currentIndex % 8 != 0 && currentIndex / 8 != 0) { result ^= toggle << (currentIndex - 9); }
-    if (currentIndex / 8 != 0                         ) { result ^= toggle << (currentIndex - 8); }
-    if (currentIndex % 8 != 7 && currentIndex / 8 != 0) { result ^= toggle << (currentIndex - 7); }
-    if (currentIndex % 8 != 0                         ) { result ^= toggle << (currentIndex - 1); }
-    if (currentIndex % 8 != 7                         ) { result ^= toggle << (currentIndex + 1); }
-    if (currentIndex % 8 != 0 && currentIndex / 8 != 7) { result ^= toggle << (currentIndex + 7); }
-    if (currentIndex / 8 != 7                         ) { result ^= toggle << (currentIndex + 8); }
-    if (currentIndex % 8 != 7 && currentIndex / 8 != 7) { result ^= toggle << (currentIndex + 9); }
-    return result;
 }
 
 void addBitBoardToAttackedSquares(u64 bitBoard) {
@@ -189,14 +137,14 @@ void calculateAttackSquares() {
             queenAttackedSquares(currentIndex);
             break;
         case KNIGHT:
-            bitBoard = getKnightValidMovesBitBoard(currentIndex);
+            bitBoard = knightMovementMask[currentIndex];
             addBitBoardToAttackedSquares(bitBoard);
             break;
         case PAWN:
             pawnAttackingSquares(currentIndex);
             break;
         case KING:
-            bitBoard = getKingMoves(currentIndex);
+            bitBoard = kingMovementMask[currentIndex];
             addBitBoardToAttackedSquares(bitBoard);
             break;
         default:
@@ -325,7 +273,7 @@ void generateKingMoves() {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; checkBitBoard = (u64) 0; }
 
     u64 bitboard;
-    bitboard = getKingMoves(friendlyKingIndex);
+    bitboard = kingMovementMask[friendlyKingIndex];
     while (bitboard) {
         int targetSquare = trailingZeros_64(bitboard);
         if (isKingIndexLegal(targetSquare)) {
@@ -361,7 +309,7 @@ void generateKingMoves() {
     }
     
     // Checking for knights 
-    bitboard = getKnightValidMovesBitBoard(friendlyKingIndex);
+    bitboard = knightMovementMask[friendlyKingIndex];
     while (bitboard) {
         int index = trailingZeros_64(bitboard);
         if (pieceAtIndex(currentState.board, index) == makePiece(opponentColor, KNIGHT)) {
@@ -505,12 +453,6 @@ void rookMoves(int from) {
     u64 movesBitBoard = getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
 
     // Accounting for friendly pieces
-    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
-    if (currentState.colorToGo == WHITE) {
-        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
-    } else { 
-        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
-    }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
     appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
@@ -524,12 +466,6 @@ void bishopMoves(int from) {
     u64 movesBitBoard = getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
 
     // Accounting for friendly pieces
-    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
-    if (currentState.colorToGo == WHITE) {
-        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
-    } else { 
-        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
-    }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
     appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
@@ -547,12 +483,6 @@ void queenMoves(int from) {
     u64 movesBitBoard = rookMovesBitBoard | bishopMovesBitBoard;
 
     // Accounting for friendly pieces
-    u64 friendlyPieceBitBoard; // The ternary was too big for my liking
-    if (currentState.colorToGo == WHITE) {
-        friendlyPieceBitBoard = whitePiecesBitBoard(currentState.board);
-    } else { 
-        friendlyPieceBitBoard = blackPiecesBitBoard(currentState.board);
-    }
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
     
     appendLegalMovesFromPseudoLegalMovesBitBoard(from, movesBitBoard);
@@ -574,20 +504,14 @@ void pawnMoves(int from) {
     u64 toggle = (u64) 1;
     
     int forwardIndex = from + increment;
-
-    if (forwardIndex >= 0 && forwardIndex <= 63) {
-        if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) {
-            pseudoLegalMoves ^= toggle << forwardIndex;
-        }
-
-        if (forwardIndex % 8 != 7 && pieceColor(pieceAtIndex(currentState.board, forwardIndex + 1)) == opponentColor) {
-            pseudoLegalMoves ^= toggle << (forwardIndex + 1);
-        }
-
-        if (forwardIndex % 8 != 0 && pieceColor(pieceAtIndex(currentState.board, forwardIndex - 1)) == opponentColor) {
-            pseudoLegalMoves ^= toggle << (forwardIndex - 1);
-        }
-    }
+    // The forward index is always between 0 and 63, because if a pawn is on one of the edge ranks it will get promoted
+    if (forwardIndex % 8 != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
+    if (forwardIndex % 8 != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
+    // Only making capture moves if we actually capture a piece
+    u64 opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
+    pseudoLegalMoves &= opponentBitBoard;
+    
+    if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
 
     if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
         generateEnPassant(from); 
@@ -637,7 +561,8 @@ void generateSupportingPiecesMoves() {
                 queenMoves(currentIndex);
                 break;
             case KNIGHT:
-                pseudoLegalMovesBitBoard = getKnightPseudoLegalMovesBitBoard(currentIndex);
+                pseudoLegalMovesBitBoard = knightMovementMask[currentIndex];
+                pseudoLegalMovesBitBoard &= ~friendlyPieceBitBoard; // We invert the bit board so that we do not capture friendly pieces
                 appendLegalMovesFromPseudoLegalMovesBitBoard(currentIndex, pseudoLegalMovesBitBoard);
                 break;
             case PAWN:
@@ -699,7 +624,6 @@ void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGam
     
     if (isThereThreeFoldRepetition(previousStates) || (currentState.turnsForFiftyRule >= 50)) {
         appendMove(0, 0, DRAW); // This is the `draw` move
-
         // We assume that the array is 0 initialized, so we do not need to add a 0 entry
         return; 
     }
@@ -714,7 +638,6 @@ void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGam
             // A pretty cool double checkmate
             appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
         }
-
         // We assume that the array is 0 initialized, so we do not need to add a 0 entry
         return;
     }

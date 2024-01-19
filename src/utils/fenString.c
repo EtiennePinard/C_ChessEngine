@@ -80,7 +80,7 @@ void setBoardArrayFromFenString(char* fen, Piece* board) {
 }
 
 int convertSquareToIndex(char* square) {
-    if (strcmp(square,"-") == 0) { return -1; }
+    if (strcmp(square,"-") == 0) { return 0; }
     int file = square[0] - 'a';
     int rank = 8 - (square[1] - '0');
     return rank * 8 + file;

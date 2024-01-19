@@ -117,8 +117,8 @@ void makeMove(Move move, GameState* state) {
     return;
   }
   state->colorToGo = oppositeColor;
-  if (flag != DOUBLE_PAWN_PUSH && state->enPassantTargetSquare != -1) {
-    state->enPassantTargetSquare = -1;
+  if (flag != DOUBLE_PAWN_PUSH && state->enPassantTargetSquare != 0) {
+    state->enPassantTargetSquare = 0;
   }
   if (state->colorToGo == WHITE) {
     state->nbMoves++; // Only recording full moves

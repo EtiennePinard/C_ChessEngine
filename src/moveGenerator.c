@@ -516,8 +516,8 @@ void pawnMoves(int from) {
     pseudoLegalMoves &= opponentBitBoard;
     
     if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
-
-    if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
+    // enPassantTargetSquare is 0 when there is no pawn that has double pushed
+    if (pawnCanEnPassant && currentState.enPassantTargetSquare) { 
         generateEnPassant(from); 
     } else if (pawnCanDoublePush) {
         generatePawnDoublePush(from, increment);

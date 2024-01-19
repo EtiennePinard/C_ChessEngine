@@ -28,6 +28,7 @@ bool enPassantWillRemoveTheCheck;
 u64 checkBitBoard;
 u64 pinMasks[BOARD_SIZE];
 u64 friendlyPieceBitBoard;
+u64 opponentBitBoard;
 
 void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
@@ -41,6 +42,7 @@ void init() {
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
     friendlyPieceBitBoard = currentState.colorToGo == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
+    opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
 }
 
 void appendMove(int startSquare, int targetSquare, int flag) {
@@ -123,10 +125,10 @@ void pawnAttackingSquares(int from) {
 
 void calculateAttackSquares() {
     u64 bitBoard;
-    for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const Piece piece = pieceAtIndex(currentState.board, currentIndex);
-        if (piece == NOPIECE || pieceColor(piece) != opponentColor) continue;
-        switch (pieceType(piece)) {
+    u64 opponentBitBoardCopy = opponentBitBoard;
+    while (opponentBitBoardCopy) {
+        int currentIndex = trailingZeros_64(opponentBitBoardCopy);
+        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
         case ROOK: 
             rookAttackedSquares(currentIndex);
             break;
@@ -150,6 +152,7 @@ void calculateAttackSquares() {
         default:
             break;
         }
+       opponentBitBoardCopy &= opponentBitBoardCopy - 1; 
     }
 }
 
@@ -220,8 +223,6 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
 void handlePinsAndChecksFromSlidingPieces() {
     int kingX = friendlyKingIndex % 8;
     int kingY = friendlyKingIndex / 8;
-    // Doing another implementation of this function using precomputed bitboards
-    // Here a "hack" is used to get a bitboard that has the "edge" bits set
     u64 orthogonalMask = rookMovementMask[friendlyKingIndex];
     if (kingX < 7) handlePinAndCheckForDirection(1, orthogonalMask, ROOK);
     if (kingX > 0) handlePinAndCheckForDirection(-1, orthogonalMask, ROOK);
@@ -237,7 +238,7 @@ void handlePinsAndChecksFromSlidingPieces() {
 
 void generateCastle() {
     const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
-    if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
+    if (friendlyKingIndex != defaultKingIndex) { return; }
 
     const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState.castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
@@ -284,8 +285,12 @@ void generateKingMoves() {
 
     if (inDoubleCheck) { return; } // Only king moves are valid
     
-    generateCastle();
     handlePinsAndChecksFromSlidingPieces();
+
+    if (!inCheck) { 
+        generateCastle();
+        return; // Do not need to look for checks
+    } 
 
     u64 toggle = (u64) 1;
     // Handling checks from pawns and knights
@@ -508,7 +513,6 @@ void pawnMoves(int from) {
     if (forwardIndex % 8 != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
     if (forwardIndex % 8 != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
     // Only making capture moves if we actually capture a piece
-    u64 opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
     pseudoLegalMoves &= opponentBitBoard;
     
     if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
@@ -545,12 +549,12 @@ void pawnMoves(int from) {
 }
 
 void generateSupportingPiecesMoves() {
-    for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const int piece = pieceAtIndex(currentState.board, currentIndex);
-        if (piece == NOPIECE || pieceColor(piece) == opponentColor) { continue; }
-        
-        u64 pseudoLegalMovesBitBoard;
-        switch (pieceType(piece)) {
+    u64 pseudoLegalMovesBitBoard;
+    u64 piecesBitBoard = friendlyPieceBitBoard;
+    while (piecesBitBoard) {
+        int currentIndex = trailingZeros_64(piecesBitBoard);
+
+        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
             case ROOK: 
                 rookMoves(currentIndex);
                 break;
@@ -571,6 +575,8 @@ void generateSupportingPiecesMoves() {
             default:
                 break;
         }
+
+        piecesBitBoard &= piecesBitBoard - 1;
     }
 }
 
@@ -616,6 +622,7 @@ bool isThereThreeFoldRepetition(const GameState* previousStates) {
     return result;
 }
 
+// TODO: Make the caller give us a fixed size of memory (arenas?) which we can then use to store our global variables
 void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
     currentState = currentGameState;
 

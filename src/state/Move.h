@@ -31,12 +31,10 @@ typedef enum {
     DRAW 
 } Flag;
 
-char fromSquareFromMove(Move move);
-char toSquareFromMove(Move move);
+// TODO: Make this macros
+char fromSquare(Move move);
+char toSquare(Move move);
 Flag flagFromMove(Move move);
-
 Move createMove(int from, int to, Flag flag);
-
-int nbMovesInArray(Move moves[MAX_LEGAL_MOVES + 1]);
 
 #endif /* A267B67F_4ECE_456A_A4EB_C6E73ACF11E0 */

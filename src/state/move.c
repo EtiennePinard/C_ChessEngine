@@ -1,10 +1,10 @@
 #include "Move.h"
 
-char fromSquareFromMove(Move move) {
+char fromSquare(Move move) {
     return move & 0b111111;
 }
 
-char toSquareFromMove(Move move) {
+char toSquare(Move move) {
     return (move >> 6) & 0b111111;
 }
 
@@ -18,12 +18,3 @@ Move createMove(int from, int to, Flag flag) {
     move |= (flag << 12);
     return move;
 }
-
-int nbMovesInArray(Move moves[MAX_LEGAL_MOVES + 1]) {
-    int index = 0;
-    while (moves[index]) {
-        index++;
-    }
-    return index;
-}
-

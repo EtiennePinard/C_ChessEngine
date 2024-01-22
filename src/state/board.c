@@ -1,5 +1,6 @@
 #include "Board.h"
 
+// TODO: This should be a great place for SIMD, right?
 Piece pieceAtIndex(Board board, int index) {
 
     Piece K = ((board.bitboards[0] >> index) & 1UL) * makePiece(WHITE, KING);
@@ -55,19 +56,6 @@ void togglePieceAtIndex(Board* board, int index, Piece piece) {
 
     int arrayIndex = piece - 9; // The best hash function there is!
     board->bitboards[arrayIndex] ^= toggle;
-}
-
-void handleMove(Board* board, int from, int to) {
-    int pieceToMove = pieceAtIndex(*board, from);
-
-    togglePieceAtIndex(board, from, pieceToMove);
-
-    Piece capturePiece = pieceAtIndex(*board, to);
-    if (capturePiece != NOPIECE) {
-        togglePieceAtIndex(board, to, capturePiece);
-    }
-
-    togglePieceAtIndex(board, to, pieceToMove);
 }
 
 void fromArray(Board* result, Piece array[BOARD_SIZE]) {

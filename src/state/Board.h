@@ -52,12 +52,10 @@ u64 allPiecesBitBoard(Board board);
 Piece pieceAtIndex(Board board, int index);
 
 /**
- * Will toggle the bits at a specific index for a piece to the opposite state.
+ * Will toggle (XOR with 1) the bits at a specific index for a piece to the opposite state.
  * If you pass in the NOPIECE piece (0) it will lead to undefined behaviour
 */
 void togglePieceAtIndex(Board* board, int index, Piece piece);
-
-void handleMove(Board* board, int from, int to);
 
 /**
  * Converts and puts the information in the piece's `array` to the `result` board.

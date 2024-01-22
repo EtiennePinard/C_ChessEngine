@@ -16,6 +16,7 @@ arg="-g"
 if [[ "$1" == "time" || "$1" == "test" ]]; then
     arg="-O3"
 fi
+# For checking memory bugs, add option -fsanitize=address 
 gcc -Wall -Wextra -Werror -Wunused "$arg" -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/utils/utils.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c src/magicBitBoard/magicBitBoard.c src/magicBitBoard/rook.c src/magicBitBoard/bishop.c 
 
 if [ $? -ne 0 ]; then

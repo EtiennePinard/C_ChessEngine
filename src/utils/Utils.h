@@ -11,6 +11,8 @@
 
 int trailingZeros_64(const u64 x);
 
+u64 random_u64();
+
 void printBitBoard(const u64 bitboard);
 
 void printBin(const u64 num); 

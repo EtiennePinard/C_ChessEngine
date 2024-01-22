@@ -10,7 +10,7 @@
 #include "MoveGenerator.h"
 #include "magicBitBoard/MagicBitBoard.h"
 
-GameState currentState;
+ChessPosition currentState;
 
 Move* validMoves;
 int currentMoveIndex;
@@ -46,7 +46,7 @@ void init() {
 }
 
 void appendMove(int startSquare, int targetSquare, int flag) {
-    Move move = startSquare;
+    Move move = (Move) startSquare;
     move |= (targetSquare << 6);
     move |= (flag << 12);
     validMoves[currentMoveIndex] = move;
@@ -580,84 +580,40 @@ void generateSupportingPiecesMoves() {
     }
 }
 
-bool compareGameStateForRepetition(const GameState gameStateToCompare) {
-    // Comparing boards
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        if (pieceAtIndex(currentState.board, i) != pieceAtIndex(gameStateToCompare.board, i)) {
-            return false;
-        }
-    }
-    return currentState.castlingPerm == gameStateToCompare.castlingPerm &&
-        currentState.colorToGo == gameStateToCompare.colorToGo &&
-        currentState.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
-}
-
-bool isThereThreeFoldRepetition(const GameState* previousStates) {
-    if (previousStates == NULL) { 
-        return false;
-    }
+bool isThereThreeFoldRepetition(const ChessGame* game) {
     bool hasOneDuplicate = false;
-    int index = 0;
     bool result = false;
-    GameState previousState;
-    // If colorToGo == 0 then it is not a valid state
-    while (true) {
-
-        previousState = previousStates[index];
-        if (previousState.colorToGo == 0) {
-            break;
-        }
-
-        if (compareGameStateForRepetition(previousState)) {
-            if (!hasOneDuplicate) {
-                hasOneDuplicate = true;
-            } else {
-                // Already has a duplicate, this is the third repetition
+    for (int i = 0; i < game->previousStatesCount; i++) {
+        if (game->currentState->key == game->previousStates[i]) {
+            if (hasOneDuplicate) {
                 result = true;
                 break;
             }
+            hasOneDuplicate = true;
         }
-        index++;
     }
     return result;
 }
 
 // TODO: Make the caller give us a fixed size of memory (arenas?) which we can then use to store our global variables
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
-    currentState = currentGameState;
+/*
+We are not computing end of games in this function!!!!
+They are not needed for perft and so I did not write a function to compute just yet
+These function will probably in the board.c file
+*/
+void getValidMoves(Move result[256], int* numMoves, ChessGame* game) {
+    currentState = *game->currentState;
 
-    validMoves = results;
+    validMoves = result;
     currentMoveIndex = 0;
     
-    if (isThereThreeFoldRepetition(previousStates) || (currentState.turnsForFiftyRule >= 50)) {
-        appendMove(0, 0, DRAW); // This is the `draw` move
-        // We assume that the array is 0 initialized, so we do not need to add a 0 entry
-        return; 
-    }
-
     init();
     calculateAttackSquares();
     generateKingMoves();
 
-    if (inDoubleCheck) { 
-        // Only king moves are valid when in double check
-        if (currentMoveIndex == 0) { // Is there any king moves?
-            // A pretty cool double checkmate
-            appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
-        }
-        // We assume that the array is 0 initialized, so we do not need to add a 0 entry
-        return;
+    if (!inDoubleCheck) { 
+        generateSupportingPiecesMoves();
     }
     
-    generateSupportingPiecesMoves();
-    
-    if (currentMoveIndex == 0) {
-        // There is no valid move
-        if (inCheck) {
-            appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
-        } else {
-            appendMove(0, 0, STALEMATE); // This is the `stalemate` move
-        }
-    }
-    // We assume that the array is 0 initialized, so we do not need to add a 0 entry
+    *numMoves = currentMoveIndex;
 }

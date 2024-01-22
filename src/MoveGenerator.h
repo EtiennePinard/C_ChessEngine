@@ -6,9 +6,9 @@
 #include "state/Move.h"
 
 /**
- * Returns the valid moves in a given position
- * The results array is assumed to be 0 initialized
+ * Computes the valid moves in a given position and stores the moves in the result array
+ * and the amount of moves in the numMoves pointer
 */
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates);
+void getValidMoves(Move result[256], int* numMoves, ChessGame* game);
 
 #endif

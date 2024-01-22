@@ -4,6 +4,10 @@
 #include "state/GameState.h"
 #include "state/Move.h"
 
-void makeMove(Move move, GameState* state);
+/**
+ * Makes the move and updates the ChessGame
+ * The move is assumed to be legal
+*/
+void makeMove(Move move, ChessGame* game);
 
 #endif

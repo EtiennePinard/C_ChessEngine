@@ -16,7 +16,7 @@ int maximumDepth;
 ChessGame* game;
 ChessPosition* posHistory;
 
-bool debug = true;
+bool divide = true;
 
 u64 perft(int depth) {
   if (depth == 0) { return 1; }
@@ -34,7 +34,7 @@ u64 perft(int depth) {
       return 0;
   }
 
-  if (!debug && depth == 1) {
+  if (!divide && depth == 1) {
     return nbOfMoves;
   }
   
@@ -47,7 +47,7 @@ u64 perft(int depth) {
 
     u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
 
-    if (debug && depth == maximumDepth) {
+    if (divide && depth == maximumDepth) {
       printMoveToAlgebraic(move);
       printf(": %lu\n", moveOutput);
     }
@@ -250,10 +250,10 @@ void test() {
 // To check for memory leaks: valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./perftTesting <args>
 int main(int argc, char* argv[]) {
   if (argc == 1) {
-    printf("Usage: ./%s <mode (debug, time, test)> [position (fen string)] [depth (positive integer)]\n", argv[0]);
-    printf("\tIf `mode` is not provided it will default to debug mode\n");
+    printf("Usage: ./%s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", argv[0]);
+    printf("\tIf `mode` is not provided it will default to divide mode\n");
     printf("\tIf `position` is not provided it will default to the starting position\n");
-    printf("\tThe `position` and `depth` argument only apply for the debug and time mode\n");
+    printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
     printf("\t`depth` needs to be provided for the modes it applies to\n");
     exit(EXIT_FAILURE);
   }
@@ -264,13 +264,13 @@ int main(int argc, char* argv[]) {
   { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
     char* firstArg = argv[1];
     if (strcmp(firstArg, "test") == 0) {
-      debug = false;
+      divide = false;
       test();
       return 0;
     }
     if (strcmp(firstArg, "time") == 0) {
-      debug = false;
-    } else if (strcmp(firstArg, "debug") != 0) {
+      divide = false;
+    } else if (strcmp(firstArg, "divide") != 0) {
       // No parameter is provided, so it is either a fen string of a depth
       if (isStringValidPerftNumber(firstArg)) {
         // No fen string is provided, so the first argument is just the depth
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (maximumDepth < 0) {
-    printf("You did not provide a valid depth for the mode `%s`\n", debug ? "debug" : "time");
+    printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
     exit(EXIT_FAILURE);
   }
 
@@ -318,7 +318,7 @@ int main(int argc, char* argv[]) {
 
   u64 perftResult;
 
-  if (debug) {
+  if (divide) {
     printBoard(game->currentState->board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);

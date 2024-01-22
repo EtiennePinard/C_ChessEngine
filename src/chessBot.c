@@ -9,9 +9,11 @@ Move think(ChessGame* game) {
     
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256] = { [0 ... (255)] = 0 };
-    
-    getValidMoves(game);
-    bestMove = moves[0]; // The best bot ever!
-    
+    int numMoves;
+
+    getValidMoves(moves, &numMoves, game);
+    if (numMoves != 0) {
+        bestMove = moves[0]; // The best bot ever!
+    }
     return bestMove; 
 }

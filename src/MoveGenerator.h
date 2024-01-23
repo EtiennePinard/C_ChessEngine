@@ -2,24 +2,20 @@
 #define MOVEGENERATOR_H
 
 #include <stddef.h>
+#include <stdbool.h>
 #include "state/GameState.h"
 #include "state/Move.h"
 
 /**
- * Tells which squares are attacked by ennemy pieces for a turn
+ * Returns true if the friendly king (for the current turn) is in check
  * Only valid after getValidMoves is called
 */
-extern bool attackedSquares[BOARD_SIZE];
+bool isKingInCheck();
 /**
- * If the friendly king (for the current turn) is in check
+ * Returns true if the friendly king (for the current turn) is in double check
  * Only valid after getValidMoves is called
 */
-extern bool inCheck;
-/**
- * If the friendly king (for the current turn) is in double check
- * Only valid after getValidMoves is called
-*/
-extern bool inDoubleCheck;
+bool isKingInDoubleCheck();
 
 /**
  * Computes the valid moves in a given position and stores the moves in the result array

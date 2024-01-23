@@ -30,6 +30,13 @@ u64 pinMasks[BOARD_SIZE];
 u64 friendlyPieceBitBoard;
 u64 opponentBitBoard;
 
+bool isKingInCheck() {
+    return inCheck;
+}
+bool isKingInDoubleCheck() {
+    return inDoubleCheck;
+}
+
 void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
     friendlyKingIndex = trailingZeros_64(bitBoardForPiece(currentState.board, makePiece(currentState.colorToGo, KING)));

@@ -43,7 +43,7 @@ u64 perft(int depth) {
   for (int i = 0; i < nbOfMoves; i++) {
 
     Move move = validMoves[i];
-    makeMove(move, game); // Move is made
+    playMove(move, game); // Move is made
 
     u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
 

@@ -8,6 +8,6 @@
  * Makes the move and updates the ChessGame
  * The move is assumed to be legal
 */
-void makeMove(Move move, ChessGame* game);
+void playMove(Move move, ChessGame* game);
 
 #endif

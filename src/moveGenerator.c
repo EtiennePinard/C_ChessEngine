@@ -14,6 +14,7 @@ ChessPosition currentState;
 
 Move* validMoves;
 int currentMoveIndex;
+#define appendMove(startSquare, targetSquare, flag) validMoves[currentMoveIndex++] = makeMove((startSquare), (targetSquare), (flag));
 
 PieceCharacteristics opponentColor;
 int friendlyKingIndex;
@@ -50,14 +51,6 @@ void init() {
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
     friendlyPieceBitBoard = currentState.colorToGo == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
     opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
-}
-
-void appendMove(int startSquare, int targetSquare, int flag) {
-    Move move = (Move) startSquare;
-    move |= (targetSquare << 6);
-    move |= (flag << 12);
-    validMoves[currentMoveIndex] = move;
-    (currentMoveIndex)++;
 }
 
 void addBitBoardToAttackedSquares(u64 bitBoard) {
@@ -113,15 +106,16 @@ void queenAttackedSquares(int from) {
 
 void pawnAttackingSquares(int from) {
     int forwardIndex = opponentColor == WHITE ? from - 8 : from + 8;
+    int forwardIndexX = file(forwardIndex);
     // The forward index is always valid because no pawn can be on the first or last rank (they get promoted)
-    if (forwardIndex % 8 != 7) {
+    if (forwardIndexX != 7) {
         int square = forwardIndex + 1;
         if (attackedSquares[square] && square == friendlyKingIndex) {
             inDoubleCheck = true;
         }
         attackedSquares[square] = true;
     }
-    if (forwardIndex % 8 != 0) { 
+    if (forwardIndexX != 0) { 
         int square = forwardIndex - 1; 
         if (attackedSquares[square] && square == friendlyKingIndex) {
             inDoubleCheck = true;
@@ -228,8 +222,8 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
 }
 
 void handlePinsAndChecksFromSlidingPieces() {
-    int kingX = friendlyKingIndex % 8;
-    int kingY = friendlyKingIndex / 8;
+    int kingX = file(friendlyKingIndex);
+    int kingY = rank(friendlyKingIndex);
     u64 orthogonalMask = rookMovementMask[friendlyKingIndex];
     if (kingX < 7) handlePinAndCheckForDirection(1, orthogonalMask, ROOK);
     if (kingX > 0) handlePinAndCheckForDirection(-1, orthogonalMask, ROOK);
@@ -337,8 +331,8 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
         // Piece is pinned and it cannot do en-passant
         return bitBoard;
     }
-    int enPassantRank = from / 8;
-    if ((friendlyKingIndex / 8 )!= enPassantRank) { 
+    int enPassantRank = rank(from);
+    if (rank(friendlyKingIndex) != enPassantRank) { 
         return bitBoard; // The king is not on the same rank as the from pawn, so oawn cannot be en-passant pinned
     }
 
@@ -381,7 +375,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     do {
         indexToSearchForThreateningPiece += increment;
         threateningPiece = pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
-    } while (threateningPiece == NOPIECE && indexToSearchForThreateningPiece / 8 == enPassantRank);
+    } while (threateningPiece == NOPIECE && rank(indexToSearchForThreateningPiece) == enPassantRank);
     
     if (threateningPiece == makePiece(opponentColor, ROOK) || 
         threateningPiece == makePiece(opponentColor, QUEEN)) {
@@ -501,24 +495,26 @@ void queenMoves(int from) {
 }
 
 void pawnMoves(int from) {
+    char fromY = rank(from);
     bool isPawnBeforePromotion = currentState.colorToGo == WHITE ? 
-        from / 8 == 1 : 
-        from / 8 == 6;
+        fromY == 1 : 
+        fromY == 6;
     bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
-        from / 8 == 3 : 
-        from / 8 == 4;
+        fromY == 3 : 
+        fromY == 4;
     bool pawnCanDoublePush = currentState.colorToGo == WHITE ? 
-        from / 8 == 6 : 
-        from / 8 == 1;
+        fromY == 6 : 
+        fromY == 1;
     int increment = currentState.colorToGo == WHITE ? -8 : 8;
 
     u64 pseudoLegalMoves = (u64) 0;
     u64 toggle = (u64) 1;
     
     int forwardIndex = from + increment;
+    int forwardX = file(forwardIndex);
     // The forward index is always between 0 and 63, because if a pawn is on one of the edge ranks it will get promoted
-    if (forwardIndex % 8 != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
-    if (forwardIndex % 8 != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
+    if (forwardX != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
+    if (forwardX != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
     // Only making capture moves if we actually capture a piece
     pseudoLegalMoves &= opponentBitBoard;
     

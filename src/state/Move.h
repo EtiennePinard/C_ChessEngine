@@ -34,6 +34,6 @@ typedef enum {
 #define fromSquare(move) (move & 0b111111)
 #define toSquare(move) ((move >> 6) & 0b111111)
 #define flagFromMove(move) ((Flag) (move >> 12))
-#define createMove(from, to, flag) (from + (to << 6) + (flag << 12))
+#define makeMove(from, to, flag) (from + (to << 6) + (flag << 12))
 
 #endif /* A267B67F_4ECE_456A_A4EB_C6E73ACF11E0 */

@@ -9,6 +9,11 @@
 
 #define u64 uint64_t
 
+// The x coordinates
+#define file(square) (square & 7)
+// The y coordinates
+#define rank(square) (square >> 3)
+
 int trailingZeros_64(const u64 x);
 
 u64 random_u64();

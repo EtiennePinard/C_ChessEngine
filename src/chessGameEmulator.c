@@ -53,7 +53,7 @@ void _updateFiftyMoveRule(int pieceToMove, int to, ChessPosition* state) {
   }
 }
 
-void makeMove(Move move, ChessGame* game) {
+void playMove(Move move, ChessGame* game) {
   ChessPosition* state = game->currentState;
   Board* board = &state->board; 
   PieceCharacteristics colorToGo = state->colorToGo;

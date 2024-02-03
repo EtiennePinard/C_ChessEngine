@@ -13,22 +13,22 @@
 typedef struct Board {
     /* Order of the bitBoard in the array 
 
-    0 -> White King
+    0 -> White Pawn
     1 -> White Knight
     2 -> White Bishop
-    3 -> White Queen
-    4 -> White Rook
-    5 -> White Pawn
+    3 -> White Rook
+    4 -> White Queen
+    5 -> White King
 
     6 -> UNUSED
     7 -> UNUSED
 
-    8 -> Black King
+    8 -> Black Pawn
     9 -> Black Knight 
     10 -> Black Bishop
-    11 -> Black Queen
-    12 -> Black Rook
-    13 -> Black Pawn
+    11 -> Black Rook
+    12 -> Black Queen
+    13 -> Black King
     */
    u64 bitboards[14];
    // I put 14 total bitboards, even though we only need 12, so that I can assign each piece to a index quickly.

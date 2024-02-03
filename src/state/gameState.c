@@ -39,8 +39,9 @@ void zobristKeyInitialize() {
     assert(zobristRandomNumber != NULL && "Buy more RAM lol");
 
     for (int color = 0; color < 2; color++) {
-        PieceCharacteristics pieceColor = color == 0 ? WHITE : BLACK;
-        for (PieceCharacteristics piece = KING; piece <= PAWN; piece++) {
+        PieceCharacteristics pieceColor = WHITE * (color + 1);
+        // Piece order influenced
+        for (PieceCharacteristics piece = PAWN; piece <= KING; piece++) {
             Piece index = makePiece(pieceColor, piece) - 9;
             for (int square = 0; square < BOARD_SIZE; square++) {
                 zobristRandomNumber->pieces[(int) index][square] = random_u64();

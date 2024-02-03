@@ -26,28 +26,19 @@ u64 bitBoardForPiece(Board board, Piece piece) {
     return board.bitboards[arrayIndex];
 }
 
-u64 whitePiecesBitBoard(Board board) {
+// TODO: Bug
+u64 specificColorBitBoard(Board board, PieceCharacteristics color) {
     return 
-    board.bitboards[0] | 
-    board.bitboards[1] |
-    board.bitboards[2] | 
-    board.bitboards[3] |
-    board.bitboards[4] | 
-    board.bitboards[5];
-}
-
-u64 blackPiecesBitBoard(Board board) {
-    return 
-    board.bitboards[8 ] | 
-    board.bitboards[9 ] |
-    board.bitboards[10] | 
-    board.bitboards[11] |
-    board.bitboards[12] | 
-    board.bitboards[13];
+    board.bitboards[makePiece(color, KING) - 9] | 
+    board.bitboards[makePiece(color, KNIGHT) - 9] |
+    board.bitboards[makePiece(color, BISHOP) - 9] | 
+    board.bitboards[makePiece(color, QUEEN) - 9] | 
+    board.bitboards[makePiece(color, ROOK) - 9] |
+    board.bitboards[makePiece(color, PAWN) - 9];
 }
 
 u64 allPiecesBitBoard(Board board) {
-    return whitePiecesBitBoard(board) | blackPiecesBitBoard(board);
+    return specificColorBitBoard(board, BLACK) | specificColorBitBoard(board, WHITE);
 }
 
 void togglePieceAtIndex(Board* board, int index, Piece piece) {

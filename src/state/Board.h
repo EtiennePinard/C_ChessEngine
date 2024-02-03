@@ -42,8 +42,7 @@ typedef struct Board {
  * Returns the bit board of a specific piece
 */
 u64 bitBoardForPiece(Board board, Piece piece);
-u64 whitePiecesBitBoard(Board board);
-u64 blackPiecesBitBoard(Board board);
+u64 specificColorBitBoard(Board board, PieceCharacteristics color);
 u64 allPiecesBitBoard(Board board);
 
 /**

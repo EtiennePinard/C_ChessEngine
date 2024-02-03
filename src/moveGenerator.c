@@ -49,8 +49,8 @@ void init() {
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
-    friendlyPieceBitBoard = currentState.colorToGo == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
-    opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
+    friendlyPieceBitBoard = specificColorBitBoard(currentState.board, currentState.colorToGo);
+    opponentBitBoard = specificColorBitBoard(currentState.board, opponentColor);
 }
 
 void addBitBoardToAttackedSquares(u64 bitBoard) {

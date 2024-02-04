@@ -8,6 +8,7 @@
 #include "../src/MoveGenerator.h"
 #include "../src/utils/FenString.h"
 #include "../src/ChessGameEmulator.h"
+#include "../src/state/ZobristKey.h"
 #include "LogChessStructs.h"
 
 #define TEST_ITERATION 100
@@ -312,7 +313,7 @@ int main(int argc, char* argv[]) {
   magicBitBoardInitialize();
   zobristKeyInitialize();
 
-  game = newChessGame(NULL, fenString);
+  game = setupChesGame(NULL, fenString);
   posHistory = malloc(sizeof(ChessPosition) * (maximumDepth));
   assert(posHistory != NULL && "Buy more RAM lol");
 

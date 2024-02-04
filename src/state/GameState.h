@@ -3,19 +3,6 @@
 
 #include <stddef.h>
 #include "Board.h"
-#include "Move.h"
-
-typedef struct {
-    // Rank is already included in the side to move key
-    u64 enPassantFile[9];
-    // 16 total possibilities for castling
-    u64 castlingPerms[16];
-    // 14 is the biggest piece index ((Black pawn piece index - 9) + 1)
-    // To access the random number for a piece for a square: pieces[piece - 9][square]
-    u64 pieces[14][BOARD_SIZE];
-    
-    u64 sideToMove;
-} ZobristRandomNumber;
 
 typedef u64 ZobristKey;
 
@@ -42,18 +29,14 @@ typedef struct {
     int previousStatesCapacity;
 } ChessGame;
 
-ZobristRandomNumber* zobristRandomNumber;
-
-ChessGame* newChessGame(ChessGame* result, char* fenString);
-void freeChessGame(ChessGame* chessGame);
-
-void zobristKeyInitialize();
-void zobristKeyTerminate();
+/**
+ * Setups a chess game from the position specified by the fen string
+*/
+ChessGame* setupChesGame(ChessGame* result, char* fenString);
 
 /**
- * This function should be called only once when creating the your initial ChessGame struct
- * Subsequent Zobrist key will be calculated by the makeMove function incrementally
+ * Correctly frees the chessGame structs. The argument will also be freed
 */
-void calculateZobristKey(ChessPosition* state);
+void freeChessGame(ChessGame* chessGame);
 
 #endif /* BDF83061_7504_461E_BCDD_602085692048 */

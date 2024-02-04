@@ -29,13 +29,18 @@ typedef struct Board {
     11 -> Black Rook
     12 -> Black Queen
     13 -> Black King
+
+    14 -> UNUSED
+    15 -> UNUSED
     */
-   u64 bitboards[14];
+   u64 bitboards[16];
    // I put 14 total bitboards, even though we only need 12, so that I can assign each piece to a index quickly.
    // The formula for assigning a piece to an index in the array (the hashing function) is (piece - 9)
    // This works well for WHITE pieces, as (white piece - 9) will yield results from 0 to 5
    // However, (black piece - 9) will yield results from 8 to 13
    // Thus, index 6 and 7 are invalid in the array
+
+   // Index 14 and 15 are invalid because I wanted the size of the array to be a power of 2, and 16 is close enough to 14.
 } Board;
 
 /**

@@ -3,7 +3,6 @@
 
 #include "state/GameState.h"
 #include "state/Move.h"
-
 /**
  * Makes the move and updates the ChessGame
  * The move is assumed to be legal

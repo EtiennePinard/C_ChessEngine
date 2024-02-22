@@ -55,13 +55,7 @@ u64 perft(int depth) {
     nodes += moveOutput;
 
     game->previousStatesCount--;
-    game->currentState->board = posHistory[maximumDepth - depth].board;
-    game->currentState->castlingPerm = posHistory[maximumDepth - depth].castlingPerm;
-    game->currentState->colorToGo = posHistory[maximumDepth - depth].colorToGo;
-    game->currentState->enPassantTargetSquare = posHistory[maximumDepth - depth].enPassantTargetSquare;
-    game->currentState->key = posHistory[maximumDepth - depth].key;
-    game->currentState->nbMoves = posHistory[maximumDepth - depth].nbMoves;
-    game->currentState->turnsForFiftyRule = posHistory[maximumDepth - depth].turnsForFiftyRule;
+    memcpy(game->currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
   }
   
   return nodes;

@@ -25,10 +25,7 @@ typedef enum {
     PROMOTE_TO_QUEEN, 
     PROMOTE_TO_KNIGHT, 
     PROMOTE_TO_ROOK, 
-    PROMOTE_TO_BISHOP, 
-    STALEMATE, 
-    CHECKMATE, 
-    DRAW 
+    PROMOTE_TO_BISHOP
 } Flag;
 
 #define fromSquare(move) (move & 0b111111)

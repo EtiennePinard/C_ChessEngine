@@ -15,11 +15,12 @@
 #define rank(square) (square >> 3)
 
 int trailingZeros_64(const u64 x);
+int numBitSet_64(u64 x);
 
 u64 random_u64();
 
-void printBitBoard(const u64 bitboard);
+void (*loggingFFI)(char *);
 
-void printBin(const u64 num); 
+void initializeFFILogging(void (*printCallback)(char *));
 
 #endif /* DB9C663F_7757_4E5F_9CDD_23E9A09D9515 */

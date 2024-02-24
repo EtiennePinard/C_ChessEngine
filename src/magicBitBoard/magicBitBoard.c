@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include "MagicBitBoard.h"
 #include "Rook.h"
 #include "Bishop.h"
@@ -49,6 +50,9 @@ u64 getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
 void magicBitBoardInitialize() {
     rookPseudoLegalMovesBitBoard = calloc(ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     bishopPseudoLegalMovesBitBoard = calloc(BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
+    assert(rookPseudoLegalMovesBitBoard != NULL && "Buy more RAM lol");
+    assert(bishopPseudoLegalMovesBitBoard != NULL && "Buy more RAM lol");
+
     // The max number of valid squares for a piece is 12
     // Thus the max number of blocking bit board 2^12 = 1 << 12
     u64* blockingBitBoards = malloc((1 << 12) * sizeof(u64));

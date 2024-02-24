@@ -605,11 +605,12 @@ They are not needed for perft and so I did not write a function to compute just 
 These function will probably in the board.c file
 */
 void getValidMoves(Move result[256], int* numMoves, ChessGame* game) {
-    currentState = *game->currentState;
+
+    currentState = *(game->currentState);
 
     validMoves = result;
     currentMoveIndex = 0;
-    
+
     init();
     calculateAttackSquares();
     generateKingMoves();
@@ -618,5 +619,5 @@ void getValidMoves(Move result[256], int* numMoves, ChessGame* game) {
         generateSupportingPiecesMoves();
     }
     
-    *numMoves = currentMoveIndex;
+    *(numMoves) = currentMoveIndex;
 }

@@ -26,7 +26,6 @@ u64 bitBoardForPiece(Board board, Piece piece) {
     return board.bitboards[arrayIndex];
 }
 
-// TODO: Bug
 u64 specificColorBitBoard(Board board, PieceCharacteristics color) {
     return 
     board.bitboards[makePiece(color, PAWN  ) - 9] |

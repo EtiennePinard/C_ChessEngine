@@ -17,7 +17,7 @@ if [[ "$1" == "time" || "$1" == "test" ]]; then
     arg="-O3"
 fi
 
-VAR="testing/perft.c 
+files="testing/perft.c 
 testing/logChessStructs.c 
 
 src/chessGameEmulator.c 
@@ -35,7 +35,7 @@ src/magicBitBoard/rook.c
 src/magicBitBoard/bishop.c"
 
 # For checking memory bugs, add option -fsanitize=address 
-echo -n "$VAR" | tr -d '\n' | xargs gcc -Wall -Wextra -Werror -Wunused "$arg" -o perftTesting
+echo -n "$files" | tr -d '\n' | xargs gcc -Wall -Wextra -Werror -Wunused "$arg" -o perftTesting
 
 if [ $? -ne 0 ]; then
     exit 1

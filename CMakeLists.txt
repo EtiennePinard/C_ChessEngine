@@ -1,3 +1,4 @@
+# Warning: Windows guide is OUTADED. It needs to include all the files in the add_library function
 # ON WINDOWS: Commands to run to get the .dll
 # Note: Use MinGW to get the gcc executable
 # cd ./src
@@ -14,12 +15,13 @@ project(chess_engine VERSION 1.0.0 LANGUAGES C)
 add_library(chess_engine SHARED 
     src/moveGenerator.c
     src/chessGameEmulator.c
-    src/chessBot.c
+    
+    src/chessBot/chessBot.c
+    src/chessBot/pieceSquareTable.c
 
     src/state/board.c 
     src/state/gameState.c 
-    src/state/move.c 
-    src/state/piece.c 
+    src/state/zobristKey.c
     
     src/magicBitBoard/magicBitBoard.c 
     src/magicBitBoard/rook.c 
@@ -30,7 +32,7 @@ add_library(chess_engine SHARED
 )
 
 set_target_properties(chess_engine PROPERTIES
-    PUBLIC_HEADER moveGenerator.h
+    PUBLIC_HEADER ChessBot.h
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
     LIBRARY_OUTPUT_NAME "chess_engine"

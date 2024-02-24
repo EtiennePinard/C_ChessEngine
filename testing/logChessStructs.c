@@ -115,3 +115,62 @@ void writeBoardToFile(Board board, FILE *file) {
     if ((i + 1) % 8 == 0 && i != 63) fprintf(file, "\n");
   }
 }
+
+void printPosition(ChessPosition position, int score, Move bestMove) {
+  for (int index = 0; index < BOARD_SIZE; index++) {
+    if ((index % 8) == 0) {
+      printf("%d ", 8 - index / 8);
+    }
+    Piece pieceAtPosition = pieceAtIndex(position.board, index);
+    printf("[%c]", pieceToFenChar(pieceAtPosition));
+
+    if ((index + 1) % 8 == 0) {
+      
+      // I can add more cases if I want to display more information
+      switch ((index + 1) / 8) {
+      case 1:
+        printf(" %s to go", position.colorToGo == WHITE ? "white" : "black");
+        break;
+      case 2:
+        printf(" evaluation: %d", score);
+        break;
+      case 3:
+        printf(" best move: [From: %d, To: %d, Flag: %d] (", 
+          (bestMove) & 0b111111,
+          (bestMove >> 6) & 0b111111,
+          (bestMove >> 12));
+        printMoveToAlgebraic(bestMove);
+        printf(")");
+        break;
+      default:
+        break;
+      }
+
+      printf("\n");
+    } else {
+      printf(" ");
+    }
+  }
+  printf("  ");
+  for (int i = 0; i < BOARD_LENGTH; i++) {
+    printf(" %c  ", 'a' + i);
+  }
+  printf("\n");
+}
+
+void printBitBoard(u64 bitboard) {
+    for (int i = 0; i < 64; i++) {
+        printf("%ld", (bitboard >> i) & 1);
+        if ((i + 1) % 8 == 0) {
+            printf("\n");
+        }
+    }
+}
+
+void printBin(const u64 num) {
+    printf("0b");
+    for (int i = 63; i >= 0; i--) {
+        printf("%lu", (num >> i) & 1);
+    }
+    printf("\n");
+}

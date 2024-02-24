@@ -25,6 +25,7 @@ typedef enum PieceCharacteristics {
 } PieceCharacteristics;
 
 #define MAX_PIECE_INDEX (BLACK | KING)
+#define NUM_PIECES 6
 
 #define pieceColor(piece) (PieceCharacteristics) (piece & 0b11000)
 #define pieceType(piece) (PieceCharacteristics) (piece & 0b111)

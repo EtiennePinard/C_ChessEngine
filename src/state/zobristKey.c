@@ -5,6 +5,10 @@
 
 void zobristKeyInitialize() {
     srand(time(NULL));
+    if (zobristRandomNumber != NULL) {
+        loggingFFI("Do not initialize Zobrist Keys if they are already initialized!");
+        return;
+    }
     zobristRandomNumber = malloc(sizeof(ZobristRandomNumber));
     assert(zobristRandomNumber != NULL && "Buy more RAM lol");
 

@@ -26,8 +26,8 @@ int bishopIndexOffset[BOARD_SIZE] = {0, 32, 48, 80, 112, 144, 176, 192, 224, 240
 
 // The total size of these two arrays is 742.912kb
 // We don't want that much on the stack so these arrays are allocated on the heap
-u64* rookPseudoLegalMovesBitBoard;
-u64* bishopPseudoLegalMovesBitBoard;
+u64* rookPseudoLegalMovesBitBoard = NULL;
+u64* bishopPseudoLegalMovesBitBoard = NULL;
 
 u64 getRookPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
     u64 magic = rookMagics[position];
@@ -48,6 +48,10 @@ u64 getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
 }
 
 void magicBitBoardInitialize() {
+    if (rookPseudoLegalMovesBitBoard != NULL || bishopPseudoLegalMovesBitBoard != NULL) {
+        loggingFFI("Do not initialize the magic bitboards if they are already initialized!");
+        return;
+    }
     rookPseudoLegalMovesBitBoard = calloc(ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     bishopPseudoLegalMovesBitBoard = calloc(BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     assert(rookPseudoLegalMovesBitBoard != NULL && "Buy more RAM lol");

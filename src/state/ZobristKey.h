@@ -15,7 +15,7 @@ typedef struct {
     u64 sideToMove;
 } ZobristRandomNumber;
 
-ZobristRandomNumber* zobristRandomNumber;
+extern ZobristRandomNumber* zobristRandomNumber;
 
 void zobristKeyInitialize();
 void zobristKeyTerminate();

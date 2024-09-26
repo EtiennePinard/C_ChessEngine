@@ -19,6 +19,8 @@ u64 random_u64() {
   return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
 }
 
+void (*loggingFFI)(char *);
+
 void initializeFFILogging(void (*printCallback)(char *)) {
     loggingFFI = printCallback;
     loggingFFI("C library initialized");

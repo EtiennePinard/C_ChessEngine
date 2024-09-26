@@ -19,7 +19,7 @@ int numBitSet_64(u64 x);
 
 u64 random_u64();
 
-void (*loggingFFI)(char *);
+extern void (*loggingFFI)(char *);
 
 void initializeFFILogging(void (*printCallback)(char *));
 

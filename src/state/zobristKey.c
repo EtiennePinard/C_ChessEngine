@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+ZobristRandomNumber* zobristRandomNumber;
+
 void zobristKeyInitialize() {
     srand(time(NULL));
     if (zobristRandomNumber != NULL) {

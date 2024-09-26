@@ -4,11 +4,11 @@
 
 # Check if one argument is provided
 if [ "$#" -lt 1 ]; then
-    printf "Usage: ./$1 <mode (debug, time, test)> [position (fen string)] [depth (positive integer)]\n"
-    printf "The 'position' and 'depth' argument only apply for the debug and time mode\n"
-    printf "If 'mode' is not provided it will default to debug mode\n"
-    printf "If 'position' is not provided it will default to the starting position\n"
-    printf "'depth' needs to be provided\n"
+    printf "Usage: ./perft <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n"
+    printf "\tIf \`mode\` is not provided it will default to divide mode\n"
+    printf "\tIf \`position\` is not provided it will default to the starting position\n"
+    printf "\tThe \`position\` and \`depth\` argument only apply for the divide and time mode\n"
+    printf "\t\`depth\` needs to be provided for the modes it applies to\n"
     exit 1
 fi
 

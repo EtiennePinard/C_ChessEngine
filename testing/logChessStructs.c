@@ -102,10 +102,21 @@ char pieceToFenChar(Piece piece) {
 
 void printBoard(Board board) {
   for (int index = 0; index < BOARD_SIZE; index++) {
+
+    if ((index % 8) == 0) {
+      printf("%d ", 8 - index / 8);
+    }
+
     Piece pieceAtPosition = pieceAtIndex(board, index);
     printf("[%c]", pieceToFenChar(pieceAtPosition));
     printf((index + 1) % 8 == 0 ? "\n" : " ");
   }
+
+  printf("  ");
+  for (int i = 0; i < BOARD_LENGTH; i++) {
+    printf(" %c  ", 'a' + i);
+  }
+  printf("\n");
 }
 
 void writeBoardToFile(Board board, FILE *file) {

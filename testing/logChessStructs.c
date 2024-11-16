@@ -127,7 +127,7 @@ void writeBoardToFile(Board board, FILE *file) {
   }
 }
 
-void printPosition(ChessPosition position, int score, Move bestMove) {
+void printPosition(ChessPosition position, int score, Move bestMove, float stockfishScore, Move stockfishMove) {
   for (int index = 0; index < BOARD_SIZE; index++) {
     if ((index % 8) == 0) {
       printf("%d ", 8 - index / 8);
@@ -151,6 +151,19 @@ void printPosition(ChessPosition position, int score, Move bestMove) {
           (bestMove >> 6) & 0b111111,
           (bestMove >> 12));
         printMoveToAlgebraic(bestMove);
+        printf(")");
+        break;
+      case 4:
+        break; // Empty line for more redeability
+      case 5:
+        printf(" Stockfish eval: %.2f", stockfishScore);
+        break;
+      case 6:
+        printf(" Stockfish best move: [From: %d, To: %d, Flag: %d] (",
+               (stockfishMove) & 0b111111,
+               (stockfishMove >> 6) & 0b111111,
+               (stockfishMove >> 12));
+        printMoveToAlgebraic(stockfishMove);
         printf(")");
         break;
       default:

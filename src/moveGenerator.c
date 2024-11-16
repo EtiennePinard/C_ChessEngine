@@ -53,6 +53,7 @@ void init() {
     opponentBitBoard = specificColorBitBoard(currentState.board, opponentColor);
 }
 
+// Note: Could be inlined
 void addBitBoardToAttackedSquares(u64 bitBoard) {
     // Turning the bitboard into our move objects
     while (bitBoard) {
@@ -299,7 +300,8 @@ void generateKingMoves() {
     int potentialPawn;
     // For loop is remove copy pasting. I know sometimes I copy paste a lot but I was fed up this time
     for (int i = 0; i < 2; i++) {
-        potentialPawn = friendlyKingIndex + (i == 0 ? 7 : 9) * delta;
+        // A kind of hacky way to get 7 if i == 0 and 9 if i == 1
+        potentialPawn = friendlyKingIndex + (2 * i + 7) * delta;
         if (pieceAtIndex(currentState.board, potentialPawn) == makePiece(opponentColor, PAWN)) {
             checkBitBoard |= toggle << potentialPawn;
 
@@ -333,7 +335,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     }
     int enPassantRank = rank(from);
     if (rank(friendlyKingIndex) != enPassantRank) { 
-        return bitBoard; // The king is not on the same rank as the from pawn, so oawn cannot be en-passant pinned
+        return bitBoard; // The king is not on the same rank as the from pawn, so pawn cannot be en-passant pinned
     }
 
     // To determine the correct direction to look for pinned en-passant
@@ -389,7 +391,7 @@ void generateEnPassant(int from) {
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
 
-    // Note that canEnPasant is never 0, because so can only en passant on the third or fourth rank
+    // Note that canEnPasant is never 0, because pawns can only en passant on the third or fourth rank
     u64 toggle = ((u64) 1) << currentState.enPassantTargetSquare;
     u64 canEnPassant = toggle;
     
@@ -429,6 +431,7 @@ void generatePawnDoublePush(int from, int increment) {
     }
 }
 
+// Note: Could be inlined
 void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves) {
     // Accounting for pins
     pseudoLegalMoves &= pinMasks[from];
@@ -519,6 +522,7 @@ void pawnMoves(int from) {
     pseudoLegalMoves &= opponentBitBoard;
     
     if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
+    
     // enPassantTargetSquare is 0 when there is no pawn that has double pushed
     if (pawnCanEnPassant && currentState.enPassantTargetSquare) { 
         generateEnPassant(from); 
@@ -581,21 +585,6 @@ void generateSupportingPiecesMoves() {
 
         piecesBitBoard &= piecesBitBoard - 1;
     }
-}
-
-bool isThereThreeFoldRepetition(const ChessGame* game) {
-    bool hasOneDuplicate = false;
-    bool result = false;
-    for (int i = 0; i < game->previousStatesCount; i++) {
-        if (game->currentState->key == game->previousStates[i]) {
-            if (hasOneDuplicate) {
-                result = true;
-                break;
-            }
-            hasOneDuplicate = true;
-        }
-    }
-    return result;
 }
 
 // TODO: Make the caller give us a fixed size of memory (arenas?) which we can then use to store our global variables

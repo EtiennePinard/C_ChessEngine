@@ -18,7 +18,7 @@ void writeMoveToAlgebraicToFile(Move move, FILE *file);
 
 void writeBoardToFile(Board board, FILE *file);
 
-void printPosition(ChessPosition game, int score, Move bestMove);
+void printPosition(ChessPosition game, int score, Move bestMove, float stockfishScore, Move stockfishMove);
 
 void printBitBoard(const u64 bitboard);
 

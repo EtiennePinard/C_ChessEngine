@@ -5,14 +5,14 @@
 
 #include "../src/state/Move.h"
 
-bool init(const char *stockfishPath);
+bool stockfishInit(const char *stockfishPath);
 
 void terminate();
 
-void setPosition(char* fen);
+void setStockfishPosition(char* fen);
 
-float staticEvaluationOfCurrentPosition();
+float stockfishStaticEvaluation();
 
-Move bestMoveOfCurrentPosition(int depth);
+Move stockfishBestMove(int depth);
 
 #endif /* A3EA3C40_5803_4027_A286_6049A6D5C587 */

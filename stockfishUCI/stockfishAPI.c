@@ -109,7 +109,7 @@ bool sendUCICommand() {
     return findResponse("uciok", &response);
 }
 
-bool init(const char *stockfishPath) {
+bool stockfishInit(const char *stockfishPath) {
 
     pid_t pid = 0;
     FileDescriptor inpipefd[2];
@@ -166,7 +166,7 @@ void terminate() {
 }
 
 #define POSITION_FEN_LENGTH 13
-void setPosition(char* fen) {
+void setStockfishPosition(char* fen) {
     sendCommand("ucinewgame");
 
     int fenLength = strlen(fen);
@@ -178,7 +178,7 @@ void setPosition(char* fen) {
     sendCommand(command);
 }
 
-float staticEvaluationOfCurrentPosition() {
+float stockfishStaticEvaluation() {
     sendCommand("eval");
     StockfishResponse response;
     initResponse(response);
@@ -230,9 +230,8 @@ Move moveFromAlgebraic(const char *move) {
 }
 
 #define GO_DEPTH_LENGTH 9
-Move bestMoveOfCurrentPosition(int depth) {
-    
-    int depthLength = ceilf(log10f((float) depth)) + (depth % 10 == 0 ? 1 : 0);
+Move stockfishBestMove(int depth) {
+    int depthLength = (int) ceilf(log10f((float) depth)) + (depth % 10 == 0 ? 1 : 0);
     char depthString[depthLength];
     int index = depthLength - 1;
     while (depth) {

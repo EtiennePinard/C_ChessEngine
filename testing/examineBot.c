@@ -12,9 +12,14 @@
 
 #include "../src/state/ZobristKey.h"
 
+#include "../stockfishUCI/StockfishAPI.h"
+
 #include "LogChessStructs.h"
 
 #define BUF_SIZE 65536
+// Number taken from https://chess.stackexchange.com/a/30006
+// The post states an answer of 87, but's let's add 3 more characters just to be sure
+#define LARGEST_FEN 90
 
 u64 countLinesInFile(FILE* file) {
     char buf[BUF_SIZE];
@@ -38,73 +43,29 @@ u64 countLinesInFile(FILE* file) {
     return counter;
 }
 
-char* randomFenFromFile(FILE* file, u64 numLines) {
-
-    // Assuming a line is less than 256 bytes
-    char result[256];
-
+void randomFenFromFile(FILE* file, u64 numLines, char* fenString) {
     u64 targetLine = random_u64() % (numLines + 1);
 
-    char buf[BUF_SIZE];
-    u64 counter = 0;
-
-    int resultIndex = 0;
-    bool hitEndOfLine = false;
-
-    while (1) {
-        size_t chunkSize = fread(buf, 1, BUF_SIZE, file);
-        if (ferror(file)) { return NULL; }
-
-        size_t i;
-        for (i = 0; i < chunkSize; i++) {
-            if (buf[i] == '\n') {
-                counter++;
-
-                if (counter == targetLine) {
-                    // Adding the line to the result
-                    i++; // So that we don't hit the same '\n'
-                    char bufferRead;
-                    for (; i < chunkSize; resultIndex++, i++) {
-                        bufferRead = buf[i];
-                        if (bufferRead == '\n') {
-                            result[resultIndex] = '\0';
-                            hitEndOfLine = true;
-                            break;
-                        }
-                        result[resultIndex] = bufferRead;
-                    }
-                    break;
-                }
-            }
-        }
-
-        if (counter == targetLine) {
-            if (hitEndOfLine) { break; }
-            
-            char remainingLine[256];
-            fgets(remainingLine, sizeof(char) * 256, file);
-
-            for (i = 0; resultIndex < 256; i++, resultIndex++) {
-                result[resultIndex] = remainingLine[i];
-                if (remainingLine[i] == '\0') { break; }
-            }
-            break;
-        }
-
-        if (feof(file)) {
-            break;
-        }
+    char line[LARGEST_FEN];
+    u64 currentLine = 0;
+    while (currentLine < targetLine && fgets(line, sizeof(line), file) != NULL) {
+        currentLine++;
     }
 
-    char* resultPointer = malloc(sizeof(char) * resultIndex);
-    memcpy(resultPointer, &result, resultIndex);
-
-    return resultPointer;
+    strcpy(fenString, line);
 }
 
-// Compile and run: ./tBot
-int main(void) {
-    FILE* positions = fopen("./testing/chessPositions.txt", "r");
+#define KEY_Q 113
+
+int main(int argc, char* argv[]) {
+    if (argc == 1) {
+        printf("Usage: %s <fen strings file path> <stockfish executable path>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    char* fenStringsPath = argv[1];
+    char* stockfishPath = argv[2];
+
+    FILE* positions = fopen(fenStringsPath, "r");
     if (positions == NULL) {
         printf("Unable to open the positions file\n");
         exit(EXIT_FAILURE);
@@ -116,21 +77,33 @@ int main(void) {
 
     u64 lineSize = countLinesInFile(positions);
     
+    if (!stockfishInit(stockfishPath)) {
+        printf("Error while initializing stockfish\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char fen[LARGEST_FEN] = { 0 };
     while (true) {
         rewind(positions);
-        char* fen = randomFenFromFile(positions, lineSize);
-
+        randomFenFromFile(positions, lineSize, fen);
         ChessGame* game = setupChesGame(NULL, fen);
-        
-        int score = staticEvaluation(game);
-        Move bestMove = think(game);
-        printPosition(*game->currentState, score, bestMove); 
+
+        provideGameState(game);
+        setStockfishPosition(fen);
+
+        int score = staticEvaluation();
+        Move bestMove = think();
+
+        float stockfishScore = stockfishStaticEvaluation();
+        Move stockfishMove = stockfishBestMove(2); // Start with depth 2 for now
+
+        printf("\n");
+        printPosition(*game->currentState, score, bestMove, stockfishScore, stockfishMove); 
     
-        free(fen);
         freeChessGame(game);
-        printf("Enter q to quit: ");
+        printf("Enter q to quit (Any key to continue): ");
         int c = getc(stdin);
-        if (c == 113) {
+        if (c == KEY_Q) {
             break;
         }
     }

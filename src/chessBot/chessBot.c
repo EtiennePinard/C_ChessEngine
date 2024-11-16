@@ -3,14 +3,23 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 #include "ChessBot.h"
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "PieceSquareTable.h"
 #include "../MoveGenerator.h"
 #include "../ChessGameEmulator.h"
+#include "../../testing/LogChessStructs.h"
 
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
+
+ChessGame* game;
+
+void provideGameState(ChessGame* state) {
+    game = state;
+}
 
 // Piece order influenced
 /*
@@ -63,25 +72,44 @@ int reducingKingMovementBonus[] = {
     S(23, 18)   // King
 };
 
-u64 friendlyBitBoard;
-
-bool isPosititionARepeatition(ChessGame* game) {
+bool isThereThreeFoldRepetition() {
+    bool hasOneDuplicate = false;
+    bool result = false;
     for (int i = 0; i < game->previousStatesCount; i++) {
-        if (game->previousStates[i] == game->currentState->key) {
-            return true;
+        if (game->currentState->key == game->previousStates[i]) {
+            if (hasOneDuplicate) {
+                result = true;
+                break;
+            }
+            hasOneDuplicate = true;
         }
     }
-    return false; 
+    return result;
 }
-
 #define TOTAL_PHASE 24
 
-int staticEvaluation(ChessGame* game) {
+// TODO: Static evaluation does not give positive/negative inf if one side is checkmated
+int staticEvaluation() {
 
     int phase = TOTAL_PHASE;
     int score = 15;
     u64 file = 0x101010101010101UL;
-    u64 bitboard, attack, currentFileWithoutPiece, kingAttacks;    
+    u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;  
+
+    // Checking for mate:
+    Move validMoves[256] = { [0 ... (255)] = 0 };
+    int numMoves;
+    getValidMoves(validMoves, &numMoves, game);
+
+    bool inCheck = isKingInCheck(); 
+    if (numMoves == 0) {
+        if (inCheck) {
+            // The player has lost
+            return game->currentState->colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
+        }
+        // It is a stalemate
+        return 0;
+    }
 
     for (int i = 0; i < 2; i++) {
         PieceCharacteristics color = WHITE * (i + 1);
@@ -173,56 +201,82 @@ int staticEvaluation(ChessGame* game) {
 }
 
 int perspective;
+ChessPosition* posHistory;
+int maximumDepth;
 
-int search(ChessGame* game, int depth) {
-    if (depth == 0) {
-        return staticEvaluation(game) * perspective;
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
+// A negamax search with alpha-beta pruning
+// TODO: This is slow!
+// Move ordering will be important to implement to speed it up
+int search(int alpha, int beta, int depth) {
+    if (depth == 0) { return staticEvaluation(); } // eventually do return quiesce(alpha, beta);
+    int bestValue = MINUS_INFINITY;
+
+    int nbOfMoves;
+    Move validMoves[256];
+    getValidMoves(validMoves, &nbOfMoves, game);
+    posHistory[maximumDepth - depth] = *game->currentState;
+
+    for (int i = 0; i < nbOfMoves; i++) {
+        Move move = validMoves[i];
+        playMove(move, game);
+        // We switch alpha and beta, because alpha is the lower bound for the color to go 
+        // but it is the upper bound for the other color. Opposite is true for beta
+        // thus we switch them so that it works for the opponent
+        int score = -search(-beta, -alpha, depth - 1);
+
+        if (score > bestValue) {
+            bestValue = score;
+            if (score > alpha ) {
+                alpha = score; // alpha acts like max in MiniMax
+            }
+        }
+        // fail soft beta-cutoff, existing the loop here is also 
+        if (score >= beta) { return bestValue; }  
+
+        game->previousStatesCount--;
+        memcpy(game->currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
     }
-
-    /* Later
-    // If repetition is the best course of action, then no need to check for 3 fold repetition before exiting
-    if (isPosititionARepeatition(game)) {
-        return 0;
-    }
-
-    // Check extension
-    // Note: Check if this return a valid value (did we call generateValidMoves yet)
-    bool inCheck = isKingInCheck(); 
-    if (inCheck) {
-        depth++;
-    }
-    */
-
-   return search(game, depth - 1);
+    return bestValue;
 }
 
-Move think(ChessGame* game) {
-    
+Move think() {
+
     Move bestMove = (Move) 0;
     int bestEval = MINUS_INFINITY;
+
+    ChessPosition lastPos = *game->currentState;
+
+    maximumDepth = 3;
+    posHistory = malloc(sizeof(ChessPosition) * (maximumDepth));
+    assert(posHistory != NULL && "Buy more RAM lol");
+
 
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256] = { [0 ... (255)] = 0 };
     int numMoves;
-
     getValidMoves(moves, &numMoves, game);
 
-    ChessPosition lastPos = *game->currentState;
 
     perspective = game->currentState->colorToGo == WHITE ? 1 : -1;
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
 
         playMove(move, game);
-        int score = search(game, 0);
+        int score = -search(MINUS_INFINITY, INFINITY, maximumDepth);
         if (score >= bestEval) {
             bestEval = score;
             bestMove = move;
         }
 
-        game->previousStatesCount--; // Removing last zobrist key compute
+        game->previousStatesCount--; // Removing last zobrist key computed
         memcpy(game->currentState, &lastPos, sizeof(ChessPosition));
     }
 
+    free(posHistory);
     return bestMove; 
 }

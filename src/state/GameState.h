@@ -4,28 +4,39 @@
 #include <stddef.h>
 #include "Board.h"
 
+typedef u64 ZobristKey;
+
 typedef struct {
     Board board;
     PieceCharacteristics colorToGo;
-    int castlingPerm, // The first bit is for white king side, second bit is for white queen side and pattern continues but for black
-        enPassantTargetSquare, 
-        turnsForFiftyRule, 
-        nbMoves;
-} GameState;
+    char castlingPerm; // 4 bits are used. The first bit is for white king side, second bit is for white queen side and pattern continues but for black
+    int enPassantTargetSquare; 
+    int turnsForFiftyRule; 
+    int nbMoves;
+    ZobristKey key;
+} ChessPosition;
 
 /**
- * Returns the number of elements in an array of gamestates.
- * Assumes that the last element of the array is 0
+ * Represents a game of chess.
+ * currentState holds all information of a position (same information that is in a fen string)
+ * Zobrist keys are used to quickly compute repetitions
 */
-size_t nbGameStatesInArray(GameState* gameStates);
+typedef struct {
+    ChessPosition* currentState;
+    
+    ZobristKey* previousStates;
+    int previousStatesCount;
+    int previousStatesCapacity;
+} ChessGame;
 
-GameState* createState(
-    Board board,
-    int colorToGo, 
-    int castlingPerm, 
-    int enPassantTargetSquare, 
-    int turnsForFiftyRule, 
-    int nbMoves
-);
+/**
+ * Setups a chess game from the position specified by the fen string
+*/
+ChessGame* setupChesGame(ChessGame* result, char* fenString);
+
+/**
+ * Correctly frees the chessGame structs. The argument will also be freed
+*/
+void freeChessGame(ChessGame* chessGame);
 
 #endif /* BDF83061_7504_461E_BCDD_602085692048 */

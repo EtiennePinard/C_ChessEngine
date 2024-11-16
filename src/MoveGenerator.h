@@ -2,13 +2,25 @@
 #define MOVEGENERATOR_H
 
 #include <stddef.h>
+#include <stdbool.h>
 #include "state/GameState.h"
 #include "state/Move.h"
 
 /**
- * Returns the valid moves in a given position
- * The results array is assumed to be 0 initialized
+ * Returns true if the friendly king (for the current turn) is in check
+ * Only valid after getValidMoves is called
 */
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates);
+bool isKingInCheck();
+/**
+ * Returns true if the friendly king (for the current turn) is in double check
+ * Only valid after getValidMoves is called
+*/
+bool isKingInDoubleCheck();
+
+/**
+ * Computes the valid moves in a given position and stores the moves in the result array
+ * and the amount of moves in the numMoves pointer
+*/
+void getValidMoves(Move result[256], int* numMoves, ChessGame* game);
 
 #endif

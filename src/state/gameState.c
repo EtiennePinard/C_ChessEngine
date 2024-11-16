@@ -1,31 +1,33 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
 #include "GameState.h"
-#include "stdlib.h"
-#include "assert.h"
+#include "../utils/FenString.h"
 
-size_t nbGameStatesInArray(GameState* gameStates) {
-  size_t size = 0;
-  // I just check that colorToGo == 0
-  // If that is the case, then the GameState is not valid, as WHITE = 8 and BLACK = 16
-  while (gameStates[size].colorToGo == 0) {
-    size++;
-  }
-  return size;
+ChessGame* setupChesGame(ChessGame* result, char* fenString) {
+    if (result == NULL) {
+        result = (ChessGame*) malloc(sizeof(ChessGame));
+        assert(result != NULL && "Buy more RAM lol");
+    }
+
+    ChessPosition* currentPosition = (ChessPosition*) malloc(sizeof(ChessPosition));
+    assert(currentPosition != NULL && "Buy more RAM lol");
+    if (!setChessPositionFromFenString(fenString, currentPosition)) {
+        printf("Invalid fen string %s\n", fenString);
+        return NULL;
+    }
+    result->currentState = currentPosition;
+
+    result->previousStatesCapacity = 256;
+    result->previousStatesCount = 0;
+    result->previousStates = malloc(sizeof(ZobristKey) * result->previousStatesCapacity);
+    assert(result->previousStates != NULL && "Buy more RAM lol");
+
+    return result;
 }
 
-GameState* createState(
-    Board board,
-    int colorToGo, 
-    int castlingPerm, 
-    int enPassantTargetSquare, 
-    int turnsForFiftyRule, 
-    int nbMoves) {
-    GameState* result = malloc(sizeof(GameState));
-    assert(result != NULL && "Malloc failed so buy more RAM lol");
-    result->board = board;
-    result->castlingPerm = castlingPerm;
-    result->colorToGo = colorToGo;
-    result->enPassantTargetSquare = enPassantTargetSquare;
-    result->nbMoves = nbMoves;
-    result->turnsForFiftyRule = turnsForFiftyRule;
-    return result;
+void freeChessGame(ChessGame* chessGame) {
+    free(chessGame->currentState);
+    free(chessGame->previousStates);
+    free(chessGame);
 }

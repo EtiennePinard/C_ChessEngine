@@ -13,20 +13,22 @@ typedef char Piece;
 
 typedef enum PieceCharacteristics {
     NOPIECE = 0, 
-    KING    = 1, 
+    PAWN    = 1, 
     KNIGHT  = 2, 
     BISHOP  = 3, 
-    QUEEN   = 4, 
-    ROOK    = 5, 
-    PAWN    = 6, 
+    ROOK    = 4, 
+    QUEEN   = 5, 
+    KING    = 6, 
             
     WHITE   = 8, 
     BLACK   = 16
 } PieceCharacteristics;
 
-PieceCharacteristics pieceColor(Piece piece);
-PieceCharacteristics pieceType(Piece piece);
+#define MAX_PIECE_INDEX (BLACK | KING)
+#define NUM_PIECES 6
 
-Piece makePiece(PieceCharacteristics color, PieceCharacteristics type);
+#define pieceColor(piece) (PieceCharacteristics) (piece & 0b11000)
+#define pieceType(piece) (PieceCharacteristics) (piece & 0b111)
+#define makePiece(color, type) (Piece) (color | type)
 
 #endif /* C61A945A_18DA_4DBE_85F9_7784EBEDF6AE */

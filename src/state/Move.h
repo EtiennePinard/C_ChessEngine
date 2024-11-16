@@ -25,18 +25,12 @@ typedef enum {
     PROMOTE_TO_QUEEN, 
     PROMOTE_TO_KNIGHT, 
     PROMOTE_TO_ROOK, 
-    PROMOTE_TO_BISHOP, 
-    STALEMATE, 
-    CHECKMATE, 
-    DRAW 
+    PROMOTE_TO_BISHOP
 } Flag;
 
-char fromSquareFromMove(Move move);
-char toSquareFromMove(Move move);
-Flag flagFromMove(Move move);
-
-Move createMove(int from, int to, Flag flag);
-
-int nbMovesInArray(Move moves[MAX_LEGAL_MOVES + 1]);
+#define fromSquare(move) (move & 0b111111)
+#define toSquare(move) ((move >> 6) & 0b111111)
+#define flagFromMove(move) ((Flag) (move >> 12))
+#define makeMove(from, to, flag) (Move) (from + (to << 6) + (flag << 12))
 
 #endif /* A267B67F_4ECE_456A_A4EB_C6E73ACF11E0 */

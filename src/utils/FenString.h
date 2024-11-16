@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include "../state/GameState.h"
 
-bool setGameStateFromFenString(char* fenString, GameState* result);
+/**
+ * Sets ups the chess position currently from a fen string.
+ * Returns true if the fenstring is valid and result != NULL
+*/
+bool setChessPositionFromFenString(char* fenString, ChessPosition* result);
 
 #endif

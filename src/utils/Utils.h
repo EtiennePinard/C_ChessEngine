@@ -9,10 +9,18 @@
 
 #define u64 uint64_t
 
+// The x coordinates
+#define file(square) (square & 7)
+// The y coordinates
+#define rank(square) (square >> 3)
+
 int trailingZeros_64(const u64 x);
+int numBitSet_64(u64 x);
 
-void printBitBoard(const u64 bitboard);
+u64 random_u64();
 
-void printBin(const u64 num); 
+extern void (*loggingFFI)(char *);
+
+void initializeFFILogging(void (*printCallback)(char *));
 
 #endif /* DB9C663F_7757_4E5F_9CDD_23E9A09D9515 */

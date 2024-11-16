@@ -10,10 +10,11 @@
 #include "MoveGenerator.h"
 #include "magicBitBoard/MagicBitBoard.h"
 
-GameState currentState;
+ChessPosition currentState;
 
 Move* validMoves;
 int currentMoveIndex;
+#define appendMove(startSquare, targetSquare, flag) validMoves[currentMoveIndex++] = makeMove((startSquare), (targetSquare), (flag));
 
 PieceCharacteristics opponentColor;
 int friendlyKingIndex;
@@ -28,6 +29,14 @@ bool enPassantWillRemoveTheCheck;
 u64 checkBitBoard;
 u64 pinMasks[BOARD_SIZE];
 u64 friendlyPieceBitBoard;
+u64 opponentBitBoard;
+
+bool isKingInCheck() {
+    return inCheck;
+}
+bool isKingInDoubleCheck() {
+    return inDoubleCheck;
+}
 
 void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
@@ -40,17 +49,11 @@ void init() {
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
-    friendlyPieceBitBoard = currentState.colorToGo == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
+    friendlyPieceBitBoard = specificColorBitBoard(currentState.board, currentState.colorToGo);
+    opponentBitBoard = specificColorBitBoard(currentState.board, opponentColor);
 }
 
-void appendMove(int startSquare, int targetSquare, int flag) {
-    Move move = startSquare;
-    move |= (targetSquare << 6);
-    move |= (flag << 12);
-    validMoves[currentMoveIndex] = move;
-    (currentMoveIndex)++;
-}
-
+// Note: Could be inlined
 void addBitBoardToAttackedSquares(u64 bitBoard) {
     // Turning the bitboard into our move objects
     while (bitBoard) {
@@ -104,15 +107,16 @@ void queenAttackedSquares(int from) {
 
 void pawnAttackingSquares(int from) {
     int forwardIndex = opponentColor == WHITE ? from - 8 : from + 8;
+    int forwardIndexX = file(forwardIndex);
     // The forward index is always valid because no pawn can be on the first or last rank (they get promoted)
-    if (forwardIndex % 8 != 7) {
+    if (forwardIndexX != 7) {
         int square = forwardIndex + 1;
         if (attackedSquares[square] && square == friendlyKingIndex) {
             inDoubleCheck = true;
         }
         attackedSquares[square] = true;
     }
-    if (forwardIndex % 8 != 0) { 
+    if (forwardIndexX != 0) { 
         int square = forwardIndex - 1; 
         if (attackedSquares[square] && square == friendlyKingIndex) {
             inDoubleCheck = true;
@@ -123,10 +127,10 @@ void pawnAttackingSquares(int from) {
 
 void calculateAttackSquares() {
     u64 bitBoard;
-    for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const Piece piece = pieceAtIndex(currentState.board, currentIndex);
-        if (piece == NOPIECE || pieceColor(piece) != opponentColor) continue;
-        switch (pieceType(piece)) {
+    u64 opponentBitBoardCopy = opponentBitBoard;
+    while (opponentBitBoardCopy) {
+        int currentIndex = trailingZeros_64(opponentBitBoardCopy);
+        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
         case ROOK: 
             rookAttackedSquares(currentIndex);
             break;
@@ -150,6 +154,7 @@ void calculateAttackSquares() {
         default:
             break;
         }
+       opponentBitBoardCopy &= opponentBitBoardCopy - 1; 
     }
 }
 
@@ -218,10 +223,8 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
 }
 
 void handlePinsAndChecksFromSlidingPieces() {
-    int kingX = friendlyKingIndex % 8;
-    int kingY = friendlyKingIndex / 8;
-    // Doing another implementation of this function using precomputed bitboards
-    // Here a "hack" is used to get a bitboard that has the "edge" bits set
+    int kingX = file(friendlyKingIndex);
+    int kingY = rank(friendlyKingIndex);
     u64 orthogonalMask = rookMovementMask[friendlyKingIndex];
     if (kingX < 7) handlePinAndCheckForDirection(1, orthogonalMask, ROOK);
     if (kingX > 0) handlePinAndCheckForDirection(-1, orthogonalMask, ROOK);
@@ -237,7 +240,7 @@ void handlePinsAndChecksFromSlidingPieces() {
 
 void generateCastle() {
     const int defaultKingIndex = currentState.colorToGo == WHITE ? 60 : 4;
-    if (friendlyKingIndex != defaultKingIndex || inCheck) { return; }
+    if (friendlyKingIndex != defaultKingIndex) { return; }
 
     const int castlingBits = currentState.colorToGo == WHITE ? currentState.castlingPerm >> 2 : currentState.castlingPerm & 0b11;
     if (castlingBits >> 1) { // Can castle king side
@@ -284,8 +287,12 @@ void generateKingMoves() {
 
     if (inDoubleCheck) { return; } // Only king moves are valid
     
-    generateCastle();
     handlePinsAndChecksFromSlidingPieces();
+
+    if (!inCheck) { 
+        generateCastle();
+        return; // Do not need to look for checks
+    } 
 
     u64 toggle = (u64) 1;
     // Handling checks from pawns and knights
@@ -293,7 +300,8 @@ void generateKingMoves() {
     int potentialPawn;
     // For loop is remove copy pasting. I know sometimes I copy paste a lot but I was fed up this time
     for (int i = 0; i < 2; i++) {
-        potentialPawn = friendlyKingIndex + (i == 0 ? 7 : 9) * delta;
+        // A kind of hacky way to get 7 if i == 0 and 9 if i == 1
+        potentialPawn = friendlyKingIndex + (2 * i + 7) * delta;
         if (pieceAtIndex(currentState.board, potentialPawn) == makePiece(opponentColor, PAWN)) {
             checkBitBoard |= toggle << potentialPawn;
 
@@ -325,9 +333,9 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
         // Piece is pinned and it cannot do en-passant
         return bitBoard;
     }
-    int enPassantRank = from / 8;
-    if ((friendlyKingIndex / 8 )!= enPassantRank) { 
-        return bitBoard; // The king is not on the same rank as the from pawn, so oawn cannot be en-passant pinned
+    int enPassantRank = rank(from);
+    if (rank(friendlyKingIndex) != enPassantRank) { 
+        return bitBoard; // The king is not on the same rank as the from pawn, so pawn cannot be en-passant pinned
     }
 
     // To determine the correct direction to look for pinned en-passant
@@ -369,7 +377,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     do {
         indexToSearchForThreateningPiece += increment;
         threateningPiece = pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
-    } while (threateningPiece == NOPIECE && indexToSearchForThreateningPiece / 8 == enPassantRank);
+    } while (threateningPiece == NOPIECE && rank(indexToSearchForThreateningPiece) == enPassantRank);
     
     if (threateningPiece == makePiece(opponentColor, ROOK) || 
         threateningPiece == makePiece(opponentColor, QUEEN)) {
@@ -383,7 +391,7 @@ void generateEnPassant(int from) {
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
 
-    // Note that canEnPasant is never 0, because so can only en passant on the third or fourth rank
+    // Note that canEnPasant is never 0, because pawns can only en passant on the third or fourth rank
     u64 toggle = ((u64) 1) << currentState.enPassantTargetSquare;
     u64 canEnPassant = toggle;
     
@@ -423,6 +431,7 @@ void generatePawnDoublePush(int from, int increment) {
     }
 }
 
+// Note: Could be inlined
 void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves) {
     // Accounting for pins
     pseudoLegalMoves &= pinMasks[from];
@@ -489,31 +498,33 @@ void queenMoves(int from) {
 }
 
 void pawnMoves(int from) {
+    char fromY = rank(from);
     bool isPawnBeforePromotion = currentState.colorToGo == WHITE ? 
-        from / 8 == 1 : 
-        from / 8 == 6;
+        fromY == 1 : 
+        fromY == 6;
     bool pawnCanEnPassant = currentState.colorToGo == WHITE ? 
-        from / 8 == 3 : 
-        from / 8 == 4;
+        fromY == 3 : 
+        fromY == 4;
     bool pawnCanDoublePush = currentState.colorToGo == WHITE ? 
-        from / 8 == 6 : 
-        from / 8 == 1;
+        fromY == 6 : 
+        fromY == 1;
     int increment = currentState.colorToGo == WHITE ? -8 : 8;
 
     u64 pseudoLegalMoves = (u64) 0;
     u64 toggle = (u64) 1;
     
     int forwardIndex = from + increment;
+    int forwardX = file(forwardIndex);
     // The forward index is always between 0 and 63, because if a pawn is on one of the edge ranks it will get promoted
-    if (forwardIndex % 8 != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
-    if (forwardIndex % 8 != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
+    if (forwardX != 7) { pseudoLegalMoves ^= toggle << (forwardIndex + 1); }
+    if (forwardX != 0) { pseudoLegalMoves ^= toggle << (forwardIndex - 1); }
     // Only making capture moves if we actually capture a piece
-    u64 opponentBitBoard = opponentColor == WHITE ? whitePiecesBitBoard(currentState.board) : blackPiecesBitBoard(currentState.board);
     pseudoLegalMoves &= opponentBitBoard;
     
     if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
-
-    if (pawnCanEnPassant && currentState.enPassantTargetSquare != -1) { 
+    
+    // enPassantTargetSquare is 0 when there is no pawn that has double pushed
+    if (pawnCanEnPassant && currentState.enPassantTargetSquare) { 
         generateEnPassant(from); 
     } else if (pawnCanDoublePush) {
         generatePawnDoublePush(from, increment);
@@ -545,12 +556,12 @@ void pawnMoves(int from) {
 }
 
 void generateSupportingPiecesMoves() {
-    for (int currentIndex = 0; currentIndex < BOARD_SIZE; currentIndex++) {
-        const int piece = pieceAtIndex(currentState.board, currentIndex);
-        if (piece == NOPIECE || pieceColor(piece) == opponentColor) { continue; }
-        
-        u64 pseudoLegalMovesBitBoard;
-        switch (pieceType(piece)) {
+    u64 pseudoLegalMovesBitBoard;
+    u64 piecesBitBoard = friendlyPieceBitBoard;
+    while (piecesBitBoard) {
+        int currentIndex = trailingZeros_64(piecesBitBoard);
+
+        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
             case ROOK: 
                 rookMoves(currentIndex);
                 break;
@@ -571,86 +582,31 @@ void generateSupportingPiecesMoves() {
             default:
                 break;
         }
+
+        piecesBitBoard &= piecesBitBoard - 1;
     }
 }
 
-bool compareGameStateForRepetition(const GameState gameStateToCompare) {
-    // Comparing boards
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        if (pieceAtIndex(currentState.board, i) != pieceAtIndex(gameStateToCompare.board, i)) {
-            return false;
-        }
-    }
-    return currentState.castlingPerm == gameStateToCompare.castlingPerm &&
-        currentState.colorToGo == gameStateToCompare.colorToGo &&
-        currentState.enPassantTargetSquare == gameStateToCompare.enPassantTargetSquare;
-}
+// TODO: Make the caller give us a fixed size of memory (arenas?) which we can then use to store our global variables
+/*
+We are not computing end of games in this function!!!!
+They are not needed for perft and so I did not write a function to compute just yet
+These function will probably in the board.c file
+*/
+void getValidMoves(Move result[256], int* numMoves, ChessGame* game) {
 
-bool isThereThreeFoldRepetition(const GameState* previousStates) {
-    if (previousStates == NULL) { 
-        return false;
-    }
-    bool hasOneDuplicate = false;
-    int index = 0;
-    bool result = false;
-    GameState previousState;
-    // If colorToGo == 0 then it is not a valid state
-    while (true) {
+    currentState = *(game->currentState);
 
-        previousState = previousStates[index];
-        if (previousState.colorToGo == 0) {
-            break;
-        }
-
-        if (compareGameStateForRepetition(previousState)) {
-            if (!hasOneDuplicate) {
-                hasOneDuplicate = true;
-            } else {
-                // Already has a duplicate, this is the third repetition
-                result = true;
-                break;
-            }
-        }
-        index++;
-    }
-    return result;
-}
-
-void getValidMoves(Move results[MAX_LEGAL_MOVES + 1], const GameState currentGameState, const GameState* previousStates) {
-    currentState = currentGameState;
-
-    validMoves = results;
+    validMoves = result;
     currentMoveIndex = 0;
-    
-    if (isThereThreeFoldRepetition(previousStates) || (currentState.turnsForFiftyRule >= 50)) {
-        appendMove(0, 0, DRAW); // This is the `draw` move
-        // We assume that the array is 0 initialized, so we do not need to add a 0 entry
-        return; 
-    }
 
     init();
     calculateAttackSquares();
     generateKingMoves();
 
-    if (inDoubleCheck) { 
-        // Only king moves are valid when in double check
-        if (currentMoveIndex == 0) { // Is there any king moves?
-            // A pretty cool double checkmate
-            appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
-        }
-        // We assume that the array is 0 initialized, so we do not need to add a 0 entry
-        return;
+    if (!inDoubleCheck) { 
+        generateSupportingPiecesMoves();
     }
     
-    generateSupportingPiecesMoves();
-    
-    if (currentMoveIndex == 0) {
-        // There is no valid move
-        if (inCheck) {
-            appendMove(0, 0, CHECKMATE); // This is the `checkmate` move
-        } else {
-            appendMove(0, 0, STALEMATE); // This is the `stalemate` move
-        }
-    }
-    // We assume that the array is 0 initialized, so we do not need to add a 0 entry
+    *(numMoves) = currentMoveIndex;
 }

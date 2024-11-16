@@ -3,7 +3,7 @@ src/fenString.o
 src/moveGenerator.h.gch
 src/moveGenerator.o
 build/
-out
+*.out
 .vs
 .vscode
 perftTesting
@@ -18,3 +18,8 @@ precomputedMasks/generateMask
 precomputedMasks/MagicBitBoardOutput.txt
 precomputedMasks/precomputedMaskOutput.txt
 diffPerft.bash
+deploy
+examineBot
+chess_position_extraction
+stockfishUCI/main.c
+tbot

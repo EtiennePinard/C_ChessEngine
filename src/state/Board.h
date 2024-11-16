@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "Piece.h"
-#include "Move.h"
 #include "../utils/Utils.h"
 
 /**
@@ -13,22 +12,22 @@
 typedef struct Board {
     /* Order of the bitBoard in the array 
 
-    0 -> White King
+    0 -> White Pawn
     1 -> White Knight
     2 -> White Bishop
-    3 -> White Queen
-    4 -> White Rook
-    5 -> White Pawn
+    3 -> White Rook
+    4 -> White Queen
+    5 -> White King
 
     6 -> UNUSED
     7 -> UNUSED
 
-    8 -> Black King
+    8 -> Black Pawn
     9 -> Black Knight 
     10 -> Black Bishop
-    11 -> Black Queen
-    12 -> Black Rook
-    13 -> Black Pawn
+    11 -> Black Rook
+    12 -> Black Queen
+    13 -> Black King
     */
    u64 bitboards[14];
    // I put 14 total bitboards, even though we only need 12, so that I can assign each piece to a index quickly.
@@ -42,8 +41,7 @@ typedef struct Board {
  * Returns the bit board of a specific piece
 */
 u64 bitBoardForPiece(Board board, Piece piece);
-u64 whitePiecesBitBoard(Board board);
-u64 blackPiecesBitBoard(Board board);
+u64 specificColorBitBoard(Board board, PieceCharacteristics color);
 u64 allPiecesBitBoard(Board board);
 
 /**
@@ -52,12 +50,10 @@ u64 allPiecesBitBoard(Board board);
 Piece pieceAtIndex(Board board, int index);
 
 /**
- * Will toggle the bits at a specific index for a piece to the opposite state.
+ * Will toggle (XOR with 1) the bits at a specific index for a piece to the opposite state.
  * If you pass in the NOPIECE piece (0) it will lead to undefined behaviour
 */
 void togglePieceAtIndex(Board* board, int index, Piece piece);
-
-void handleMove(Board* board, int from, int to);
 
 /**
  * Converts and puts the information in the piece's `array` to the `result` board.

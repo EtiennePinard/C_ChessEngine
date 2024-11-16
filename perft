@@ -4,15 +4,38 @@
 
 # Check if one argument is provided
 if [ "$#" -lt 1 ]; then
-    printf "Usage: ./$1 <mode (debug, time, test)> [position (fen string)] [depth (positive integer)]\n"
-    printf "The 'position' and 'depth' argument only apply for the debug and time mode\n"
-    printf "If 'mode' is not provided it will default to debug mode\n"
-    printf "If 'position' is not provided it will default to the starting position\n"
-    printf "'depth' needs to be provided\n"
+    printf "Usage: ./perft <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n"
+    printf "\tIf \`mode\` is not provided it will default to divide mode\n"
+    printf "\tIf \`position\` is not provided it will default to the starting position\n"
+    printf "\tThe \`position\` and \`depth\` argument only apply for the divide and time mode\n"
+    printf "\t\`depth\` needs to be provided for the modes it applies to\n"
     exit 1
 fi
 
-gcc -Wall -Wextra -Werror -Wunused -g -o perftTesting testing/perft.c testing/logChessStructs.c src/chessGameEmulator.c src/moveGenerator.c src/utils/fenString.c src/utils/utils.c src/state/board.c src/state/gameState.c src/state/move.c src/state/piece.c src/magicBitBoard/magicBitBoard.c src/magicBitBoard/rook.c src/magicBitBoard/bishop.c 
+arg="-g"
+if [[ "$1" == "time" || "$1" == "test" ]]; then
+    arg="-O3"
+fi
+
+files="testing/perft.c 
+testing/logChessStructs.c 
+
+src/chessGameEmulator.c 
+src/moveGenerator.c 
+
+src/utils/fenString.c 
+src/utils/utils.c 
+
+src/state/board.c 
+src/state/gameState.c 
+src/state/zobristKey.c 
+
+src/magicBitBoard/magicBitBoard.c 
+src/magicBitBoard/rook.c 
+src/magicBitBoard/bishop.c"
+
+# For checking memory bugs, add option -fsanitize=address 
+echo -n "$files" | tr -d '\n' | xargs gcc -Wall -Wextra -Werror -Wunused "$arg" -o perftTesting
 
 if [ $? -ne 0 ]; then
     exit 1

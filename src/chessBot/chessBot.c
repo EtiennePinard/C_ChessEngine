@@ -26,7 +26,7 @@ void provideGameState(ChessGame* state) {
 This array maps the piece index to a number, which represents how much
 a piece is worth for a phase of the game
 */
-char phaseWeight[6] = { 
+const char phaseWeight[6] = { 
     0, // Pawn
     1, // Knight
     1, // Bishop
@@ -36,7 +36,7 @@ char phaseWeight[6] = {
 };
 
 // Piece order influenced
-int openFilesAndDoublePawns[6] = { 
+const int openFilesAndDoublePawns[6] = { 
     S(16, 26), // Pawn
     S(5, -4), // Knight
     S(1, 4), // Bishop
@@ -48,7 +48,7 @@ int openFilesAndDoublePawns[6] = {
 // Gotten from https://github.com/official-stockfish/Stockfish/blob/b4c239b625285307c5871f1104dc3fb80aa6d5d2/src/evaluate.cpp#L102
 // MobilityBonus[PieceType - 2][num square attacked] contains bonuses for middle and end game,
 // indexed by piece type and number of attacked squares in the mobility area.
-int mobilityBonus[][32] = {
+const int mobilityBonus[][32] = {
     { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knights
       S( 22, 23), S( 28, 27), S( 33, 33) },
     { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
@@ -65,7 +65,7 @@ int mobilityBonus[][32] = {
     { S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4),  } // King
   };
 
-int reducingKingMovementBonus[] = {
+const int reducingKingMovementBonus[] = {
     S(9, -2),   // Bishop
     S(16, 0),   // Rook
     S(36, -10), // Queen
@@ -91,7 +91,7 @@ bool isThereThreeFoldRepetition() {
 // TODO: Static evaluation does not give positive/negative inf if one side is checkmated
 int staticEvaluation() {
 
-    int phase = TOTAL_PHASE;
+    GamePhase phase = TOTAL_PHASE;
     int score = 15;
     u64 file = 0x101010101010101UL;
     u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;  
@@ -204,14 +204,10 @@ int perspective;
 ChessPosition* posHistory;
 int maximumDepth;
 
-#define max(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
-
 // A negamax search with alpha-beta pruning
 // TODO: This is slow!
 // Move ordering will be important to implement to speed it up
+// TODO: Implement transposition table
 int search(int alpha, int beta, int depth) {
     if (depth == 0) { return staticEvaluation(); } // eventually do return quiesce(alpha, beta);
     int bestValue = MINUS_INFINITY;
@@ -251,7 +247,7 @@ Move think() {
 
     ChessPosition lastPos = *game->currentState;
 
-    maximumDepth = 3;
+    maximumDepth = 2;
     posHistory = malloc(sizeof(ChessPosition) * (maximumDepth));
     assert(posHistory != NULL && "Buy more RAM lol");
 

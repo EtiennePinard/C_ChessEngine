@@ -14,6 +14,17 @@
 // The y coordinates
 #define rank(square) (square >> 3)
 
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
+
+
 int trailingZeros_64(const u64 x);
 int numBitSet_64(u64 x);
 

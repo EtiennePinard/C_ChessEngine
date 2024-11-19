@@ -4,9 +4,10 @@
 #include "../utils/Utils.h"
 #include "../state/Piece.h"
 
+typedef int GamePhase;
 #define MIDGAME 0
-#define ENGGAME 1
-#define NB_PHASE 2
+#define ENGGAME ((GamePhase) 1)
+#define NB_PHASE ((GamePhase) 2)
 
 // This packs the midgame and endgame into one integer
 // This packing allows us to operate on both of them simultaneously
@@ -16,7 +17,7 @@
 
 #define eg_value(score) ((int16_t) (((uint32_t) (score + 0x8000)) >> 16))
 // The piece square is gotten from https://github.com/official-stockfish/Stockfish/blob/sf_14/src/psqt.cpp
-extern int pieceSquareTable[MAX_PIECE_INDEX - 9][BOARD_SIZE];
+extern int pieceSquareTable[MAX_PIECE_INDEX - 9 + 1][BOARD_SIZE];
 
 void pieceSquareTableInitialize();
 

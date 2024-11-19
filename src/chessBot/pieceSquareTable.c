@@ -2,7 +2,7 @@
 #include "../state/Piece.h"
 
 // The piece square is gotten from https://github.com/official-stockfish/Stockfish/blob/sf_14/src/psqt.cpp
-int _pieceSquareTableIntermediate[][BOARD_LENGTH][BOARD_LENGTH / 2] = {
+const int _pieceSquareTableIntermediate[][BOARD_LENGTH][BOARD_LENGTH / 2] = {
   { // Knight
    { S(-175, -96), S(-92,-65), S(-74,-49), S(-73,-21) },
    { S( -77, -67), S(-41,-54), S(-27,-18), S(-15,  8) },
@@ -55,7 +55,7 @@ int _pieceSquareTableIntermediate[][BOARD_LENGTH][BOARD_LENGTH / 2] = {
   }, 
 };
 
-int _pawnPieceSquareTable[BOARD_LENGTH][BOARD_LENGTH] =
+const int _pawnPieceSquareTable[BOARD_LENGTH][BOARD_LENGTH] =
   { // Pawn (asymmetric distribution)
    { 0, 0, 0, 0, 0, 0, 0, 0},
    { S(  2, -8), S(  4, -6), S( 11,  9), S( 18,  5), S( 16, 16), S( 21,  6), S(  9, -6), S( -3,-18) },
@@ -85,23 +85,24 @@ int _pawnPieceSquareTable[BOARD_LENGTH][BOARD_LENGTH] =
 #define QUEEN_VAL_EG 2682
 
 // Piece order influenced
-int pieceValue[NB_PHASE][NUM_PIECES] = {
+const int pieceValue[NB_PHASE][NB_PIECE_TYPE] = {
   { PAWN_VAL_MG, KNIGHT_VAL_MG, BISHOP_VAL_MG, ROOK_VAL_MG, QUEEN_VAL_MG, KING_VAL },
   { PAWN_VAL_EG, KNIGHT_VAL_EG, BISHOP_VAL_EG, ROOK_VAL_EG, QUEEN_VAL_EG, KING_VAL }
 };
 
 // Total size is 832 bytes, so we are fine
-int pieceSquareTable[MAX_PIECE_INDEX - 9][BOARD_SIZE];
+int pieceSquareTable[MAX_PIECE_INDEX - 9 + 1][BOARD_SIZE];
 
 void pieceSquareTableInitialize() {
     // Piece order influenced
     for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
-      int score = S(pieceValue[MIDGAME][type], pieceValue[ENGGAME][type]);
+      int score = S(pieceValue[MIDGAME][type - 1], pieceValue[ENGGAME][type - 1]);
 
+      int finalScore;
       for (int square = 0; square < BOARD_SIZE; square++) {
         
-        int finalScore = score;
+        finalScore = score;
         if (type == PAWN) {
           finalScore += _pawnPieceSquareTable[rank(square)][file(square)];
         } else {
@@ -109,10 +110,8 @@ void pieceSquareTableInitialize() {
           int realX = x < (7 - x) ? x : 7 - x;
           finalScore += _pieceSquareTableIntermediate[type - 2][rank(square)][realX];
         }
-        // For white
-        pieceSquareTable[makePiece(WHITE, type) - 9][square] = finalScore;
 
-        // For black:
+        // For white:
         // Here we are basically flipping the rank of the square variable
         // We could use this somewhat complex expression to do this: (7 - rank(square)) * 8 + file(square)
         // Notice that this is equal to flipping the state of the first three most significant bits
@@ -120,9 +119,18 @@ void pieceSquareTableInitialize() {
         // Example: 56 -> 0  (111 000 -> 000 000) 
         // Example: 47 -> 23 (101 111 -> 010 111)
         // To achieve this state flipping, it requires to xor by 56 (111 000)
-        pieceSquareTable[makePiece(BLACK, type) - 9][square ^ 56] = -finalScore;
+        pieceSquareTable[makePiece(WHITE, type) - 9][square ^ 56] = finalScore;
+        
+        // For black
+        pieceSquareTable[makePiece(BLACK, type) - 9][square] = -finalScore;
+
+        // Note: Why are we flipping the rank for white and not for black? Well it is because I use 
+        // a different to give values to squares then what Stockfish uses. I set SQ_A8 = 0
+        // and SQ_H1 = 63, but Stockfish uses SQ_A1 = 0 and SQ_H8 = 63. Thus either I switch 
+        // the elements in the _pieceSquareTableIntermediate array or I treat white as black
+        // and black as white when assining scores to the pieceSquareTable. Since the former 
+        // is tedious and error prone, I just did the latter.
       }
 
     }
-  
 }

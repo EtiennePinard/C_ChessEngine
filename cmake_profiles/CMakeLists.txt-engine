@@ -13,10 +13,9 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 
 set(PROJECT chess_engine)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wunused")
 
 project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
-add_library(chess_engine SHARED 
+add_library(${PROJECT} SHARED 
     src/moveGenerator.c
     src/chessGameEmulator.c
     
@@ -35,11 +34,11 @@ add_library(chess_engine SHARED
     src/utils/utils.c 
 )
 
-set_target_properties(chess_engine PROPERTIES
+set_target_properties(${PROJECT} PROPERTIES
     PUBLIC_HEADER ChessBot.h
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
-    LIBRARY_OUTPUT_NAME "chess_engine"
+    LIBRARY_OUTPUT_NAME "${PROJECT}"
     PREFIX ""
     SUFFIX ".so"
 )

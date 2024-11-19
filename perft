@@ -12,32 +12,19 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
-arg="-g"
+buildType="Debug"
 if [[ "$1" == "time" || "$1" == "test" ]]; then
-    arg="-O3"
+    buildType="Release"
 fi
 
-files="testing/perft.c 
-testing/logChessStructs.c 
+mkdir -p /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
+cd /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
 
-src/chessGameEmulator.c 
-src/moveGenerator.c 
-
-src/utils/fenString.c 
-src/utils/utils.c 
-
-src/state/board.c 
-src/state/gameState.c 
-src/state/zobristKey.c 
-
-src/magicBitBoard/magicBitBoard.c 
-src/magicBitBoard/rook.c 
-src/magicBitBoard/bishop.c"
-
-# For checking memory bugs, add option -fsanitize=address 
-echo -n "$files" | tr -d '\n' | xargs gcc -Wall -Wextra -Werror -Wunused "$arg" -o perftTesting
+cmake -DWHICH=perft -DCMAKE_BUILD_TYPE="$buildType" .. > /dev/null
+cmake --build . > /dev/null
 
 if [ $? -ne 0 ]; then
+    printf "\n================== ERROR while compiling with CMake ==================\n"
     exit 1
 fi
 

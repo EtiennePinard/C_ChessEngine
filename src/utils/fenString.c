@@ -97,7 +97,7 @@ do { \
  * Populates a GameState struct from a fen string.
  * Returns false if the fen string is invalid
 */
-bool setChessPositionFromFenString(char *fen, ChessPosition* result) {
+bool setChessPositionFromFenString(const char *fen, ChessPosition* result) {
     if (result == NULL) { return false; }
     if (strlen(fen) > 100) {
       printf("The fen string length is bigger than 100, which is too long for the program\n");

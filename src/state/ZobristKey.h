@@ -3,22 +3,21 @@
 
 #include "GameState.h"
 
-typedef struct {
+typedef struct ZobristRandomNumber {
     // Rank is already included in the side to move key
     u64 enPassantFile[9];
     // 16 total possibilities for castling
     u64 castlingPerms[16];
     // 14 is the biggest piece index ((Black pawn piece index - 9) + 1)
     // To access the random number for a piece for a square: pieces[piece - 9][square]
-    u64 pieces[14][BOARD_SIZE];
+    u64 pieces[MAX_PIECE_INDEX - 9 + 1][BOARD_SIZE];
     
     u64 sideToMove;
 } ZobristRandomNumber;
 
-extern ZobristRandomNumber* zobristRandomNumber;
+extern ZobristRandomNumber zobristRandomNumber;
 
 void zobristKeyInitialize();
-void zobristKeyTerminate();
 
 /**
  * This function should be called only once when creating the your initial ChessGame struct

@@ -8,6 +8,6 @@
  * Sets ups the chess position currently from a fen string.
  * Returns true if the fenstring is valid and result != NULL
 */
-bool setChessPositionFromFenString(char* fenString, ChessPosition* result);
+bool setChessPositionFromFenString(const char* fenString, ChessPosition* result);
 
 #endif

@@ -12,10 +12,11 @@
 #include "LogChessStructs.h"
 
 #define TEST_ITERATION 100
+#define MAXIMUM_DEPTH 20
 
 int maximumDepth;
-ChessGame* game;
-ChessPosition* posHistory;
+ChessGame game = { 0 };
+ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
 bool divide = true;
 
@@ -24,7 +25,7 @@ u64 perft(int depth) {
 
   int nbOfMoves;
   Move validMoves[256];
-  getValidMoves(validMoves, &nbOfMoves, game); // We do not care about draw by repetition
+  getValidMoves(validMoves, &nbOfMoves, &game); // We do not care about draw by repetition
   u64 nodes = 0;
 
   // Note that here we take into account the fifty move fule
@@ -39,12 +40,13 @@ u64 perft(int depth) {
     return nbOfMoves;
   }
   
-  posHistory[maximumDepth - depth] = *game->currentState;
+  posHistory[maximumDepth - depth] = game.currentState;
 
-  for (int i = 0; i < nbOfMoves; i++) {
+  for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
-    Move move = validMoves[i];
-    playMove(move, game); // Move is made
+    Move move = validMoves[moveIndex];
+
+    playMove(move, &game); // Move is made
 
     u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
 
@@ -54,8 +56,8 @@ u64 perft(int depth) {
     }
     nodes += moveOutput;
 
-    game->previousStatesCount--;
-    memcpy(game->currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+    game.previousStatesCount--;
+    memcpy(&game.currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
   }
   
   return nodes;
@@ -124,6 +126,13 @@ void test() {
   zobristKeyInitialize();
   
   int biggestDepth = 5;
+  if (biggestDepth > MAXIMUM_DEPTH) {
+    printf("The biggest depth of test %d exceeds the position history limit, %d\n", biggestDepth, MAXIMUM_DEPTH);
+    magicBitBoardTerminate();
+    zobristKeyTerminate();
+    exit(EXIT_FAILURE);
+  }
+
   int startingPosResults[6] = {1, 20, 400, 8902, 197281, 4865609};
   TestPosition startingPositionTests = {
     .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
@@ -175,17 +184,8 @@ void test() {
     pos6, 
   };
   
-  posHistory = malloc(sizeof(ChessPosition) * (biggestDepth));
-  assert(posHistory != NULL && "Buy more RAM lol");
-    
-  game = (ChessGame*) malloc(sizeof(ChessGame));
-  assert(game != NULL && "Buy more RAM lol");
-  game->currentState = malloc(sizeof(ChessPosition));
-  assert(game->currentState != NULL && "Buy more RAM lol");
-  game->previousStatesCapacity = 256;
-  game->previousStatesCount = 0;
-  game->previousStates = malloc(sizeof(ZobristKey) * game->previousStatesCapacity);
-  assert(game->previousStates != NULL && "Buy more RAM lol");
+  game.currentState = (ChessPosition) { 0 };
+  game.previousStatesCount = 0;
 
   ChessPosition startingState;
   u64 perftResult;
@@ -199,8 +199,8 @@ void test() {
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
     
-    setChessPositionFromFenString(testPosition.fenString, game->currentState);
-    startingState = *game->currentState;
+    setChessPositionFromFenString(testPosition.fenString, &game.currentState);
+    startingState = game.currentState;
 
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
 
@@ -218,14 +218,15 @@ void test() {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
       }
 
-      game->currentState->board = startingState.board;
-      game->currentState->castlingPerm = startingState.castlingPerm;
-      game->currentState->colorToGo = startingState.colorToGo;
-      game->currentState->enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game->currentState->key = startingState.key;
-      game->currentState->nbMoves = startingState.nbMoves;
-      game->currentState->turnsForFiftyRule = startingState.turnsForFiftyRule;
-      game->previousStatesCount = 0;
+      // TODO: try memcpy
+      game.currentState.board = startingState.board;
+      game.currentState.castlingPerm = startingState.castlingPerm;
+      game.currentState.colorToGo = startingState.colorToGo;
+      game.currentState.enPassantTargetSquare = startingState.enPassantTargetSquare;
+      game.currentState.key = startingState.key;
+      game.currentState.nbMoves = startingState.nbMoves;
+      game.currentState.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      game.previousStatesCount = 0;
     }
  
     printf("\n");
@@ -236,9 +237,6 @@ void test() {
   printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
 
   magicBitBoardTerminate();
-  zobristKeyTerminate();
-  freeChessGame(game);
-  free(posHistory);
 }
 
 // To compile and run the program: ./perft
@@ -307,18 +305,22 @@ int main(int argc, char* argv[]) {
   magicBitBoardInitialize();
   zobristKeyInitialize();
 
-  game = setupChesGame(NULL, fenString);
-  posHistory = malloc(sizeof(ChessPosition) * (maximumDepth));
+  ChessPosition currentPosition = { 0 };
+  if (!setupChesGame(&game, &currentPosition, fenString)) {
+    printf("ERROR while setup of chess game state\n Exiting\n");
+    exit(EXIT_FAILURE);
+  }
+
   assert(posHistory != NULL && "Buy more RAM lol");
 
   u64 perftResult;
 
   if (divide) {
-    printBoard(game->currentState->board);
+    printBoard(game.currentState.board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
   } else {
-    ChessPosition startingState = *game->currentState;
+    ChessPosition startingState = game.currentState;
 
     double averageExecutionTime = 0;
     clock_t begin, end;
@@ -330,14 +332,14 @@ int main(int argc, char* argv[]) {
       double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       averageExecutionTime += timeSpent;
       
-      game->currentState->board = startingState.board;
-      game->currentState->castlingPerm = startingState.castlingPerm;
-      game->currentState->colorToGo = startingState.colorToGo;
-      game->currentState->enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game->currentState->key = startingState.key;
-      game->currentState->nbMoves = startingState.nbMoves;
-      game->currentState->turnsForFiftyRule = startingState.turnsForFiftyRule;
-      game->previousStatesCount = 0;
+      game.currentState.board = startingState.board;
+      game.currentState.castlingPerm = startingState.castlingPerm;
+      game.currentState.colorToGo = startingState.colorToGo;
+      game.currentState.enPassantTargetSquare = startingState.enPassantTargetSquare;
+      game.currentState.key = startingState.key;
+      game.currentState.nbMoves = startingState.nbMoves;
+      game.currentState.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      game.previousStatesCount = 0;
 
       printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
     }
@@ -346,8 +348,5 @@ int main(int argc, char* argv[]) {
   }
 
   magicBitBoardTerminate();
-  zobristKeyTerminate();
-  freeChessGame(game);
-  free(posHistory);
   return 0;
 }

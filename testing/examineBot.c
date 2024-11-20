@@ -57,6 +57,7 @@ void randomFenFromFile(FILE* file, u64 numLines, char* fenString) {
 
 #define KEY_Q 113
 
+// TODO: When this is called the previousState explodes to a number bigger than 512, which is not supposed to happen
 int main(int argc, char* argv[]) {
     if (argc == 1) {
         printf("Usage: %s <fen strings file path> <stockfish executable path>\n", argv[0]);
@@ -83,12 +84,14 @@ int main(int argc, char* argv[]) {
     }
 
     char fen[LARGEST_FEN] = { 0 };
+    ChessGame game = { 0 };
+    ChessPosition currentPosition = { 0 };
     while (true) {
         rewind(positions);
         randomFenFromFile(positions, lineSize, fen);
-        ChessGame* game = setupChesGame(NULL, fen);
-
-        provideGameState(game);
+        setupChesGame(&game, &currentPosition, fen);
+        
+        provideGameState(&game);
         setStockfishPosition(fen);
 
         int score = staticEvaluation();
@@ -98,9 +101,8 @@ int main(int argc, char* argv[]) {
         Move stockfishMove = stockfishBestMove(2); // Start with depth 2 for now
 
         printf("\n");
-        printPosition(*game->currentState, score, bestMove, stockfishScore, stockfishMove); 
-    
-        freeChessGame(game);
+        printPosition(game.currentState, score, bestMove, stockfishScore, stockfishMove); 
+
         printf("Enter q to quit (Any key to continue): ");
         int c = getc(stdin);
         if (c == KEY_Q) {
@@ -109,7 +111,6 @@ int main(int argc, char* argv[]) {
     }
 
     magicBitBoardTerminate();
-    zobristKeyTerminate();
     fclose(positions);
     return 0;
 }

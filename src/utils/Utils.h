@@ -6,6 +6,7 @@
 #define BOARD_SIZE 64
 #define BOARD_LENGTH 8
 #define MAX_LEGAL_MOVES 218
+#define MAX_NB_LEGAL_MOVES_IN_GAME 6000
 
 #define u64 uint64_t
 

@@ -12,6 +12,8 @@ if [ "$#" -lt 1 ]; then
     exit 1
 fi
 
+OUT="$(mktemp /tmp/output.XXXXXXXXXX)" || { echo "Failed to create temp file"; exit 1; }
+
 buildType="Debug"
 if [[ "$1" == "time" || "$1" == "test" ]]; then
     buildType="Release"
@@ -20,10 +22,11 @@ fi
 mkdir -p /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
 cd /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
 
-cmake -DWHICH=perft -DCMAKE_BUILD_TYPE="$buildType" .. > /dev/null
-cmake --build . > /dev/null
+cmake -DWHICH=perft -DCMAKE_BUILD_TYPE="$buildType" .. >> "$OUT"
+cmake --build . >> "$OUT"
 
 if [ $? -ne 0 ]; then
+    cat "$OUT"
     printf "\n================== ERROR while compiling with CMake ==================\n"
     exit 1
 fi

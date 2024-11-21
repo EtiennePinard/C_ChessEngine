@@ -26,7 +26,7 @@ typedef struct ChessPosition {
  * Zobrist keys are used to quickly compute repetitions
 */
 typedef struct ChessGame {
-    ChessPosition currentState;
+    ChessPosition currentPosition;
 
     /*
         IMPORTANT! Notice that previousStates is initialized to 512. 
@@ -41,8 +41,8 @@ typedef struct ChessGame {
         Also like the average chess game is about 40 moves, so its not
         like were gonna run into this issue anytime soon.
      */
-    ZobristKey previousStates[PREVIOUS_STATE_CAPACITY];
-    uint16_t previousStatesCount;
+    ZobristKey previousPositions[PREVIOUS_STATE_CAPACITY];
+    uint16_t previousPositionsCount;
 } ChessGame;
 
 /**

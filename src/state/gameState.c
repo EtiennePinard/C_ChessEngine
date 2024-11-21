@@ -14,7 +14,7 @@ bool setupChesGame(ChessGame *result, ChessPosition *currentPosition, const char
         return false;
     }
 
-    result->currentState = *currentPosition;
-    result->previousStatesCount = 0;
+    result->currentPosition = *currentPosition;
+    result->previousPositionsCount = 0;
     return true;
 }

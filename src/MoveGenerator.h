@@ -21,6 +21,6 @@ bool isKingInDoubleCheck();
  * Computes the valid moves in a given position and stores the moves in the result array
  * and the amount of moves in the numMoves pointer
 */
-void getValidMoves(Move result[256], int* numMoves, const ChessGame* game);
+void getValidMoves(Move result[256], int* numMoves, ChessPosition game);
 
 #endif

@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
         Move stockfishMove = stockfishBestMove(2); // Start with depth 2 for now
 
         printf("\n");
-        printPosition(game.currentState, score, bestMove, stockfishScore, stockfishMove); 
+        printPosition(game.currentPosition, score, bestMove, stockfishScore, stockfishMove); 
 
         printf("Enter q to quit (Any key to continue): ");
         int c = getc(stdin);

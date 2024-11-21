@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include "ChessGameEmulator.h"
 #include "../src/state/ZobristKey.h"
-#include "../testing/LogChessStructs.h"
 
 void _updateCastlePerm(int pieceToMove, int from, ChessPosition* state) {
   if (state->castlingPerm == 0) { return; }
@@ -55,31 +54,31 @@ void _updateFiftyMoveRule(int pieceToMove, int to, ChessPosition* state) {
 }
 
 void playMove(Move move, ChessGame* game) {
-  PieceCharacteristics colorToGo = game->currentState.colorToGo;
+  PieceCharacteristics colorToGo = game->currentPosition.colorToGo;
   int from = fromSquare(move);
   int to = toSquare(move);
   Flag flag = flagFromMove(move);
-  Piece pieceToMove = pieceAtIndex(game->currentState.board, from);
+  Piece pieceToMove = pieceAtIndex(game->currentPosition.board, from);
 
-  u64 newZobristKey = game->currentState.key;
+  u64 newZobristKey = game->currentPosition.key;
 
-  newZobristKey ^= zobristRandomNumber.castlingPerms[(int) game->currentState.castlingPerm]; // Removing old castling perm
-  _updateCastlePerm(pieceToMove, from, &game->currentState);
-  newZobristKey ^= zobristRandomNumber.castlingPerms[(int) game->currentState.castlingPerm]; // Adding new castling perm
+  newZobristKey ^= zobristRandomNumber.castlingPerms[(int) game->currentPosition.castlingPerm]; // Removing old castling perm
+  _updateCastlePerm(pieceToMove, from, &game->currentPosition);
+  newZobristKey ^= zobristRandomNumber.castlingPerms[(int) game->currentPosition.castlingPerm]; // Adding new castling perm
   
-  _updateFiftyMoveRule(pieceToMove, to, &game->currentState);
+  _updateFiftyMoveRule(pieceToMove, to, &game->currentPosition);
 
   // Handling move
-  togglePieceAtIndex(&game->currentState.board, from, pieceToMove);
+  togglePieceAtIndex(&game->currentPosition.board, from, pieceToMove);
   newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][from]; // Removing piece to move
   
-  Piece capturePiece = pieceAtIndex(game->currentState.board, to);
+  Piece capturePiece = pieceAtIndex(game->currentPosition.board, to);
   if (capturePiece != NOPIECE) { // A piece has been captured!
-    togglePieceAtIndex(&game->currentState.board, to, capturePiece);
+    togglePieceAtIndex(&game->currentPosition.board, to, capturePiece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) capturePiece - 9][to]; // Removing captured piece
   }
   
-  togglePieceAtIndex(&game->currentState.board, to, pieceToMove);
+  togglePieceAtIndex(&game->currentPosition.board, to, pieceToMove);
   newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][to]; // Adding piece to move
 
   PieceCharacteristics oppositeColor = colorToGo == WHITE ? BLACK : WHITE;
@@ -94,88 +93,85 @@ void playMove(Move move, ChessGame* game) {
     break;
   case EN_PASSANT:
     enPassantPawnIndex = colorToGo == WHITE ? to + 8 : to - 8;
-    piece = pieceAtIndex(game->currentState.board, enPassantPawnIndex);
-    togglePieceAtIndex(&game->currentState.board, enPassantPawnIndex, piece);
+    piece = pieceAtIndex(game->currentPosition.board, enPassantPawnIndex);
+    togglePieceAtIndex(&game->currentPosition.board, enPassantPawnIndex, piece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) piece - 9][enPassantPawnIndex]; // Removing captured en-passant pawn
     break;
   case DOUBLE_PAWN_PUSH:
     enPassantPawnIndex = colorToGo == WHITE ? to + 8 : to - 8;
-    game->currentState.enPassantTargetSquare = enPassantPawnIndex;
+    game->currentPosition.enPassantTargetSquare = enPassantPawnIndex;
     break;
   case KING_SIDE_CASTLING:
     rookIndex = from + 3;
-    piece = pieceAtIndex(game->currentState.board, rookIndex);
-    togglePieceAtIndex(&game->currentState.board, rookIndex, piece);
+    piece = pieceAtIndex(game->currentPosition.board, rookIndex);
+    togglePieceAtIndex(&game->currentPosition.board, rookIndex, piece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) piece - 9][rookIndex]; // Removing rook
-    togglePieceAtIndex(&game->currentState.board, to - 1, piece);
+    togglePieceAtIndex(&game->currentPosition.board, to - 1, piece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) piece - 9][to - 1]; // Adding rook
     break;
   case QUEEN_SIDE_CASTLING:
     rookIndex = from - 4;
-    piece = pieceAtIndex(game->currentState.board, rookIndex);
-    togglePieceAtIndex(&game->currentState.board, rookIndex, piece);
+    piece = pieceAtIndex(game->currentPosition.board, rookIndex);
+    togglePieceAtIndex(&game->currentPosition.board, rookIndex, piece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) piece - 9][rookIndex]; // Removing rook
-    togglePieceAtIndex(&game->currentState.board, to + 1, piece);
+    togglePieceAtIndex(&game->currentPosition.board, to + 1, piece);
     newZobristKey ^= zobristRandomNumber.pieces[(int) piece - 9][to + 1]; // Adding rook
     break;
   case PROMOTE_TO_QUEEN: 
-    togglePieceAtIndex(&game->currentState.board, to, makePiece(colorToGo, QUEEN));
+    togglePieceAtIndex(&game->currentPosition.board, to, makePiece(colorToGo, QUEEN));
     newZobristKey ^= zobristRandomNumber.pieces[(int) makePiece(colorToGo, QUEEN) - 9][to]; // Adding promotion piece
     // To undo what the `handleMove` function did wrong (on accident, I might add)
-    togglePieceAtIndex(&game->currentState.board, to, pieceToMove);
+    togglePieceAtIndex(&game->currentPosition.board, to, pieceToMove);
     newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][to]; // Removing piece to move (it was added on accident)
     break;
   case PROMOTE_TO_KNIGHT: 
-    togglePieceAtIndex(&game->currentState.board, to, makePiece(colorToGo, KNIGHT));
+    togglePieceAtIndex(&game->currentPosition.board, to, makePiece(colorToGo, KNIGHT));
     newZobristKey ^= zobristRandomNumber.pieces[(int) makePiece(colorToGo, KNIGHT) - 9][to]; // Adding promotion piece
     // To undo what the `handleMove` function did wrong (on accident, I might add)
-    togglePieceAtIndex(&game->currentState.board, to, pieceToMove);
+    togglePieceAtIndex(&game->currentPosition.board, to, pieceToMove);
     newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][to]; // Removing piece to move (it was added on accident)
     break;
   case PROMOTE_TO_ROOK: 
-    togglePieceAtIndex(&game->currentState.board, to, makePiece(colorToGo, ROOK));
+    togglePieceAtIndex(&game->currentPosition.board, to, makePiece(colorToGo, ROOK));
     newZobristKey ^= zobristRandomNumber.pieces[(int) makePiece(colorToGo, ROOK) - 9][to]; // Adding promotion piece
     // To undo what the `handleMove` function did wrong (on accident, I might add)
-    togglePieceAtIndex(&game->currentState.board, to, pieceToMove);
+    togglePieceAtIndex(&game->currentPosition.board, to, pieceToMove);
     newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][to]; // Removing piece to move (it was added on accident)
     break;
   case PROMOTE_TO_BISHOP: 
-    togglePieceAtIndex(&game->currentState.board, to, makePiece(colorToGo, BISHOP));
+    togglePieceAtIndex(&game->currentPosition.board, to, makePiece(colorToGo, BISHOP));
     newZobristKey ^= zobristRandomNumber.pieces[(int) makePiece(colorToGo, BISHOP) - 9][to]; // Adding promotion piece
     // To undo what the `handleMove` function did wrong (on accident, I might add)
-    togglePieceAtIndex(&game->currentState.board, to, pieceToMove);
+    togglePieceAtIndex(&game->currentPosition.board, to, pieceToMove);
     newZobristKey ^= zobristRandomNumber.pieces[(int) pieceToMove - 9][to]; // Removing piece to move (it was added on accident)
     break;
   default:
     printf("ERROR: Invalid flag %d\n", flag);
-    printBoard(game->currentState.board);
     return;
   }
   
-  if (flag != DOUBLE_PAWN_PUSH && game->currentState.enPassantTargetSquare != 0) {
-    game->currentState.enPassantTargetSquare = 0;
+  if (flag != DOUBLE_PAWN_PUSH && game->currentPosition.enPassantTargetSquare != 0) {
+    game->currentPosition.enPassantTargetSquare = 0;
   }
-  newZobristKey ^= zobristRandomNumber.enPassantFile[game->currentState.enPassantTargetSquare % 8];
+  newZobristKey ^= zobristRandomNumber.enPassantFile[game->currentPosition.enPassantTargetSquare % 8];
 
-  game->currentState.colorToGo = oppositeColor;
-  if (game->currentState.colorToGo == WHITE) {
-    game->currentState.nbMoves++; // Only recording full moves
+  game->currentPosition.colorToGo = oppositeColor;
+  if (game->currentPosition.colorToGo == WHITE) {
+    game->currentPosition.nbMoves++; // Only recording full moves
   }
   newZobristKey ^= zobristRandomNumber.sideToMove;
 
 
-  if (game->previousStatesCount > PREVIOUS_STATE_CAPACITY) {
+  if (game->previousPositionsCount > PREVIOUS_STATE_CAPACITY) {
     printf("***** RARE ACHIEVEMENT UNLOCKED ***** (or you have a bug in your code )\n");
-    printf("Your game with %d moves has exceeded %d moves.\n", game->previousStatesCount, PREVIOUS_STATE_CAPACITY - 1);
+    printf("Your game with %d moves has exceeded %d moves.\n", game->previousPositionsCount, PREVIOUS_STATE_CAPACITY - 1);
     printf("Since this exceeds the number of zobrist key we can store the program will exit cold turkey\n");
     printf("Sorry about that...\n");
-
-    printBoard(game->currentState.board);
     exit(EXIT_FAILURE);
   }
 
-  game->previousStates[game->previousStatesCount++] = game->currentState.key;
+  game->previousPositions[game->previousPositionsCount++] = game->currentPosition.key;
 
   // Updating the zobrist key
-  game->currentState.key = newZobristKey;
+  game->currentPosition.key = newZobristKey;
 }

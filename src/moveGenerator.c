@@ -593,9 +593,9 @@ We are not computing end of games in this function!!!!
 They are not needed for perft and so I did not write a function to compute just yet
 These function will probably in the board.c file
 */
-void getValidMoves(Move result[256], int* numMoves, const ChessGame* game) {
+void getValidMoves(Move result[256], int* numMoves, ChessPosition position) {
 
-    currentState = game->currentState;
+    currentState = position;
 
     validMoves = result;
     currentMoveIndex = 0;

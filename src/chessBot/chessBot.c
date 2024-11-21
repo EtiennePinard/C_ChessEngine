@@ -75,8 +75,8 @@ const int reducingKingMovementBonus[] = {
 bool isThereThreeFoldRepetition() {
     bool hasOneDuplicate = false;
     bool result = false;
-    for (int i = 0; i < game->previousStatesCount; i++) {
-        if (game->currentState.key == game->previousStates[i]) {
+    for (int i = 0; i < game->previousPositionsCount; i++) {
+        if (game->currentPosition.key == game->previousPositions[i]) {
             if (hasOneDuplicate) {
                 result = true;
                 break;
@@ -99,13 +99,13 @@ int staticEvaluation() {
     // Checking for mate:
     Move validMoves[256] = { [0 ... (255)] = 0 };
     int numMoves;
-    getValidMoves(validMoves, &numMoves, game);
+    getValidMoves(validMoves, &numMoves, game->currentPosition);
 
     bool inCheck = isKingInCheck(); 
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
-            return game->currentState.colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
+            return game->currentPosition.colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
         }
         // It is a stalemate
         return 0;
@@ -115,13 +115,13 @@ int staticEvaluation() {
         PieceCharacteristics color = WHITE * (i + 1);
         
         int view = color == WHITE ? 1 : -1;
-        int opposingKingIndex = trailingZeros_64(bitBoardForPiece(game->currentState.board, makePiece(BLACK / (i + 1), KING)));
+        int opposingKingIndex = trailingZeros_64(bitBoardForPiece(game->currentPosition.board, makePiece(BLACK / (i + 1), KING)));
         kingAttacks = kingMovementMask[opposingKingIndex];
-        friendlyBitBoard = specificColorBitBoard(game->currentState.board, color);
+        friendlyBitBoard = specificColorBitBoard(game->currentPosition.board, color);
         
         for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
-            bitboard = bitBoardForPiece(game->currentState.board, makePiece(color, type));
+            bitboard = bitBoardForPiece(game->currentPosition.board, makePiece(color, type));
 
             while (bitboard) {
                 int square = trailingZeros_64(bitboard);
@@ -136,7 +136,7 @@ int staticEvaluation() {
                 // We do not include the piece that we are currently looking in the file bitboard
                 currentFileWithoutPiece = (file << file(square)) & ~(1UL << square);
                 
-                if ((currentFileWithoutPiece & bitBoardForPiece(game->currentState.board, makePiece(color, PAWN))) == 0) {
+                if ((currentFileWithoutPiece & bitBoardForPiece(game->currentPosition.board, makePiece(color, PAWN))) == 0) {
                     score += openFilesAndDoublePawns[type - 1] * view;
                 }
                 
@@ -147,7 +147,7 @@ int staticEvaluation() {
                     break;
                 case BISHOP:
                     attack = getBishopPseudoLegalMovesBitBoard(
-                                 square, allPiecesBitBoard(game->currentState.board) & bishopMovementMask[square]
+                                 square, allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -156,7 +156,7 @@ int staticEvaluation() {
 
                 case ROOK:
                     attack = getRookPseudoLegalMovesBitBoard(
-                                 square, allPiecesBitBoard(game->currentState.board) & rookMovementMask[square]
+                                 square, allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -165,9 +165,9 @@ int staticEvaluation() {
 
                 case QUEEN:
                     attack = (getBishopPseudoLegalMovesBitBoard(
-                                  square, allPiecesBitBoard(game->currentState.board) & bishopMovementMask[square]) |
+                                  square, allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]) |
                               getRookPseudoLegalMovesBitBoard(
-                                  square, allPiecesBitBoard(game->currentState.board) & rookMovementMask[square])) &
+                                  square, allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square])) &
                              (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -214,8 +214,8 @@ int search(int alpha, int beta, int depth) {
 
     int nbOfMoves;
     Move validMoves[256];
-    getValidMoves(validMoves, &nbOfMoves, game);
-    posHistory[maximumDepth - depth] = game->currentState;
+    getValidMoves(validMoves, &nbOfMoves, game->currentPosition);
+    posHistory[maximumDepth - depth] = game->currentPosition;
 
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
@@ -231,8 +231,8 @@ int search(int alpha, int beta, int depth) {
                 alpha = score; // alpha acts like max in MiniMax
             }
         }
-        game->previousStatesCount--;
-        memcpy(&game->currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+        game->previousPositionsCount--;
+        memcpy(&game->currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
         
         // fail soft beta-cutoff, existing the loop here is also 
         if (score >= beta) { return bestValue; }  
@@ -245,7 +245,7 @@ Move think() {
     Move bestMove = (Move) 0;
     int bestEval = MINUS_INFINITY;
 
-    ChessPosition lastPos = game->currentState;
+    ChessPosition lastPos = game->currentPosition;
 
     maximumDepth = 2;
     if (maximumDepth >= 10) {
@@ -256,7 +256,7 @@ Move think() {
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256] = { [0 ... (255)] = 0 };
     int numMoves;
-    getValidMoves(moves, &numMoves, game);
+    getValidMoves(moves, &numMoves, lastPos);
 
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
@@ -268,8 +268,8 @@ Move think() {
             bestMove = move;
         }
 
-        game->previousStatesCount--; // Removing last zobrist key computed
-        memcpy(&game->currentState, &lastPos, sizeof(ChessPosition));
+        game->previousPositionsCount--; // Removing last zobrist key computed
+        memcpy(&game->currentPosition, &lastPos, sizeof(ChessPosition));
     }
 
     return bestMove; 

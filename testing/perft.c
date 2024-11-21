@@ -25,7 +25,7 @@ u64 perft(int depth) {
 
   int nbOfMoves;
   Move validMoves[256];
-  getValidMoves(validMoves, &nbOfMoves, &game); // We do not care about draw by repetition
+  getValidMoves(validMoves, &nbOfMoves, game.currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
   // Note that here we take into account the fifty move fule
@@ -40,7 +40,7 @@ u64 perft(int depth) {
     return nbOfMoves;
   }
   
-  posHistory[maximumDepth - depth] = game.currentState;
+  posHistory[maximumDepth - depth] = game.currentPosition;
 
   for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
@@ -56,8 +56,8 @@ u64 perft(int depth) {
     }
     nodes += moveOutput;
 
-    game.previousStatesCount--;
-    memcpy(&game.currentState, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+    game.previousPositionsCount--;
+    memcpy(&game.currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
   }
   
   return nodes;
@@ -184,8 +184,8 @@ void test() {
     pos6, 
   };
   
-  game.currentState = (ChessPosition) { 0 };
-  game.previousStatesCount = 0;
+  game.currentPosition = (ChessPosition) { 0 };
+  game.previousPositionsCount = 0;
 
   ChessPosition startingState;
   u64 perftResult;
@@ -199,8 +199,8 @@ void test() {
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
     
-    setChessPositionFromFenString(testPosition.fenString, &game.currentState);
-    startingState = game.currentState;
+    setChessPositionFromFenString(testPosition.fenString, &game.currentPosition);
+    startingState = game.currentPosition;
 
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
 
@@ -219,14 +219,14 @@ void test() {
       }
 
       // TODO: try memcpy
-      game.currentState.board = startingState.board;
-      game.currentState.castlingPerm = startingState.castlingPerm;
-      game.currentState.colorToGo = startingState.colorToGo;
-      game.currentState.enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game.currentState.key = startingState.key;
-      game.currentState.nbMoves = startingState.nbMoves;
-      game.currentState.turnsForFiftyRule = startingState.turnsForFiftyRule;
-      game.previousStatesCount = 0;
+      game.currentPosition.board = startingState.board;
+      game.currentPosition.castlingPerm = startingState.castlingPerm;
+      game.currentPosition.colorToGo = startingState.colorToGo;
+      game.currentPosition.enPassantTargetSquare = startingState.enPassantTargetSquare;
+      game.currentPosition.key = startingState.key;
+      game.currentPosition.nbMoves = startingState.nbMoves;
+      game.currentPosition.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      game.previousPositionsCount = 0;
     }
  
     printf("\n");
@@ -316,11 +316,11 @@ int main(int argc, char* argv[]) {
   u64 perftResult;
 
   if (divide) {
-    printBoard(game.currentState.board);
+    printBoard(game.currentPosition.board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
   } else {
-    ChessPosition startingState = game.currentState;
+    ChessPosition startingState = game.currentPosition;
 
     double averageExecutionTime = 0;
     clock_t begin, end;
@@ -332,14 +332,14 @@ int main(int argc, char* argv[]) {
       double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       averageExecutionTime += timeSpent;
       
-      game.currentState.board = startingState.board;
-      game.currentState.castlingPerm = startingState.castlingPerm;
-      game.currentState.colorToGo = startingState.colorToGo;
-      game.currentState.enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game.currentState.key = startingState.key;
-      game.currentState.nbMoves = startingState.nbMoves;
-      game.currentState.turnsForFiftyRule = startingState.turnsForFiftyRule;
-      game.previousStatesCount = 0;
+      game.currentPosition.board = startingState.board;
+      game.currentPosition.castlingPerm = startingState.castlingPerm;
+      game.currentPosition.colorToGo = startingState.colorToGo;
+      game.currentPosition.enPassantTargetSquare = startingState.enPassantTargetSquare;
+      game.currentPosition.key = startingState.key;
+      game.currentPosition.nbMoves = startingState.nbMoves;
+      game.currentPosition.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      game.previousPositionsCount = 0;
 
       printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
     }

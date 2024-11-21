@@ -17,7 +17,7 @@
 
 ChessGame* game;
 
-void provideGameState(ChessGame* state) {
+void provideGameStateForBot(ChessGame* state) {
     game = state;
 }
 
@@ -97,7 +97,7 @@ int staticEvaluation() {
     u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;  
 
     // Checking for mate:
-    Move validMoves[256] = { [0 ... (255)] = 0 };
+    Move validMoves[256];
     int numMoves;
     getValidMoves(validMoves, &numMoves, game->currentPosition);
 
@@ -254,7 +254,7 @@ Move think() {
     }
 
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
-    Move moves[256] = { [0 ... (255)] = 0 };
+    Move moves[256];
     int numMoves;
     getValidMoves(moves, &numMoves, lastPos);
 

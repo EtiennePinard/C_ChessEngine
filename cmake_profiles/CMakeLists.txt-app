@@ -1,0 +1,47 @@
+# Minimum CMake version
+cmake_minimum_required(VERSION 3.10)
+
+set(PROJECT chess_app)
+set(link_src "${CMAKE_SOURCE_DIR}/chess_app/assets")
+set(link_dst "${CMAKE_CURRENT_BINARY_DIR}/assets") 
+
+# Project name and language
+project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
+
+# Define source files
+set(SOURCE_FILES
+    src/chessGameEmulator.c
+    src/moveGenerator.c
+    src/utils/fenString.c
+    src/utils/utils.c
+    src/state/board.c
+    src/state/gameState.c
+    src/state/zobristKey.c
+    src/magicBitBoard/magicBitBoard.c
+    src/magicBitBoard/rook.c
+    src/magicBitBoard/bishop.c
+    src/chessBot/chessBot.c
+    src/chessBot/pieceSquareTable.c
+    testing/logChessStructs.c
+    chess_app/app.c 
+    chess_app/render.c 
+    chess_app/appInit.c 
+    chess_app/eventHandler.c
+)
+
+# Add executable target
+add_executable(${PROJECT} ${SOURCE_FILES})
+target_link_libraries(${PROJECT} m SDL2 SDL2_ttf SDL2_image)
+
+# Specify the output name for the executable
+set_target_properties(${PROJECT} PROPERTIES OUTPUT_NAME "${PROJECT}")
+
+message("=== [CMakeLists.txt-app] symbolic link ${link_src} => ${link_dst}")
+
+add_custom_command( 
+    TARGET ${PROJECT} 
+    POST_BUILD COMMAND ${CMAKE_COMMAND} 
+        -E create_symlink ${link_src} ${link_dst} 
+    DEPENDS ${link_dst} 
+    COMMENT "symbolic link ${link_src} => ${link_dst}" 
+)

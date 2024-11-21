@@ -54,8 +54,8 @@ void magicBitBoardInitialize() {
     }
     rookPseudoLegalMovesBitBoard = calloc(ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     bishopPseudoLegalMovesBitBoard = calloc(BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
-    assert(rookPseudoLegalMovesBitBoard != NULL && "Buy more RAM lol");
-    assert(bishopPseudoLegalMovesBitBoard != NULL && "Buy more RAM lol");
+    assert(rookPseudoLegalMovesBitBoard != NULL && "rookPseudoLegalMovesBitBoard == NULL, Buy more RAM lol");
+    assert(bishopPseudoLegalMovesBitBoard != NULL && "bishopPseudoLegalMovesBitBoard == NULL, Buy more RAM lol");
 
     // The max number of valid squares for a piece is 12
     // Thus the max number of blocking bit board 2^12 = 1 << 12

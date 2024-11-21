@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
         randomFenFromFile(positions, lineSize, fen);
         setupChesGame(&game, &currentPosition, fen);
         
-        provideGameState(&game);
+        provideGameStateForBot(&game);
         setStockfishPosition(fen);
 
         int score = staticEvaluation();

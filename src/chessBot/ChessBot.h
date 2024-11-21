@@ -7,7 +7,7 @@
 /**
  * Call this function with the ChessGame that you want the bot to analyze
 */
-void provideGameState(ChessGame* game);
+void provideGameStateForBot(ChessGame* game);
 
 /**
  * Returns the best move in a position (according to the computer)

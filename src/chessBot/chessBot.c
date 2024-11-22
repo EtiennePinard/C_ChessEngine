@@ -72,20 +72,6 @@ const int reducingKingMovementBonus[] = {
     S(23, 18)   // King
 };
 
-bool isThereThreeFoldRepetition() {
-    bool hasOneDuplicate = false;
-    bool result = false;
-    for (int i = 0; i < game->previousPositionsCount; i++) {
-        if (game->currentPosition.key == game->previousPositions[i]) {
-            if (hasOneDuplicate) {
-                result = true;
-                break;
-            }
-            hasOneDuplicate = true;
-        }
-    }
-    return result;
-}
 #define TOTAL_PHASE 24
 
 // TODO: Static evaluation does not give positive/negative inf if one side is checkmated

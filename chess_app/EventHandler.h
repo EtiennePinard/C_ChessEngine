@@ -3,7 +3,9 @@
 
 #include "AppState.h"
 
-void handleMouseButtonDown(GameState *gameState, DraggingState *draggingState);
-void handleMouseButtonUp(GameState *gameState, DraggingState *draggingState);
+void clickeChessBoard(SDL_Event event, GameState *gameState, DraggingState *draggingState);
+void clickedRestartButton(SDL_Event event, GameState *gameState, DraggingState *draggingState);
+
+void handleEvent(bool *isRunning, ClickableAreas* clickableArea, GameState *gameState, DraggingState *draggingState);
 
 #endif /* D3396E27_D64F_4822_A2B1_53F51ECF3977 */

@@ -50,4 +50,13 @@ typedef struct ChessGame {
 */
 bool setupChesGame(ChessGame *result, ChessPosition *currentPosition, const char *fenString);
 
+/**
+ * @brief Returns true if the current position aleady happened twice in the game
+ * 
+ * @param game The game to look for repeated positions
+ * @return true If the current position already happened twice
+ * @return false If the current position did not already happened twice
+ */
+bool isThereThreeFoldRepetition(ChessGame* game);
+
 #endif /* BDF83061_7504_461E_BCDD_602085692048 */

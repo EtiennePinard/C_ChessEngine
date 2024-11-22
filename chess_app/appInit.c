@@ -112,9 +112,11 @@ static void freeChessImages(ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE]
     }
 }
 
-void cleanupApp(SDL_State *sldState, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE]) {
+void cleanupApp(SDL_State *sldState, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE], GameState *gameState, ClickableAreas *clickableAreas) {
     magicBitBoardTerminate();
     freeChessImages(chessImages);
+    free(gameState->previousStates);
+    free(clickableAreas->areas);
     if (sldState->font) {
         TTF_CloseFont(sldState->font);
     }

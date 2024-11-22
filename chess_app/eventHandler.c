@@ -6,9 +6,23 @@
 #include "../src/ChessGameEmulator.h"
 #include "../src/chessBot/ChessBot.h"
 
-static bool pointInChessBoard(int x, int y) {
-    return x >= CHESSBOARD_X && x < CHESSBOARD_X + CHESSBOARD_WIDTH &&
-        y >= CHESSBOARD_Y && y < CHESSBOARD_Y + CHESSBOARD_HEIGHT;
+static void resetGame(GameState *gameState) {
+    if (gameState->previousStateIndex == 0) {
+        return; // Game is already reset
+    }
+    gameState->currentState = gameState->previousStates[0];
+    gameState->previousStateIndex = 0;
+    gameState->result = GAME_IS_NOT_DONE;
+}
+
+void clickedRestartButton(SDL_Event event, GameState *gameState, DraggingState *draggingState) {
+    switch (event.type) {
+    case SDL_MOUSEBUTTONDOWN:
+        resetGame(gameState);
+        break;
+    default: // Only do something for mouse button down
+        break;
+    }
 }
 
 // Note: This will be correct if the point (x, y) is in the chessboard
@@ -17,21 +31,6 @@ static int squareFromxy(int x, int y) {
     int col = (x - CHESSBOARD_X) / squareSize;
     int row = y / squareSize;
     return row * BOARD_LENGTH + col;
-}
-
-void handleMouseButtonDown(GameState *gameState, DraggingState *draggingState) {
-    int mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
-    
-    if (!pointInChessBoard(mouseX, mouseY)) { return; }
-    
-    int square = squareFromxy(mouseX, mouseY);
-
-    if (pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
-
-    draggingState->draggedPiece = pieceAtIndex(gameState->currentState.currentPosition.board, square);
-    draggingState->from = square;
-    draggingState->isDragging = true;
 }
 
 static void playBotMove(GameState *gameState) {
@@ -46,12 +45,30 @@ static void playBotMove(GameState *gameState) {
     playMove(botMove, &gameState->currentState);
 }
 
-void handleMouseButtonUp(GameState *gameState, DraggingState *draggingState) {
+static void computeGameEnd(GameState *gameState) {
+    Move moves[256];
+    int numMove;
+    getValidMoves(moves, &numMove, gameState->currentState.currentPosition);
+    if (numMove == 0) {
+        if (isKingInCheck() || isKingInDoubleCheck()) {
+            gameState->result = gameState->currentState.currentPosition.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
+        } else {
+            gameState->result = STALEMATE;
+        }
+    } else if (isThereThreeFoldRepetition(&gameState->currentState)) {
+        gameState->result = THREE_MOVE_REPETITION;
+    } else if (gameState->currentState.currentPosition.turnsForFiftyRule > 50) {
+        // TODO: Check this case out
+        gameState->result = FIFTY_MOVE_RULE;
+    }
+}
+
+static void chessBoardMouseButtonUp(GameState *gameState, DraggingState *draggingState) {
+    if (!draggingState->isDragging) { return; } // We are not dragging anything
     draggingState->isDragging = false; // Always stop dragging when we stop holding click
 
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    if (!pointInChessBoard(mouseX, mouseY)) { return; }
     
     int draggingTo = squareFromxy(mouseX, mouseY);
 
@@ -73,11 +90,71 @@ void handleMouseButtonUp(GameState *gameState, DraggingState *draggingState) {
             }
             gameState->previousStates[gameState->previousStateIndex++] = gameState->currentState;
             // This is the move the player wants to play
-            // This is true because their is only one move with a particular from and to square
+            // This is true because their is only one move with a particular from and to square (except for promotion)
             playMove(move, &gameState->currentState);
+            computeGameEnd(gameState);
+            if (gameState->result != GAME_IS_NOT_DONE) { break; }
 
             playBotMove(gameState);
             break;
         }
     }
+}
+
+static void chessBoardMouseButtonDown(GameState *gameState, DraggingState *draggingState) {
+    if (gameState->result != GAME_IS_NOT_DONE) { return; } // Game is done
+
+    int mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    
+    int square = squareFromxy(mouseX, mouseY);
+
+    if (pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
+
+    draggingState->draggedPiece = pieceAtIndex(gameState->currentState.currentPosition.board, square);
+    draggingState->from = square;
+    draggingState->isDragging = true;
+}
+
+void clickeChessBoard(SDL_Event event, GameState *gameState, DraggingState *draggingState) {
+    switch (event.type) {
+    case SDL_MOUSEBUTTONDOWN:
+        chessBoardMouseButtonDown(gameState, draggingState);
+        break;
+    case SDL_MOUSEBUTTONUP:
+        chessBoardMouseButtonUp(gameState, draggingState);
+        break;
+    default:
+        break;
+    }
+}
+
+static bool pointInRect(int x, int y, SDL_Rect rect) {
+    return x >= rect.x && x <= rect.x + rect.w &&
+        y >= rect.y && y <= rect.y + rect.h;
+}
+
+void handleEvent(bool *isRunning, ClickableAreas *clickableAreas, GameState *gameState, DraggingState *draggingState) {
+    SDL_Event event;
+        int mouseX, mouseY;
+            while (SDL_PollEvent(&event)) {
+            // TODO: Maybe put this logic in the event handler file
+            switch (event.type) {
+            case SDL_QUIT:
+                *isRunning = false;
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP:
+                SDL_GetMouseState(&mouseX, &mouseY);
+                for (int index = 0; index < clickableAreas->count; index++) {
+                    ClickableArea area = clickableAreas->areas[index];
+                    if (pointInRect(mouseX, mouseY, area.rect)) {
+                        area.callback(event, gameState, draggingState);
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+        }
 }

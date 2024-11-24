@@ -106,8 +106,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     appState->gameState.previousStateIndex = 0;
     appState->gameState.result = GAME_IS_NOT_DONE;
 
-    const char* otherFen = "8/8/8/8/8/8/2Kpk3/8 w - - 0 1";
-    setupChesGame(&appState->gameState.currentState, &appState->gameState.currentState.currentPosition, otherFen);
+    setupChesGame(&appState->gameState.currentState, &appState->gameState.currentState.currentPosition, INITIAL_FEN);
 
     appState->draggingState.isDragging = false;
 

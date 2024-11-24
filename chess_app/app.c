@@ -7,8 +7,7 @@
 #include "AppInit.h"
 #include "EventHandler.h"
 
-// TODO: Promotion. Note: will have to code the functionality of a popup, meaning that when the promotion overlay is active nothing else works
-// TODO: Make the app compile and fix the buggy behavior of promotion cause it will happen
+// TODO: Make the ability to start decide which color to play
 int main() {
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };

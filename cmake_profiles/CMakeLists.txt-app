@@ -24,9 +24,11 @@ set(SOURCE_FILES
     src/chessBot/pieceSquareTable.c
     testing/logChessStructs.c
     chess_app/app.c 
-    chess_app/render.c 
     chess_app/appInit.c 
     chess_app/eventHandler.c
+    chess_app/events.c
+    chess_app/render.c 
+    chess_app/overlay.c
 )
 
 # Add executable target

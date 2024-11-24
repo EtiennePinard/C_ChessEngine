@@ -7,48 +7,23 @@
 #include "AppInit.h"
 #include "EventHandler.h"
 
-// TODO: Promotion
+// TODO: Promotion. Note: will have to code the functionality of a popup, meaning that when the promotion overlay is active nothing else works
+// TODO: Make the app compile and fix the buggy behavior of promotion cause it will happen
 int main() {
-    SDL_State sdlState = { 0 };
-    ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE] = { 0 };
-    const char* imageBasePath = "./assets/png";
-    const char* title = "SDL Chess Application";
-    const char* fontPath = "/usr/share/fonts/truetype/computer-modern/cmunbl.ttf";
+    AppState appState = { 0 };
+    AppEvents appEvents = { 0 };
 
-    if (!initializeApp(&sdlState, 
-                        title, WINDOW_WIDTH, WINDOW_HEIGHT, 
-                        fontPath, FONT_SIZE, 
-                        imageBasePath, chessImages)) {
+    if (!initializeApp(&appEvents, &appState)) {
         fprintf(stderr, "Failed to initialize application.\n");
         exit(EXIT_FAILURE);
     }
     
-    GameState state = { 0 };
-    state.previousStates = malloc(sizeof(ChessGame) * 64);
-    state.previousStateCapacity = 64;
-    state.previousStateIndex = 0;
-    state.result = GAME_IS_NOT_DONE;
-
-    const char* initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    setupChesGame(&state.currentState, &state.currentState.currentPosition, initialFen);
-
-    DraggingState draggingState = { 0 };
-
-    ClickableAreas clickableAreas = { 0 };
-    clickableAreas.capacity = 2; // We don't have that much clickableAreas right now
-    clickableAreas.count = 0;
-    clickableAreas.areas = malloc(sizeof(ClickableArea) * clickableAreas.capacity);
-
-    // Chessboard position will not change while the app is running, so we can add it once at app startup
-    clickableAreas_append((&clickableAreas), ((ClickableArea) { .rect = CHESSBOARD_RECT, .callback = &clickeChessBoard}));
-
-    bool running = true;
-    while (running) {
-        handleEvent(&running, &clickableAreas, &state, &draggingState);
-        render(&sdlState, chessImages, &state, draggingState, &clickableAreas);
+    while (appState.isRunning) {
+        handleEvent(&appEvents, &appState);
+        render(&appEvents, &appState);
     }
 
-    cleanupApp(&sdlState, chessImages, &state, &clickableAreas);
+    cleanupApp(&appEvents, &appState);
 
     return 0;
 }

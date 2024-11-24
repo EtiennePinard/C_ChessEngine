@@ -1,6 +1,7 @@
 #include <SDL2/SDL_image.h>
 
 #include "AppInit.h"
+#include "Events.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
 #include "../src/chessBot/PieceSquareTable.h"
@@ -10,12 +11,14 @@ static const char* PIECE_NAMES[NB_PIECE_COLOR][NB_PIECE_TYPE] = {
     {"black_pawn", "black_knight", "black_bishop", "black_rook", "black_queen", "black_king"}
 };
 
-static bool loadChessImages(SDL_State* sdlState, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE], const char* basePath) {
+static bool loadChessImages(SDL_State* sdlState, Textures *chessImages, const char* basePath) {
     char filePath[256];
-    for (PieceCharacteristics type = PAWN; type <= KING; type++) {
-        for (PieceCharacteristics color = WHITE; color <= BLACK; color += WHITE) {
+    // Note: It is important that the color goes first, because this is how the pieces are ordered in the Piece.h file
+    for (PieceCharacteristics color = WHITE; color <= BLACK; color += WHITE) {
+        for (PieceCharacteristics type = PAWN; type <= KING; type++) {
+
             snprintf(filePath, sizeof(filePath), "%s/%s.png", basePath, PIECE_NAMES[color / WHITE - 1][type - 1]);
-            // Load the SVG as a texture
+
             SDL_RWops* rw = SDL_RWFromFile(filePath, "rb");
             SDL_Surface* surface = IMG_Load_RW(rw, 1);
             if (!surface) {
@@ -23,25 +26,26 @@ static bool loadChessImages(SDL_State* sdlState, ImageData chessImages[NB_PIECE_
                 return false;
             }
 
-            chessImages[color / WHITE - 1][type - 1].texture = SDL_CreateTextureFromSurface(sdlState->renderer, surface);
-            if (!chessImages[color / WHITE - 1][type - 1].texture) {
+            TextureState textureState = { 0 };
+
+            textureState.texture = SDL_CreateTextureFromSurface(sdlState->renderer, surface);
+            if (!textureState.texture) {
                 fprintf(stderr, "Failed to create texture for %s: %s\n", filePath, SDL_GetError());
                 SDL_FreeSurface(surface);
                 return false;
             }
 
-            chessImages[color / WHITE - 1][type - 1].width = surface->w;
-            chessImages[color / WHITE - 1][type - 1].height = surface->h;
+            textureState.width = surface->w;
+            textureState.height = surface->h;
             SDL_FreeSurface(surface);
+
+            da_append(chessImages, textureState);
         }
     }
     return true;
 }
 
-bool initializeApp(SDL_State *sdlState, 
-    const char* title, int width, int height, 
-    const char* fontPath, int fontSize, 
-    const char* svgBasePath, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE]) {
+bool initializeApp(AppEvents *appEvents, AppState *appState) {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return false;
@@ -57,74 +61,96 @@ bool initializeApp(SDL_State *sdlState,
         fprintf(stderr, "Failed to initialize SDL_image: %s\n", IMG_GetError());
         return 1;
     }
-
-    sdlState->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN);
-    if (!sdlState->window) {
+    
+    appState->sdlState.window = SDL_CreateWindow(TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
+    if (!appState->sdlState.window) {
         fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         TTF_Quit();
         SDL_Quit();
         return false;
     }
 
-    sdlState->renderer = SDL_CreateRenderer(sdlState->window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!sdlState->renderer) {
+    appState->sdlState.renderer = SDL_CreateRenderer(appState->sdlState.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (!appState->sdlState.renderer) {
         fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
-        SDL_DestroyWindow(sdlState->window);
+        SDL_DestroyWindow(appState->sdlState.window);
         TTF_Quit();
         SDL_Quit();
         return false;
     }
 
-    sdlState->font = TTF_OpenFont(fontPath, fontSize);
-    if (!sdlState->font) {
+    appState->sdlState.font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
+    if (!appState->sdlState.font) {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
-        SDL_DestroyRenderer(sdlState->renderer);
-        SDL_DestroyWindow(sdlState->window);
+        SDL_DestroyRenderer(appState->sdlState.renderer);
+        SDL_DestroyWindow(appState->sdlState.window);
         TTF_Quit();
         SDL_Quit();
         return false;
     }
 
-    if (!loadChessImages(sdlState, chessImages, svgBasePath)) {
+    appState->textures.capacity = 12; // Don't need more for now
+    appState->textures.count = 0;
+    appState->textures.data = malloc(sizeof(TextureState) * appState->textures.capacity);
+    if (!loadChessImages(&appState->sdlState, &appState->textures, CHESS_IMAGE_BASE_PATH)) {
         fprintf(stderr, "Failed to load images.\n");
-        SDL_DestroyRenderer(sdlState->renderer);
-        SDL_DestroyWindow(sdlState->window);
+        SDL_DestroyRenderer(appState->sdlState.renderer);
+        SDL_DestroyWindow(appState->sdlState.window);
         TTF_Quit();
         SDL_Quit();
         return false;
     }
+
+    appState->gameState.previousStates = malloc(sizeof(ChessGame) * 64);
+    appState->gameState.previousStateCapacity = 64;
+    appState->gameState.previousStateIndex = 0;
+    appState->gameState.result = GAME_IS_NOT_DONE;
+
+    const char* otherFen = "8/8/8/8/8/8/2Kpk3/8 w - - 0 1";
+    setupChesGame(&appState->gameState.currentState, &appState->gameState.currentState.currentPosition, otherFen);
+
+    appState->draggingState.isDragging = false;
+
+    appEvents->clickableAreas.capacity = 2; // We don't have that much clickableAreas right now
+    appEvents->clickableAreas.count = 0;
+    appEvents->clickableAreas.data = malloc(sizeof(ClickableArea) * appEvents->clickableAreas.capacity);
+
+    // Chessboard position will not change while the app is running, so we can add it once at app startup
+    da_append((&appEvents->clickableAreas), ((ClickableArea) { .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard}));
 
     magicBitBoardInitialize();
     zobristKeyInitialize();
     pieceSquareTableInitialize();
 
+    // We are officially running the app!
+    appState->isRunning = true;
+
     return true;
 }
 
-static void freeChessImages(ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE]) {
-    for (PieceCharacteristics type = PAWN; type <= KING; type++) {
-        for (PieceCharacteristics color = WHITE; color <= BLACK; color += WHITE) {
-            if (chessImages[color / WHITE - 1][type - 1].texture) {
-                SDL_DestroyTexture(chessImages[color / WHITE - 1][type - 1].texture);
-                chessImages[color / WHITE - 1][type - 1].texture = NULL;
-            }
+static void freeTextures(Textures textures) {
+    for (size_t index = 0; index < textures.capacity; index++) {
+        if (textures.data[index].texture) {
+            SDL_DestroyTexture(textures.data[index].texture);
+            textures.data[index].texture = NULL;
         }
     }
 }
 
-void cleanupApp(SDL_State *sldState, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE], GameState *gameState, ClickableAreas *clickableAreas) {
+void cleanupApp(AppEvents *appEvents, AppState *appState) {
     magicBitBoardTerminate();
-    freeChessImages(chessImages);
-    free(gameState->previousStates);
-    free(clickableAreas->areas);
-    if (sldState->font) {
-        TTF_CloseFont(sldState->font);
+    freeTextures(appState->textures);
+
+    free(appState->gameState.previousStates);
+    free(appEvents->clickableAreas.data);
+    if (appState->sdlState.font) {
+        TTF_CloseFont(appState->sdlState.font);
     }
-    if (sldState->renderer) {
-        SDL_DestroyRenderer(sldState->renderer);
+    if (appState->sdlState.renderer) {
+        SDL_DestroyRenderer(appState->sdlState.renderer);
     }
-    if (sldState->window) {
-        SDL_DestroyWindow(sldState->window);
+    if (appState->sdlState.window) {
+        SDL_DestroyWindow(appState->sdlState.window);
     }
     TTF_Quit();
     SDL_Quit();

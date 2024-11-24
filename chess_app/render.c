@@ -1,9 +1,12 @@
 #include <stdbool.h>
 #include <SDL2/SDL_image.h>
 
-#include "../src/MoveGenerator.h"
 #include "Render.h"
 #include "EventHandler.h"
+#include "Events.h"
+
+#include "../src/MoveGenerator.h"
+#include "../src/state/Piece.h"
 
 #define SQUARE_COLOR_1 ((SDL_Color) {240, 217, 181, 255})
 #define SQUARE_COLOR_2 ((SDL_Color) {181, 136, 99, 255})
@@ -45,9 +48,9 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
     }
 
     SDL_Surface* textSurface = TTF_RenderText_Blended(font, text, textColor);
-    if (textSurface == NULL) { printf("Text Surface is NULL\n"); return; }
+    if (textSurface == NULL) { printf("Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 }; }
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (textTexture == NULL) { printf("Text Texture is NULL\n");  SDL_FreeSurface(textSurface); return; }
+    if (textTexture == NULL) { printf("Text Texture is NULL\n");  SDL_FreeSurface(textSurface); return (SDL_Rect) { -1, -1, -1, -1 }; }
 
     int textWidth = textSurface->w;
     int textHeight = textSurface->h;
@@ -64,7 +67,7 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
     return textRect;
 }
 
-static void renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, GameState* state, SDL_Rect textRect, ClickableAreas *clickableAreas) {
+static void renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect textRect, ClickableAreas *clickableAreas) {
     int padding = 20;
     int buttonWidth = PLACEHOLDER_WIDTH / 3;
     int buttonHeight = PLACEHOLDER_HEIGHT / 8;
@@ -105,9 +108,9 @@ static void renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, GameStat
     };
     if (restartButtonIndex == -1) {
         restartButtonIndex = clickableAreas->count;
-        clickableAreas_append(clickableAreas, area);
+        da_append(clickableAreas, area);
     } else {
-        clickableAreas_update(clickableAreas, restartButtonIndex, area);
+        da_update(clickableAreas, restartButtonIndex, area);
     }
 }
 
@@ -118,25 +121,32 @@ static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState*
     SDL_RenderDrawRect(renderer, &placeholderRect);
 
     SDL_Rect textRect = renderGameStateText(renderer, font, gameState);
-    renderRestartButton(renderer, font, gameState, textRect, clickableAreas);
+    if (textRect.x == -1) {
+        printf("ERROR while rendering the game state text\n");
+        return;
+    }
+    renderRestartButton(renderer, font, textRect, clickableAreas);
 }
 
 static void renderDraggedPiece(SDL_Renderer *renderer,
-                               ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE],
+                               Textures chessImages,
                                DraggingState draggingState,
                                int mouseX, int mouseY) {
     Piece draggedPiece = draggingState.draggedPiece;
+    // This should be always false because we are already checking if isDragging is true
     if (draggedPiece == NOPIECE) { return; }
-    ImageData chessImageData = chessImages[pieceColor(draggedPiece) / WHITE - 1][pieceType(draggedPiece) - 1];
+
+    int indexOffset = pieceColor(draggedPiece) == WHITE ? 9 : 11;
+    TextureState chessImageData = chessImages.data[draggedPiece - indexOffset];
     SDL_Rect destRect = {mouseX - chessImageData.width / 2, mouseY - chessImageData.height / 2,
                          chessImageData.width, chessImageData.height};
     SDL_RenderCopy(renderer, chessImageData.texture, NULL, &destRect);
 }
 
-static void renderChessboard(SDL_Renderer* renderer, 
-                              ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE], 
-                              GameState* gameState,
-                              DraggingState draggingState) {
+static void renderChessboard(SDL_Renderer *renderer,
+                             Textures chessImages,
+                             GameState *gameState,
+                             DraggingState draggingState) {
     SDL_Rect rect = CHESSBOARD_RECT;
     int squareSize = rect.w / BOARD_LENGTH;
 
@@ -154,23 +164,24 @@ static void renderChessboard(SDL_Renderer* renderer,
         Piece piece = pieceAtIndex(gameState->currentState.currentPosition.board, squareIndex);
         if (piece != NOPIECE) {
             SDL_Rect pieceRect = {square.x, square.y, squareSize, squareSize};
-            SDL_RenderCopy(renderer, chessImages[pieceColor(piece) / WHITE - 1][pieceType(piece) - 1].texture, NULL, &pieceRect);
+            int index = piece - (pieceColor(piece) == WHITE ? 9 : 11);
+            SDL_RenderCopy(renderer, chessImages.data[index].texture, NULL, &pieceRect);
         }
     }
 }
 
-void render(SDL_State* sdlState, ImageData chessImages[NB_PIECE_COLOR][NB_PIECE_TYPE], GameState* gameState, DraggingState draggingState, ClickableAreas *clickableAreas) {
+void render(AppEvents *appEvents, AppState *appState) {
 
-    SDL_RenderClear(sdlState->renderer);
+    SDL_RenderClear(appState->sdlState.renderer);
 
-    renderPlaceholder(sdlState->renderer, sdlState->font, gameState, clickableAreas);
-    renderChessboard(sdlState->renderer, chessImages, gameState, draggingState);
+    renderPlaceholder(appState->sdlState.renderer, appState->sdlState.font, &appState->gameState, &appEvents->clickableAreas);
+    renderChessboard(appState->sdlState.renderer, appState->textures, &appState->gameState, appState->draggingState);
 
-    if (draggingState.isDragging) {
+    if (appState->draggingState.isDragging) {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
-        renderDraggedPiece(sdlState->renderer, chessImages, draggingState, mouseX, mouseY);
+        renderDraggedPiece(appState->sdlState.renderer, appState->textures, appState->draggingState, mouseX, mouseY);
     }
 
-    SDL_RenderPresent(sdlState->renderer);
+    SDL_RenderPresent(appState->sdlState.renderer);
 }

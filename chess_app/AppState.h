@@ -11,6 +11,11 @@
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
 #define FONT_SIZE 24
+#define FONT_PATH ("/usr/share/fonts/truetype/computer-modern/cmunbl.ttf")
+#define CHESS_IMAGE_BASE_PATH ("./assets/png")
+#define TITLE ("SDL Chess Application")
+
+#define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 #define PLACEHOLDER_X (0)
 #define PLACEHOLDER_Y (0)
@@ -24,22 +29,28 @@
 #define CHESSBOARD_HEIGHT (WINDOW_HEIGHT)
 #define CHESSBOARD_RECT ((SDL_Rect) { .x = CHESSBOARD_X, .y = CHESSBOARD_Y, .w = CHESSBOARD_WIDTH, .h = CHESSBOARD_HEIGHT })
 
-// Struct to hold application state
 typedef struct SDL_State {
     SDL_Window *window;
     SDL_Renderer *renderer;
     TTF_Font *font;
 } SDL_State;
 
-typedef struct ImageData {
+typedef struct TextureState {
     SDL_Texture *texture;
     int width;
     int height;
-} ImageData;
+} TextureState;
+
+typedef struct Textures {
+    TextureState *data;
+    size_t count;
+    size_t capacity;
+} Textures;
 
 typedef struct DraggingState {
     bool isDragging;
     char from;
+    char to; // The square that it ended on
     Piece draggedPiece;
 } DraggingState;
 
@@ -63,26 +74,44 @@ typedef struct GameState {
     GameResult result;
 } GameState;
 
+typedef struct AppState {
+    bool isRunning;
+    SDL_State sdlState;
+    Textures textures;
+    GameState gameState;
+    DraggingState draggingState;
+} AppState;
+
+typedef struct Popup {
+    SDL_Rect rect;
+    // Returns true if the popup worked, else returns false
+    bool (*callback)(SDL_Event, SDL_Rect, AppState*);
+} Popup;
+
 typedef struct ClickableArea {
     SDL_Rect rect;
-    void (*callback)(SDL_Event, GameState*, DraggingState*);
+    void (*callback)(SDL_Event, AppState*);
 } ClickableArea;
 
 typedef struct ClickableAreas {
-    ClickableArea* areas;
+    ClickableArea* data;
     size_t count;
     size_t capacity;
 } ClickableAreas;
 
-#define clickableAreas_append(clickableAreas, clickableArea) if (clickableAreas->count >= clickableAreas->capacity) { \
-        clickableAreas->areas = realloc(clickableAreas->areas, sizeof(ClickableArea) * clickableAreas->capacity * 2); \
-        clickableAreas->capacity *= 2; \
+typedef struct AppEvents {
+    ClickableAreas clickableAreas;
+} AppEvents;
+
+#define da_append(da, valueToAppend) if (da->count >= da->capacity) { \
+        da->data = realloc(da->data, sizeof(valueToAppend) * da->capacity * 2); \
+        da->capacity *= 2; \
     } \
-    clickableAreas->areas[clickableAreas->count++] = clickableArea; \
+    da->data[da->count++] = valueToAppend; \
 
 // Assuming that 0 <= indexToUpdate <= count
 // Note: Since we have update, we cannot have a remove function, since it would offset the indices that 
 // functions rely on to update the clickable area
-#define clickableAreas_update(clickableAreas, indexToUpdate, newValue) clickableAreas->areas[indexToUpdate] = newValue;
+#define da_update(da, indexToUpdate, newValue) da->data[indexToUpdate] = newValue;
 
 #endif /* E50A5778_B8CC_4205_8BEF_5FD650592497 */

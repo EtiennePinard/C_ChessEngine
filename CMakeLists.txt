@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 set(PROFILE_PATH cmake_profiles)
 # GCC options for all compilation profiles
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wunused")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 
 project(ChessEngine VERSION 1.0.0 LANGUAGES C)
 if("${WHICH}" STREQUAL "")

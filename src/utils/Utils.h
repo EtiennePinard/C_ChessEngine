@@ -26,8 +26,15 @@
      _a < _b ? _a : _b; })
 
 
-int trailingZeros_64(const u64 x);
-int numBitSet_64(u64 x);
+// Copied from StackOverFlow https://stackoverflow.com/a/20747375
+// log_2(0) is undefined
+static inline int trailingZeros_64(const u64 x) {
+    return __builtin_ctzll(x);
+}
+
+static inline int numBitSet_64(u64 x) {
+	return __builtin_popcountll(x);
+}
 
 u64 random_u64();
 

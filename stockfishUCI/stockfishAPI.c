@@ -199,7 +199,7 @@ float stockfishStaticEvaluation() {
     return eval;
 }
 
-int get_square_from_algebraic(const char *square) {
+int getSquareFromAlgebraic(const char *square) {
     if (square[0] < 'a' || square[0] > 'h' ||
         square[1] < '1' || square[1] > '8') {
         return -1; // Invalid square
@@ -219,8 +219,8 @@ Move moveFromAlgebraic(const char *move) {
     char start[3] = { move[0], move[1], '\0' };
     char target[3] = { move[2], move[3], '\0' };
     
-    int from = get_square_from_algebraic(start);
-    int to = get_square_from_algebraic(target);
+    int from = getSquareFromAlgebraic(start);
+    int to = getSquareFromAlgebraic(target);
     
     if (from == -1 || to == -1) {
         return (Move) -1; // Invalid move, return max move value

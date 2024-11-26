@@ -28,11 +28,56 @@ void clickedRestartButton(SDL_Event event, AppState *appState) {
 }
 
 // Note: This will be correct if the point (x, y) is in the chessboard
-static int squareFromxy(int x, int y) {
+inline static int squareFromxy(int x, int y) {
     int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
     int col = (x - CHESSBOARD_X) / squareSize;
     int row = y / squareSize;
     return row * BOARD_LENGTH + col;
+}
+
+/*
+All insufficient material scenario are:
+    - Two lone king
+    - A lone knight and a lone bishop for each player
+    - A lone bishop or a lone knight
+    - Two knights for one side with a lone king for the opponent
+        - Note: The last case sometimes has a forced mate, but not always
+                and I don't want to deal with having to calculate if there is a possibility of a forced mate,
+                so I'll say it's draw
+*/
+static inline bool insufficientMaterialScenario(const GameState *gameState) {
+    u64 piecesBitBoard = allPiecesBitBoard(gameState->currentState.currentPosition.board);
+    int nbPieces = numBitSet_64(piecesBitBoard);
+    if (nbPieces > 4) { return false; }
+
+    u64 rooksPawnsQueens = piecesBitBoard & (
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, QUEEN)) |
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, QUEEN)) |
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, ROOK)) |
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, ROOK)) |
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, PAWN)) |
+                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, PAWN))
+                        );
+    
+    if (rooksPawnsQueens != (u64) 0) {
+        // There is still pawns, rooks and/or queens on the board
+        return false;
+    }
+
+    if (nbPieces <= 3) { 
+        // Lone bishop or lone knight (nbPiece == 3) or two lone kings (nbPiece == 2)
+        return true; 
+    }
+
+    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, KNIGHT)));
+    int nbKBlackKnights = numBitSet_64(piecesBitBoard & bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, KNIGHT)));
+    if (nbKWhiteKnights != nbKBlackKnights) { 
+        // Handles case of two knights on either side and lone knight and lone bishop
+        return true; 
+    }
+
+    // The remaning scenarios are one bishop or knight for each player
+    return false;
 }
 
 static void computeGameEnd(GameState *gameState) {
@@ -50,10 +95,12 @@ static void computeGameEnd(GameState *gameState) {
     } else if (gameState->currentState.currentPosition.turnsForFiftyRule > 50) {
         // TODO: Check this case out
         gameState->result = FIFTY_MOVE_RULE;
+    } else if (insufficientMaterialScenario(gameState)) {
+        gameState->result = INSUFFICIENT_MATERIAL;
     }
 }
 
-static void playMoveOnBoard(GameState *gameState, Move move) {
+static inline void playMoveOnBoard(GameState *gameState, Move move) {
     if (gameState->previousStateIndex >= gameState->previousStateCapacity) {
         gameState->previousStates = realloc(gameState->previousStates, sizeof(GameState) * gameState->previousStateCapacity * 2);
         gameState->previousStateCapacity *= 2;
@@ -62,13 +109,13 @@ static void playMoveOnBoard(GameState *gameState, Move move) {
     playMove(move, &gameState->currentState);
 }
 
-static void playBotMove(GameState *gameState) {
+static inline void playBotMove(GameState *gameState) {
     provideGameStateForBot(&gameState->currentState);
     Move botMove = think();
     playMoveOnBoard(gameState, botMove);
 }
 
-static void playTurn(GameState *gameState, Move playerMove) {
+static inline void playTurn(GameState *gameState, Move playerMove) {
     playMoveOnBoard(gameState, playerMove);
     computeGameEnd(gameState);
     if (gameState->result != GAME_IS_NOT_DONE) { return; }

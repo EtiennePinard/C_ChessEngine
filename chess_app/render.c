@@ -15,7 +15,7 @@ static int restartButtonIndex = -1;
 
 static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState) {
     SDL_Color textColor = {0, 0, 0, 255};
-    char text[24];
+    char text[30];
 
     switch (gameState->result) {
     case GAME_IS_NOT_DONE:
@@ -26,6 +26,9 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
         break;
     case STALEMATE:
         memcpy(text, "Stalemate", 10);
+        break;
+    case INSUFFICIENT_MATERIAL:
+        memcpy(text, "Draw by insufficient material", 30);
         break;
     case FIFTY_MOVE_RULE:
         memcpy(text, "Draw by fifty move rule", 24);

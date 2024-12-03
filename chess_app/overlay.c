@@ -4,6 +4,7 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
                             Textures chessImages,
                             PieceCharacteristics colorToPromote,
                             int promotionSquare,
+                            bool flip,
                             Popup *popup) {
     // Chessboard dimensions
     int squareSize = (WINDOW_WIDTH * 2 / 3) / BOARD_LENGTH;
@@ -11,6 +12,11 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
     // Calculate position of the promotion square
     int promotionFile = file(promotionSquare);
     int promotionRank = rank(promotionSquare);
+    if (flip) {
+        promotionFile = BOARD_LENGTH - 1 - promotionFile;
+        promotionRank = BOARD_LENGTH - 1 - promotionRank;
+    }
+
     int squareX = CHESSBOARD_X + promotionFile * squareSize;
     int squareY = promotionRank * squareSize;
 

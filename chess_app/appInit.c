@@ -107,6 +107,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     appState->gameState.result = GAME_IS_NOT_DONE;
 
     setupChesGame(&appState->gameState.currentState, &appState->gameState.currentState.currentPosition, INITIAL_FEN);
+    appState->gameState.playerColor = appState->gameState.currentState.currentPosition.colorToGo;
 
     appState->draggingState.isDragging = false;
 

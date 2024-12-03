@@ -8,30 +8,15 @@
 #include "../src/ChessGameEmulator.h"
 #include "../src/chessBot/ChessBot.h"
 
-static void resetGame(GameState *gameState) {
-    if (gameState->previousStateIndex == 0) {
-        return; // Game is already reset
-    }
-    gameState->currentState = gameState->previousStates[0];
-    gameState->previousStateIndex = 0;
-    gameState->result = GAME_IS_NOT_DONE;
-}
-
-void clickedRestartButton(SDL_Event event, AppState *appState) {
-    switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
-        resetGame(&appState->gameState);
-        break;
-    default: // Only do something for mouse button down
-        break;
-    }
-}
-
 // Note: This will be correct if the point (x, y) is in the chessboard
-inline static int squareFromxy(int x, int y) {
+inline static int squareFromxy(int x, int y, bool flip) {
     int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
     int col = (x - CHESSBOARD_X) / squareSize;
     int row = y / squareSize;
+    if (flip) {
+        col = BOARD_LENGTH - 1 - col;
+        row = BOARD_LENGTH - 1 - row;
+    }
     return row * BOARD_LENGTH + col;
 }
 
@@ -124,6 +109,43 @@ static inline void playTurn(GameState *gameState, Move playerMove) {
     computeGameEnd(gameState);
 }
 
+static void resetGame(GameState *gameState) {
+    if (gameState->previousStateIndex == 0) {
+        return; // Game is already reset
+    }
+    gameState->currentState = gameState->previousStates[0];
+    gameState->previousStateIndex = 0;
+    gameState->result = GAME_IS_NOT_DONE;
+    // Note that we are not changing the player color
+}
+
+void clickedSwitchColorButton(SDL_Event event, AppState *appState) {
+    switch (event.type) {
+    case SDL_MOUSEBUTTONDOWN:
+        appState->gameState.playerColor = appState->gameState.playerColor == WHITE ? BLACK : WHITE;
+        resetGame(&appState->gameState);
+        if (appState->gameState.currentState.currentPosition.colorToGo != appState->gameState.playerColor) {
+            playBotMove(&appState->gameState);
+        }
+        break;
+    default: // Only do something for mouse button down
+        break;
+    }
+}
+
+
+void clickedRestartButton(SDL_Event event, AppState *appState) {
+    switch (event.type) {
+    case SDL_MOUSEBUTTONDOWN:
+        resetGame(&appState->gameState);
+        if (appState->gameState.currentState.currentPosition.colorToGo != appState->gameState.playerColor) {
+            playBotMove(&appState->gameState);
+        }
+        break;
+    default: // Only do something for mouse button down
+        break;
+    }
+}
 
 static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppState *appState) {
     int mouseX, mouseY;
@@ -166,7 +188,7 @@ static void chessBoardMouseButtonUp(AppState *appState) {
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    int draggingTo = squareFromxy(mouseX, mouseY);
+    int draggingTo = squareFromxy(mouseX, mouseY, appState->gameState.playerColor == BLACK);
 
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so
@@ -195,6 +217,7 @@ static void chessBoardMouseButtonUp(AppState *appState) {
                                        appState->textures, 
                                        appState->gameState.currentState.currentPosition.colorToGo, 
                                        draggingTo, 
+                                       appState->gameState.playerColor,
                                        &popup);
                 handlePopup(&popup, appState);
                 return; // The callback will handle playing the turn
@@ -212,7 +235,7 @@ static void chessBoardMouseButtonDown(GameState *gameState, DraggingState *dragg
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    int square = squareFromxy(mouseX, mouseY);
+    int square = squareFromxy(mouseX, mouseY, gameState->playerColor == BLACK);
 
     if (pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
 

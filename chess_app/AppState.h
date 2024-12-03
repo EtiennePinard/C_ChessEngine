@@ -13,7 +13,7 @@
 #define FONT_SIZE 24
 #define FONT_PATH ("/usr/share/fonts/truetype/computer-modern/cmunbl.ttf")
 #define CHESS_IMAGE_BASE_PATH ("./assets/png")
-#define TITLE ("SDL Chess Application")
+#define TITLE ("Chess")
 
 #define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
@@ -68,6 +68,8 @@ typedef enum GameResult {
 
 typedef struct GameState {
     ChessGame currentState;
+    PieceCharacteristics playerColor;
+
     ChessGame* previousStates;
     int previousStateCapacity;
     int previousStateIndex;

@@ -7,7 +7,10 @@
 #include "AppInit.h"
 #include "EventHandler.h"
 
-// TODO: Make the ability to start decide which color to play
+// TODOOOOO: The bot fails when it has the black pieces
+// TODO: Add time controls
+// TODO: Add a way to go back in moves
+// TODO: Add sounds
 int main() {
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };

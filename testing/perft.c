@@ -129,7 +129,6 @@ void test() {
   if (biggestDepth > MAXIMUM_DEPTH) {
     printf("The biggest depth of test %d exceeds the position history limit, %d\n", biggestDepth, MAXIMUM_DEPTH);
     magicBitBoardTerminate();
-    zobristKeyTerminate();
     exit(EXIT_FAILURE);
   }
 
@@ -218,14 +217,7 @@ void test() {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
       }
 
-      // TODO: try memcpy
-      game.currentPosition.board = startingState.board;
-      game.currentPosition.castlingPerm = startingState.castlingPerm;
-      game.currentPosition.colorToGo = startingState.colorToGo;
-      game.currentPosition.enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game.currentPosition.key = startingState.key;
-      game.currentPosition.nbMoves = startingState.nbMoves;
-      game.currentPosition.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      memcpy(&game.currentPosition, &startingState, sizeof(ChessPosition));
       game.previousPositionsCount = 0;
     }
  
@@ -332,13 +324,7 @@ int main(int argc, char* argv[]) {
       double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       averageExecutionTime += timeSpent;
       
-      game.currentPosition.board = startingState.board;
-      game.currentPosition.castlingPerm = startingState.castlingPerm;
-      game.currentPosition.colorToGo = startingState.colorToGo;
-      game.currentPosition.enPassantTargetSquare = startingState.enPassantTargetSquare;
-      game.currentPosition.key = startingState.key;
-      game.currentPosition.nbMoves = startingState.nbMoves;
-      game.currentPosition.turnsForFiftyRule = startingState.turnsForFiftyRule;
+      memcpy(&game.currentPosition, &startingState, sizeof(ChessPosition));
       game.previousPositionsCount = 0;
 
       printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);

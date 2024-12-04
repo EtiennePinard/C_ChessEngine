@@ -2,7 +2,7 @@
 
 A chess engine written in C with two main functionalities:  
 - **Perft** routine for move generation and position testing  
-- **Chess playing app** for playing against the chess bot
+- **Chess app** for playing against the engine's bot
   
 This project was greatly inspired by [Sabastian Lague's chess video](https://www.youtube.com/watch?v=U4ogK0MIzqk)
 

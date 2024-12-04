@@ -9,6 +9,8 @@
 #define MAX_NB_LEGAL_MOVES_IN_GAME 6000
 
 #define u64 uint64_t
+#define u32 uint32_t
+#define u16 uint16_t
 
 // The x coordinates
 #define file(square) (square & 7)

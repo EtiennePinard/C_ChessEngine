@@ -4,7 +4,10 @@
 #include "GameState.h"
 #include "../utils/FenString.h"
 
-bool setupChesGame(ChessGame *result, ChessPosition *currentPosition, const char *fenString) {
+bool setupChesGame(ChessGame *result,
+                   ChessPosition *currentPosition,
+                   const char *fenString,
+                   u32 whiteTimeInMs, u32 blackTimeInMs) {
     assert(result != NULL && "Result pointer is NULL");
     assert(fenString != NULL && "Fen string is NULL");
     
@@ -12,7 +15,10 @@ bool setupChesGame(ChessGame *result, ChessPosition *currentPosition, const char
         printf("Invalid fen string %s\n", fenString);
         return false;
     }
-
+    
+    result->whiteTimeMs = whiteTimeInMs;
+    result->blackTimeMs = blackTimeInMs;
+    
     result->currentPosition = *currentPosition;
     result->previousPositionsCount = 0;
     return true;

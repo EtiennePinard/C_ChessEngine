@@ -195,7 +195,11 @@ int maximumDepth;
 // Move ordering will be important to implement to speed it up
 // TODO: Implement transposition table
 int search(int alpha, int beta, int depth) {
-    if (depth == 0) { return staticEvaluation(); } // eventually do return quiesce(alpha, beta);
+    if (depth == 0) {
+        // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
+        int whoToMove = game->currentPosition.colorToGo == WHITE ? 1 : -1; 
+        return staticEvaluation() * whoToMove; 
+    } // eventually do return quiesce(alpha, beta);
     int bestValue = MINUS_INFINITY;
 
     int nbOfMoves;
@@ -210,7 +214,7 @@ int search(int alpha, int beta, int depth) {
         // but it is the upper bound for the other color. Opposite is true for beta
         // thus we switch them so that it works for the opponent
         int score = -search(-beta, -alpha, depth - 1);
-
+        
         if (score > bestValue) {
             bestValue = score;
             if (score > alpha ) {
@@ -246,10 +250,10 @@ Move think() {
 
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
-
         playMove(move, game);
+
         int score = -search(MINUS_INFINITY, INFINITY, maximumDepth);
-        if (score >= bestEval) {
+        if (score > bestEval) {
             bestEval = score;
             bestMove = move;
         }

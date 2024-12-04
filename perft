@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Run this bash file with ./perft <depth> to compile and run the perft functionality of this chess engine
+# Run this bash file with ./perft 
 
 # Check if one argument is provided
 if [ "$#" -lt 1 ]; then
@@ -19,8 +19,7 @@ if [[ "$1" == "time" || "$1" == "test" ]]; then
     buildType="Release"
 fi
 
-mkdir -p /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
-cd /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
+mkdir -p ./build && cd ./build
 
 cmake -DWHICH=perft -DCMAKE_BUILD_TYPE="$buildType" .. >> "$OUT"
 cmake --build . >> "$OUT"
@@ -31,4 +30,4 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-./perftTesting "$@"
+./perft "$@"

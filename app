@@ -2,8 +2,7 @@
 
 # Run with ./app
 
-mkdir -p /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
-cd /home/ejrp/Coding/OtherRandomProjects/C_ChessEngine/build
+mkdir -p ./build && cd ./build
 
 OUT="$(mktemp /tmp/output.XXXXXXXXXX)" || { echo "Failed to create temp file"; exit 1; }
 

@@ -24,7 +24,15 @@ static void formatTime(u32 milliseconds, char *output, size_t outputSize) {
     snprintf(output, outputSize, "%02u:%02u", minutes, seconds);
 }
 
-static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, GameState *gameState, char* timeText, bool bottom /* I hate this bool param */) {
+/**
+ * @brief Enum created because I hate bool params
+ */
+typedef enum Side {
+    TOP,
+    BOTTOM
+} Side;
+
+static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, char* timeText, Side side) {
     SDL_Surface *textSurface = TTF_RenderText_Blended(font, timeText, WHITE_COLOR);
     if (textSurface == NULL) { printf("Text Surface is NULL\n"); return; }
     SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
@@ -37,7 +45,7 @@ static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, GameState 
     timeControlRect.w = textWidth + BUTTON_PADDING;
     timeControlRect.h = textHeight + BUTTON_PADDING;
     timeControlRect.x = PLACEHOLDER_X + (PLACEHOLDER_WIDTH - textWidth) / 2;
-    if (bottom) {
+    if (side == BOTTOM) {
         timeControlRect.y = PLACEHOLDER_Y + PLACEHOLDER_HEIGHT - timeControlRect.h - BUTTON_PADDING;
     } else {
         timeControlRect.y = PLACEHOLDER_Y + BUTTON_PADDING;
@@ -58,17 +66,16 @@ static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, GameState 
     SDL_DestroyTexture(textTexture);
 }
 
+#define TIME_TEXT_LENGTH (6)
+
 static void renderTimeControls(SDL_Renderer *renderer, TTF_Font *font, GameState *gameState) {
+    char blackTimeText[TIME_TEXT_LENGTH];
+    formatTime(gameState->currentState.blackTimeMs, blackTimeText, TIME_TEXT_LENGTH);
+    char whiteTimeText[TIME_TEXT_LENGTH]; 
+    formatTime(gameState->currentState.whiteTimeMs, whiteTimeText, TIME_TEXT_LENGTH);
 
-    SDL_Rect placeholderRect = PLACEHOLDER_RECT;
-
-    char blackTimeText[6];
-    formatTime(gameState->currentState.blackTimeMs, blackTimeText, 6);
-    char whiteTimeText[6]; 
-    formatTime(gameState->currentState.whiteTimeMs, whiteTimeText, 6);
-
-    renderTimeControl(renderer, font, gameState, gameState->playerColor == WHITE ? blackTimeText : whiteTimeText, false);
-    renderTimeControl(renderer, font, gameState, gameState->playerColor == WHITE ? whiteTimeText : blackTimeText, true);
+    renderTimeControl(renderer, font, gameState->playerColor == WHITE ? blackTimeText : whiteTimeText, TOP);
+    renderTimeControl(renderer, font, gameState->playerColor == WHITE ? whiteTimeText : blackTimeText, BOTTOM);
 }
 
 static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState) {

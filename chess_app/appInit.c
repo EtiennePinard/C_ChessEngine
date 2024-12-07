@@ -46,7 +46,7 @@ static bool loadChessImages(SDL_State* sdlState, Textures *chessImages, const ch
 }
 
 bool initializeApp(AppEvents *appEvents, AppState *appState) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return false;
     }

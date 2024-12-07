@@ -11,6 +11,7 @@
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
 #define FONT_SIZE 24
+// TODO: Change the FONT_PATH to include a font in the repo
 #define FONT_PATH ("/usr/share/fonts/truetype/computer-modern/cmunbl.ttf")
 #define CHESS_IMAGE_BASE_PATH ("./assets/png")
 #define TITLE ("Chess")

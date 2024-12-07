@@ -71,6 +71,7 @@ typedef enum GameResult {
 typedef struct GameState {
     ChessGame currentState;
     PieceCharacteristics playerColor;
+    u64 turnStartTick;
 
     ChessGame* previousStates;
     int previousStateCapacity;

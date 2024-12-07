@@ -1,4 +1,5 @@
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_timer.h>
 
 #include "AppInit.h"
 #include "Events.h"
@@ -128,6 +129,9 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     // We are officially running the app!
     appState->isRunning = true;
 
+    // We want to minimize the time that the player lose because of initializatino
+    // I know it is pretty negligeable, but that doesn't mean we can't try
+    appState->gameState.turnStartTick = SDL_GetTicks64();
     return true;
 }
 

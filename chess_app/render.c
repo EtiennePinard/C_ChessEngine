@@ -1,5 +1,7 @@
-#include <stdbool.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_timer.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 #include "Render.h"
 #include "EventHandler.h"
@@ -9,8 +11,6 @@
 #include "../src/MoveGenerator.h"
 #include "../src/state/Piece.h"
 
-#include <stdio.h>
-#include <stdint.h>
 
 static void formatTime(u32 milliseconds, char *output, size_t outputSize) {
     if (!output || outputSize < 6) {
@@ -69,6 +69,29 @@ static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, char* time
 #define TIME_TEXT_LENGTH (6)
 
 static void renderTimeControls(SDL_Renderer *renderer, TTF_Font *font, GameState *gameState) {
+
+    // Logic for game end in here cause I don't use threads for now
+    if (gameState->result == GAME_IS_NOT_DONE) {
+        u64 currentTick = SDL_GetTicks64();
+        if (gameState->currentState.currentPosition.colorToGo == WHITE) {
+            if (gameState->currentState.whiteTimeMs <= currentTick - gameState->turnStartTick) {
+                gameState->currentState.whiteTimeMs = 0;
+                gameState->result = BLACK_WON_ON_TIME;
+            } else {
+                gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
+            }
+        } else {
+            if (gameState->currentState.blackTimeMs <= currentTick - gameState->turnStartTick) {
+                gameState->currentState.blackTimeMs = 0;
+                gameState->result = WHITE_WON_ON_TIME;
+            } else {
+                gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
+            }
+        }
+        gameState->turnStartTick = currentTick;
+
+    }
+
     char blackTimeText[TIME_TEXT_LENGTH];
     formatTime(gameState->currentState.blackTimeMs, blackTimeText, TIME_TEXT_LENGTH);
     char whiteTimeText[TIME_TEXT_LENGTH]; 
@@ -305,12 +328,10 @@ static void renderChessboard(SDL_Renderer *renderer,
 }
 
 void render(AppEvents *appEvents, AppState *appState) {
-
     SDL_RenderClear(appState->sdlState.renderer);
 
     renderPlaceholder(appState->sdlState.renderer, appState->sdlState.font, &appState->gameState, &appEvents->clickableAreas);
     renderChessboard(appState->sdlState.renderer, appState->textures, &appState->gameState, appState->draggingState);
-
     if (appState->draggingState.isDragging) {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);

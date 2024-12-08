@@ -24,3 +24,19 @@ You can run the helper build scripts in the repo's root directory.
 ```bash
 ./app
 ``` 
+
+## TODO
+
+### App
+- **Rewind moves**: ability to go back in moves
+- **Sounds** (Upgrade to SDL3 before doing audio)
+- **Evaluation bar**: Eval bar from stockfish and/or the engine bot
+
+### Bot
+- **UCI**: Make the bot read commands of the uci protocol from stdin 
+- **Bot comparison**: Program which puts two version of the bot against one another to see if the bot actually gets better
+- **Time control**: Bot needs to take time into account
+- **Quiescence Search**: Bot needs to end search on quiet positions, not just at required depth
+- **Move ordering**: In the search function to speed it up
+- **More endgame knowledge**: Increase the bot's performance in the endgame
+- **Mate in n eval bar**: Bot can give evaluation in mate-in-n 

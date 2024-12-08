@@ -66,11 +66,8 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
 }
 
 static void computeGameEnd(GameState *gameState) {
-    // Note: I know this is bad because the person which will run out of time 
-    // will play their move and then lose. But like imma do threads and locks and
-    // all that mutex tomfoolery later, cause I'm tired rn
-    // Actually, because I calculate the game end in render.c, it's not as 
-    // bad as the top comment says it is
+    // This checking of the currentState is pretty much only useful for 
+    // the bot running out of time
     if (gameState->currentState.currentPosition.colorToGo == WHITE) {
         if (gameState->currentState.blackTimeMs <= (u32) 0) {
             gameState->result = WHITE_WON_ON_TIME;

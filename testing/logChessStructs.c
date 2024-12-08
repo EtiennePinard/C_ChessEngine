@@ -3,15 +3,15 @@
 
 void printMove(Move move) {
     printf("Move: [From: %d, To: %d, Flag: %d]\n", 
-      move & 0b111111,
-      (move >> 6) & 0b111111,
-      (move >> 12)
+      fromSquare(move),
+      toSquare(move),
+      flagFromMove(move)
     );
 }
 
 void printMoveToAlgebraic(Move move) {
-  int from = move & 0b111111;
-  int to = (move >> 6) & 0b111111;
+  int from = fromSquare(move);
+  int to = toSquare(move);
   char algebraic[6];
   int row1 = from / 8;
   int col1 = from % 8;
@@ -47,15 +47,15 @@ void printMoveToAlgebraic(Move move) {
 
 void writeMoveToFile(Move move, FILE *file) {
       fprintf(file, "[From: %d, To: %d, Flag: %d], ", 
-      move & 0b111111,
-      (move >> 6) & 0b111111,
-      (move >> 12)
+      fromSquare(move),
+      toSquare(move),
+      flagFromMove(move)
     );
 }
 
 void writeMoveToAlgebraicToFile(Move move, FILE *file) {
-  int from = move & 0b111111;
-  int to = (move >> 6) & 0b111111;
+  int from = fromSquare(move);
+  int to = toSquare(move);
   char algebraic[5];
   int row1 = from / 8;
   int col1 = from % 8;
@@ -146,10 +146,10 @@ void printPosition(ChessPosition position, int score, Move bestMove, float stock
         printf(" evaluation: %d", score);
         break;
       case 3:
-        printf(" best move: [From: %d, To: %d, Flag: %d] (", 
-          (bestMove) & 0b111111,
-          (bestMove >> 6) & 0b111111,
-          (bestMove >> 12));
+        printf(" best move: [From: %d, To: %d, Flag: %d] (",
+               fromSquare(bestMove),
+               toSquare(bestMove),
+               flagFromMove(bestMove));
         printMoveToAlgebraic(bestMove);
         printf(")");
         break;
@@ -160,9 +160,9 @@ void printPosition(ChessPosition position, int score, Move bestMove, float stock
         break;
       case 6:
         printf(" Stockfish best move: [From: %d, To: %d, Flag: %d] (",
-               (stockfishMove) & 0b111111,
-               (stockfishMove >> 6) & 0b111111,
-               (stockfishMove >> 12));
+               fromSquare(stockfishMove),
+               toSquare(stockfishMove),
+               flagFromMove(stockfishMove));
         printMoveToAlgebraic(stockfishMove);
         printf(")");
         break;

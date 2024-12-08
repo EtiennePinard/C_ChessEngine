@@ -230,9 +230,11 @@ int search(int alpha, int beta, int depth) {
     return bestValue;
 }
 
+#define ERROR_STATE ((Move) 0)
+
 Move think() {
 
-    Move bestMove = (Move) 0;
+    Move bestMove = ERROR_STATE;
     int bestEval = MINUS_INFINITY;
 
     ChessPosition lastPos = game->currentPosition;
@@ -247,6 +249,10 @@ Move think() {
     Move moves[256];
     int numMoves;
     getValidMoves(moves, &numMoves, lastPos);
+    if (numMoves == 0) { // Game is done!
+        return ERROR_STATE; 
+    }
+    bestMove = moves[0]; // So that it always return a valid move if all moves have the same evaluation
 
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];

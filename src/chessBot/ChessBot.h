@@ -4,6 +4,9 @@
 #include "../state/Move.h"
 #include "../state/GameState.h"
 
+// Move from square 0 to square 0 with NOFLAG
+#define BOT_ERROR ((Move) 0)
+
 /**
  * Call this function with the ChessGame that you want the bot to analyze
 */
@@ -11,6 +14,7 @@ void provideGameStateForBot(ChessGame* game);
 
 /**
  * Returns the best move in a position (according to the computer)
+ * Returns BOT_ERROR if there was an error
  * TODO: Implement time control later
 */
 Move think();

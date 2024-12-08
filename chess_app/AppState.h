@@ -16,7 +16,7 @@
 #define TITLE ("Chess")
 
 
-#define INITIAL_FEN ("k7/8/3q4/8/8/1R6/2R5/K7 w - - 0 1") // ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+#define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 #define TIME_CONTROL_MS ((u32) (3 * 60 * 1000))
 
 #define PLACEHOLDER_X (0)

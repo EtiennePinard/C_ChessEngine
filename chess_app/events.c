@@ -111,6 +111,7 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
 static inline void playBotMove(GameState *gameState) {
     provideGameStateForBot(&gameState->currentState);
     Move botMove = think();
+    
     u64 currentTick = SDL_GetTicks64();
     if (gameState->playerColor != WHITE) {
         gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
@@ -118,6 +119,15 @@ static inline void playBotMove(GameState *gameState) {
         gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
     }
     gameState->turnStartTick = currentTick;
+
+    if (botMove == BOT_ERROR) {
+        // The bot thinks the game is done
+        if (gameState->result == GAME_IS_NOT_DONE) {
+            // The app does not think the game is done
+            printf("ERROR:  The bot cannot play a move because it thinks the game is done yet app does not label the game as done\n");
+        }
+        return;
+    }
     playMoveOnBoard(gameState, botMove);
 }
 

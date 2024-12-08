@@ -28,6 +28,14 @@ typedef struct ChessPosition {
 typedef struct ChessGame {
     ChessPosition currentPosition;
 
+    /**
+     * The longest game possible will be 2^32 milliseconds, which is
+     * 49 days 17 hours 2 minutes and 47.3 seconds (thanks WolframAlpha).
+     * This should be plently of time to play a pretty long game.
+     */
+    u32 whiteTimeMs;
+    u32 blackTimeMs;
+
     /*
         IMPORTANT! Notice that previousStates is initialized to 512. 
         This means that we only support games which are 512 moves long. 
@@ -36,19 +44,22 @@ typedef struct ChessGame {
         
         However it is important to note that 6000 * 64 bit * 1kb / 1024 bit = 375kb, 
         which is a bit too much memory to store on the stack for my taste.
-        With 512 moves, we only store 32 kb, which is a lot, I guess, but it fine by me
+        With 512 moves, we only store 32 kb, which is a lot, I guess, but it's fine by me
         
         Also like the average chess game is about 40 moves, so its not
-        like were gonna run into this issue anytime soon.
+        like were gonna run into this issue anytime soon (I really hope so)
      */
     ZobristKey previousPositions[PREVIOUS_STATE_CAPACITY];
-    uint16_t previousPositionsCount;
+    u16 previousPositionsCount;
 } ChessGame;
 
 /**
  * Setups a chess game from the position specified by the fen string
 */
-bool setupChesGame(ChessGame *result, ChessPosition *currentPosition, const char *fenString);
+bool setupChesGame(ChessGame *result,
+                   ChessPosition *currentPosition,
+                   const char *fenString,
+                   u32 whiteTimeInMs, u32 blackTimeInMs);
 
 /**
  * @brief Returns true if the current position aleady happened twice in the game

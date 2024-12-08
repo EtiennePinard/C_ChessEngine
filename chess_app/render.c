@@ -1,5 +1,7 @@
-#include <stdbool.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_timer.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 #include "Render.h"
 #include "EventHandler.h"
@@ -9,8 +11,95 @@
 #include "../src/MoveGenerator.h"
 #include "../src/state/Piece.h"
 
-static int restartButtonIndex = -1;
-static int switchColorButtonIndex = -1;
+
+static void formatTime(u32 milliseconds, char *output, size_t outputSize) {
+    if (!output || outputSize < 6) {
+        return;
+    }
+
+    u32 totalSeconds = milliseconds / 1000;
+    u32 minutes = totalSeconds / 60;
+    u32 seconds = totalSeconds % 60;
+    // Format the string as "mm:ss"
+    snprintf(output, outputSize, "%02u:%02u", minutes, seconds);
+}
+
+/**
+ * @brief Enum created because I hate bool params
+ */
+typedef enum Side {
+    TOP,
+    BOTTOM
+} Side;
+
+static void renderTimeControl(SDL_Renderer *renderer, TTF_Font *font, char* timeText, Side side) {
+    SDL_Surface *textSurface = TTF_RenderText_Blended(font, timeText, WHITE_COLOR);
+    if (textSurface == NULL) { printf("Text Surface is NULL\n"); return; }
+    SDL_Texture *textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (textTexture == NULL) { printf("Text Texture is NULL\n"); SDL_FreeSurface(textSurface); return; }
+
+    int textWidth = textSurface->w;
+    int textHeight = textSurface->h;
+
+    SDL_Rect timeControlRect;
+    timeControlRect.w = textWidth + BUTTON_PADDING;
+    timeControlRect.h = textHeight + BUTTON_PADDING;
+    timeControlRect.x = PLACEHOLDER_X + (PLACEHOLDER_WIDTH - textWidth) / 2;
+    if (side == BOTTOM) {
+        timeControlRect.y = PLACEHOLDER_Y + PLACEHOLDER_HEIGHT - timeControlRect.h - BUTTON_PADDING;
+    } else {
+        timeControlRect.y = PLACEHOLDER_Y + BUTTON_PADDING;
+    }
+
+    SDL_Rect textRect = {
+        .x = timeControlRect.x + (timeControlRect.w - textWidth) / 2,
+        .y = timeControlRect.y + (timeControlRect.h - textHeight) / 2,
+        .w = textWidth, 
+        .h = textHeight
+    };
+
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &timeControlRect);
+
+    SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+    SDL_FreeSurface(textSurface);
+    SDL_DestroyTexture(textTexture);
+}
+
+#define TIME_TEXT_LENGTH (6)
+
+static void renderTimeControls(SDL_Renderer *renderer, TTF_Font *font, GameState *gameState) {
+
+    // Logic for game end in here cause I don't use threads for now
+    if (gameState->result == GAME_IS_NOT_DONE) {
+        u64 currentTick = SDL_GetTicks64();
+        if (gameState->currentState.currentPosition.colorToGo == WHITE) {
+            if (gameState->currentState.whiteTimeMs <= currentTick - gameState->turnStartTick) {
+                gameState->currentState.whiteTimeMs = 0;
+                gameState->result = BLACK_WON_ON_TIME;
+            } else {
+                gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
+            }
+        } else {
+            if (gameState->currentState.blackTimeMs <= currentTick - gameState->turnStartTick) {
+                gameState->currentState.blackTimeMs = 0;
+                gameState->result = WHITE_WON_ON_TIME;
+            } else {
+                gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
+            }
+        }
+        gameState->turnStartTick = currentTick;
+
+    }
+
+    char blackTimeText[TIME_TEXT_LENGTH];
+    formatTime(gameState->currentState.blackTimeMs, blackTimeText, TIME_TEXT_LENGTH);
+    char whiteTimeText[TIME_TEXT_LENGTH]; 
+    formatTime(gameState->currentState.whiteTimeMs, whiteTimeText, TIME_TEXT_LENGTH);
+
+    renderTimeControl(renderer, font, gameState->playerColor == WHITE ? blackTimeText : whiteTimeText, TOP);
+    renderTimeControl(renderer, font, gameState->playerColor == WHITE ? whiteTimeText : blackTimeText, BOTTOM);
+}
 
 static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState) {
     // Right now, this value needs to be checked everytime we add a new 
@@ -71,6 +160,8 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
     return textRect;
 }
 
+static int restartButtonIndex = -1;
+
 static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect textRect, ClickableAreas *clickableAreas) {
     // Render the "Restart" button text
     SDL_Surface *buttonTextSurface = TTF_RenderText_Solid(font, "Restart", BUTTON_TEXT_COLOR);
@@ -117,6 +208,8 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
 
     return buttonRect;
 }
+
+static int switchColorButtonIndex = -1;
 
 static void renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas *clickableAreas) {
     // Render the "Restart" button text
@@ -181,6 +274,8 @@ static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState*
         return;
     }
     renderSwitchColorButton(renderer, font, buttonRect, clickableAreas);
+
+    renderTimeControls(renderer, font, gameState);
 }
 
 static void renderDraggedPiece(SDL_Renderer *renderer,
@@ -233,12 +328,10 @@ static void renderChessboard(SDL_Renderer *renderer,
 }
 
 void render(AppEvents *appEvents, AppState *appState) {
-
     SDL_RenderClear(appState->sdlState.renderer);
 
     renderPlaceholder(appState->sdlState.renderer, appState->sdlState.font, &appState->gameState, &appEvents->clickableAreas);
     renderChessboard(appState->sdlState.renderer, appState->textures, &appState->gameState, appState->draggingState);
-
     if (appState->draggingState.isDragging) {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);

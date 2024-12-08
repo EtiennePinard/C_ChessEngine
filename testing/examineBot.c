@@ -4,12 +4,9 @@
 #include <stdbool.h>
 
 #include "../src/utils/Utils.h"
-
 #include "../src/chessBot/ChessBot.h"
 #include "../src/chessBot/PieceSquareTable.h"
-
 #include "../src/magicBitBoard/MagicBitBoard.h"
-
 #include "../src/state/ZobristKey.h"
 
 #include "../stockfishUCI/StockfishAPI.h"
@@ -89,7 +86,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         rewind(positions);
         randomFenFromFile(positions, lineSize, fen);
-        setupChesGame(&game, &currentPosition, fen);
+        setupChesGame(&game, &currentPosition, fen, (u32) 1, (u32) 1); // We don't care about time controls
         
         provideGameStateForBot(&game);
         setStockfishPosition(fen);

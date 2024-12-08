@@ -184,6 +184,8 @@ void test() {
   };
   
   game.currentPosition = (ChessPosition) { 0 };
+  game.whiteTimeMs = 0; // We don't care about time in perft
+  game.blackTimeMs = 0;
   game.previousPositionsCount = 0;
 
   ChessPosition startingState;
@@ -298,7 +300,8 @@ int main(int argc, char* argv[]) {
   zobristKeyInitialize();
 
   ChessPosition currentPosition = { 0 };
-  if (!setupChesGame(&game, &currentPosition, fenString)) {
+  // Note: We don't care about time in perft
+  if (!setupChesGame(&game, &currentPosition, fenString, (u32) 0, (u32) 0)) { 
     printf("ERROR while setup of chess game state\n Exiting\n");
     exit(EXIT_FAILURE);
   }

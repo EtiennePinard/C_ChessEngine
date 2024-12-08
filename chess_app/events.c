@@ -66,6 +66,20 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
 }
 
 static void computeGameEnd(GameState *gameState) {
+    // This checking of the currentState is pretty much only useful for 
+    // the bot running out of time
+    if (gameState->currentState.currentPosition.colorToGo == WHITE) {
+        if (gameState->currentState.blackTimeMs <= (u32) 0) {
+            gameState->result = WHITE_WON_ON_TIME;
+            return;
+        }
+    } else {
+        if (gameState->currentState.whiteTimeMs <= (u32) 0) {
+            gameState->result = BLACK_WON_ON_TIME;
+            return;
+        }
+    }
+
     Move moves[256];
     int numMove;
     getValidMoves(moves, &numMove, gameState->currentState.currentPosition);
@@ -97,6 +111,23 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
 static inline void playBotMove(GameState *gameState) {
     provideGameStateForBot(&gameState->currentState);
     Move botMove = think();
+    
+    u64 currentTick = SDL_GetTicks64();
+    if (gameState->playerColor != WHITE) {
+        gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
+    } else {
+        gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
+    }
+    gameState->turnStartTick = currentTick;
+
+    if (botMove == BOT_ERROR) {
+        // The bot thinks the game is done
+        if (gameState->result == GAME_IS_NOT_DONE) {
+            // The app does not think the game is done
+            printf("ERROR:  The bot cannot play a move because it thinks the game is done yet app does not label the game as done\n");
+        }
+        return;
+    }
     playMoveOnBoard(gameState, botMove);
 }
 
@@ -116,6 +147,9 @@ static void resetGame(GameState *gameState) {
     gameState->currentState = gameState->previousStates[0];
     gameState->previousStateIndex = 0;
     gameState->result = GAME_IS_NOT_DONE;
+    gameState->turnStartTick = SDL_GetTicks64();
+    gameState->currentState.blackTimeMs = TIME_CONTROL_MS;
+    gameState->currentState.whiteTimeMs = TIME_CONTROL_MS;
     // Note that we are not changing the player color
 }
 

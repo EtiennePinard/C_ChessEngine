@@ -1,4 +1,5 @@
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_timer.h>
 
 #include "AppInit.h"
 #include "Events.h"
@@ -46,7 +47,7 @@ static bool loadChessImages(SDL_State* sdlState, Textures *chessImages, const ch
 }
 
 bool initializeApp(AppEvents *appEvents, AppState *appState) {
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
         fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
         return false;
     }
@@ -106,7 +107,10 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     appState->gameState.previousStateIndex = 0;
     appState->gameState.result = GAME_IS_NOT_DONE;
 
-    setupChesGame(&appState->gameState.currentState, &appState->gameState.currentState.currentPosition, INITIAL_FEN);
+    setupChesGame(&appState->gameState.currentState,
+                  &appState->gameState.currentState.currentPosition,
+                  INITIAL_FEN,
+                  TIME_CONTROL_MS, TIME_CONTROL_MS);
     appState->gameState.playerColor = appState->gameState.currentState.currentPosition.colorToGo;
 
     appState->draggingState.isDragging = false;
@@ -125,6 +129,9 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     // We are officially running the app!
     appState->isRunning = true;
 
+    // We want to minimize the time that the player lose because of initializatino
+    // I know it is pretty negligeable, but that doesn't mean we can't try
+    appState->gameState.turnStartTick = SDL_GetTicks64();
     return true;
 }
 

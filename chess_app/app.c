@@ -7,9 +7,8 @@
 #include "AppInit.h"
 #include "EventHandler.h"
 
-// TODO: Add time controls
 // TODO: Add a way to go back in moves
-// TODO: Add sounds
+// TODO: Add sounds Note: Upgrade to SDL3 before doing audio
 int main() {
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };

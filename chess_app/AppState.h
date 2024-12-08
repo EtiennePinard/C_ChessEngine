@@ -11,11 +11,13 @@
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
 #define FONT_SIZE 24
-#define FONT_PATH ("/usr/share/fonts/truetype/computer-modern/cmunbl.ttf")
+#define FONT_PATH ("./assets/font/cmunbl.ttf")
 #define CHESS_IMAGE_BASE_PATH ("./assets/png")
 #define TITLE ("Chess")
 
+
 #define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+#define TIME_CONTROL_MS ((u32) (3 * 60 * 1000))
 
 #define PLACEHOLDER_X (0)
 #define PLACEHOLDER_Y (0)
@@ -69,6 +71,7 @@ typedef enum GameResult {
 typedef struct GameState {
     ChessGame currentState;
     PieceCharacteristics playerColor;
+    u64 turnStartTick;
 
     ChessGame* previousStates;
     int previousStateCapacity;

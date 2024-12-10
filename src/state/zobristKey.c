@@ -5,15 +5,12 @@
 
 // Total size of the struct is 57.6 kb, which is a lot but not too bad 
 ZobristRandomNumber zobristRandomNumber = (ZobristRandomNumber) { 0 };
-static bool initZobristKey = false;
 
 void zobristKeyInitialize() {
 
     srand(time(NULL));
-    if (initZobristKey) {
-        loggingFFI("Do not initialize Zobrist Keys if they are already initialized!");
-        return;
-    }
+    // Don't need to check if already initialized because we are calling this function from our own program
+    // Other programs will not (at least should not) call this function
 
     for (int color = 0; color < 2; color++) {
         PieceCharacteristics pieceColor = WHITE * (color + 1);
@@ -32,7 +29,6 @@ void zobristKeyInitialize() {
         zobristRandomNumber.enPassantFile[i] = i == 0 ? (u64) 0 : random_u64();
     }
     zobristRandomNumber.sideToMove = random_u64();
-    initZobristKey = true;
 }
 
 // Only use this function to set the initial Zobrist key

@@ -11,6 +11,7 @@
 #define u64 uint64_t
 #define u32 uint32_t
 #define u16 uint16_t
+#define u8  uint8_t
 
 // The x coordinates
 #define file(square) (square & 7)
@@ -39,9 +40,5 @@ static inline int numBitSet_64(u64 x) {
 }
 
 u64 random_u64();
-
-extern void (*loggingFFI)(char *);
-
-void initializeFFILogging(void (*printCallback)(char *));
 
 #endif /* DB9C663F_7757_4E5F_9CDD_23E9A09D9515 */

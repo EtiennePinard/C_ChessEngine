@@ -287,7 +287,7 @@ int main(int argc, char const *argv[]) {
             fprintf(output, "};\n");
         }
     }
-    fprintf(output, "int rookShifts[BOARD_SIZE] = {");
+    fprintf(output, "u8 rookShifts[BOARD_SIZE] = {");
     for (int i = 0; i < BOARD_SIZE; i++) {
         fprintf(output, "%d", shifts[i]);
         if (i + 1 != BOARD_SIZE) {
@@ -326,7 +326,7 @@ int main(int argc, char const *argv[]) {
     }
 
     // 3 loops cause ... yeah
-    fprintf(output, "u64 bishopMagics[BOARD_SIZE] = {");
+    fprintf(output, "u8 bishopMagics[BOARD_SIZE] = {");
     for (int i = 0; i < BOARD_SIZE; i++) {
         fprintf(output, "%luUL", magics[i]);
         if (i + 1 != BOARD_SIZE) {
@@ -335,7 +335,7 @@ int main(int argc, char const *argv[]) {
             fprintf(output, "};\n");
         }
     }
-    fprintf(output, "int bishopShifts[BOARD_SIZE] = {");
+    fprintf(output, "u16 bishopShifts[BOARD_SIZE] = {");
     for (int i = 0; i < BOARD_SIZE; i++) {
         fprintf(output, "%d", shifts[i]);
         if (i + 1 != BOARD_SIZE) {
@@ -344,7 +344,7 @@ int main(int argc, char const *argv[]) {
             fprintf(output, "};\n");
         }
     }
-    fprintf(output, "int bishopIndexOffset[BOARD_SIZE] = {");
+    fprintf(output, "u16 bishopIndexOffset[BOARD_SIZE] = {");
     indexOffset = 0;
     for (int i = 0; i < BOARD_SIZE; i++) {
         if (i > 0) {

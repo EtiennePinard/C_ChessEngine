@@ -1,0 +1,13 @@
+#!/bin/bash
+
+mkdir -p ./build && cd ./build
+
+cmake -DWHICH=engine ..
+cmake --build .
+
+if [ $? -ne 0 ]; then
+    printf "\n================== ERROR while compiling with CMake ==================\n"
+    exit 1
+fi
+
+./chess_engine

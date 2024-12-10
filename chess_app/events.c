@@ -4,8 +4,8 @@
 
 #include "../src/state/Board.h"
 #include "../src/state/Move.h"
-#include "../src/MoveGenerator.h"
-#include "../src/ChessGameEmulator.h"
+#include "../src/engine/MoveGenerator.h"
+#include "../src/engine/ChessGameEmulator.h"
 #include "../src/chessBot/ChessBot.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard

@@ -3,8 +3,8 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "state/GameState.h"
-#include "state/Move.h"
+#include "../state/GameState.h"
+#include "../state/Move.h"
 
 /**
  * Returns true if the friendly king (for the current turn) is in check

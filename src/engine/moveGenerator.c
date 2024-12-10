@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "MoveGenerator.h"
-#include "magicBitBoard/MagicBitBoard.h"
+#include "../magicBitBoard/MagicBitBoard.h"
 
 ChessPosition currentState;
 

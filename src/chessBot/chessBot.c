@@ -8,8 +8,8 @@
 #include "ChessBot.h"
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "PieceSquareTable.h"
-#include "../MoveGenerator.h"
-#include "../ChessGameEmulator.h"
+#include "../engine/MoveGenerator.h"
+#include "../engine/ChessGameEmulator.h"
 #include "../../testing/LogChessStructs.h"
 
 #define INFINITY 2000000

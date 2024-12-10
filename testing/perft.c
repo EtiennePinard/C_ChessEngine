@@ -4,11 +4,12 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
-#include "../src/magicBitBoard/MagicBitBoard.h"
-#include "../src/MoveGenerator.h"
+#include "../src/engine/MoveGenerator.h"
+#include "../src/engine/ChessGameEmulator.h"
 #include "../src/utils/FenString.h"
-#include "../src/ChessGameEmulator.h"
+#include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
+
 #include "LogChessStructs.h"
 
 #define TEST_ITERATION 100

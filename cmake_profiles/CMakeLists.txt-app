@@ -10,8 +10,8 @@ project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
 
 # Define source files
 set(SOURCE_FILES
-    src/chessGameEmulator.c
-    src/moveGenerator.c
+    src/engine/chessGameEmulator.c
+    src/engine/moveGenerator.c
     src/utils/fenString.c
     src/utils/utils.c
     src/state/board.c

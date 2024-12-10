@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "ChessGameEmulator.h"
-#include "../src/state/ZobristKey.h"
+#include "../state/ZobristKey.h"
 
 void _updateCastlePerm(int pieceToMove, int from, ChessPosition* state) {
   if (state->castlingPerm == 0) { return; }

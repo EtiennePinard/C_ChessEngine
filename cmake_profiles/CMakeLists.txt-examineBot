@@ -16,8 +16,8 @@ set(SOURCE_FILES
     testing/logChessStructs.c
     src/chessBot/chessBot.c
     src/chessBot/pieceSquareTable.c
-    src/chessGameEmulator.c
-    src/moveGenerator.c
+    src/engine/chessGameEmulator.c
+    src/engine/moveGenerator.c
     src/utils/fenString.c
     src/utils/utils.c
     src/state/board.c

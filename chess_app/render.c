@@ -8,7 +8,7 @@
 #include "Events.h"
 #include "AppStyle.h"
 
-#include "../src/MoveGenerator.h"
+#include "../src/engine/MoveGenerator.h"
 #include "../src/state/Piece.h"
 
 

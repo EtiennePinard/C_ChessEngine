@@ -15,7 +15,7 @@
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
 
-ChessGame* game;
+static ChessGame* game;
 
 void provideGameStateForBot(ChessGame* state) {
     game = state;

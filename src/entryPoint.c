@@ -13,6 +13,7 @@ void initEngine() {
     magicBitBoardInitialize();
     zobristKeyInitialize();
     pieceSquareTableInitialize();
+    setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 3 * 60 * 1000, 3 * 60 * 1000);
 
     printf("Engine version %s by %s is initialized and ready to go!\n", VERSION, AUTHOR);
 }

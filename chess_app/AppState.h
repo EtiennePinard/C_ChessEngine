@@ -15,8 +15,6 @@
 #define CHESS_IMAGE_BASE_PATH ("./assets/png")
 #define TITLE ("Chess")
 
-
-#define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 #define TIME_CONTROL_MS ((u32) (3 * 60 * 1000))
 
 #define PLACEHOLDER_X (0)

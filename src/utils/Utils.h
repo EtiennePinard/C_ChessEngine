@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+
 #define BOARD_SIZE 64
 #define BOARD_LENGTH 8
 #define MAX_LEGAL_MOVES 218

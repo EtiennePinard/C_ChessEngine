@@ -10,7 +10,9 @@
 #include "MoveGenerator.h"
 #include "../magicBitBoard/MagicBitBoard.h"
 
-ChessPosition currentState;
+// NOTE: All of these global variables are there so that we don't have to pass around so many variables to functions
+
+static ChessPosition currentState;
 
 Move* validMoves;
 int currentMoveIndex;

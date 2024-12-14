@@ -16,9 +16,12 @@ u64 random_u64() {
   return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
 }
 
-void (*loggingFFI)(char *);
+u8 nextSpaceTokenStartingAtIndex(const char str[BUFFER_SIZE], u8 indexToStartAt, char bufferToStoreToken[BUFFER_SIZE]) {
+    u8 index;
+    for (index = indexToStartAt; str[index] != ' ' && str[index] != '\0'; index++) {
+      bufferToStoreToken[index - indexToStartAt] = str[index];
+    }
+    bufferToStoreToken[index - indexToStartAt] = '\0';
 
-void initializeFFILogging(void (*printCallback)(char *)) {
-    loggingFFI = printCallback;
-    loggingFFI("C library initialized");
+    return index;
 }

@@ -5,9 +5,13 @@
 #include "../state/GameState.h"
 
 /**
- * Sets ups the chess position currently from a fen string.
- * Returns true if the fenstring is valid and result != NULL
-*/
-bool setChessPositionFromFenString(const char* fenString, ChessPosition* result);
+ * @brief Sets ups the chess position from a fen string.
+ * 
+ * @param fenString The string containing the fen data
+ * @param position The ChessPosition to put the fen string into
+ * @return true If the fen string is valid and position is not NULL
+ * @return false If the fen string is invalid or position is NULL
+ */
+bool setChessPositionFromFenString(const char fen[BUFFER_SIZE], ChessPosition* position);
 
 #endif

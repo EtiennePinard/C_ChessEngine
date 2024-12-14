@@ -81,51 +81,51 @@ void setBoardArrayFromFenString(char* fen, Piece* board) {
 }
 
 int convertSquareToIndex(char* square) {
-    if (strcmp(square,"-") == 0) { return 0; }
-    int file = square[0] - 'a';
-    int rank = 8 - (square[1] - '0');
-    return rank * 8 + file;
+  u8 lengthOfSquare = strlen(square);
+  assert(lengthOfSquare > 0 && "Length of square string is 0");
+  if (square[0] == '-') { return 0; }
+  assert(strlen(square) >= 2 && "Length of square string is less than 2");
+  int file = square[0] - 'a';
+  int rank = 8 - (square[1] - '0');
+  return rank * 8 + file;
 }
 
-#define splitString \
-do { \
-    split = strtok(NULL, " "); \
-    if (split == NULL) { return false; } \
-} while (0);
+bool setChessPositionFromFenString(const char fen[BUFFER_SIZE], ChessPosition* position) {
+    if (position == NULL) { return false; }
 
-/**
- * Populates a GameState struct from a fen string.
- * Returns false if the fen string is invalid
-*/
-bool setChessPositionFromFenString(const char *fen, ChessPosition* result) {
-    if (result == NULL) { return false; }
-    if (strlen(fen) > 100) {
-      printf("The fen string length is bigger than 100, which is too long for the program\n");
-      return false;
-    }
-    char copy[100]; // Could have potential buffer overflow
-    strcpy(copy, fen);
-    char* split = strtok(copy, " ");
+    u8 fenStringLength = strlen(fen);
+    char split[BUFFER_SIZE];
+    u8 spaceIndex = nextSpaceTokenStartingAtIndex(fen, 0, split);
+    if (spaceIndex == fenStringLength) { return false; }
 
     Piece boardArray[BOARD_SIZE] = { 0 };
     setBoardArrayFromFenString(split, boardArray);
 
     Board board = { 0 };
     fromArray(&board, boardArray);
-    result->board = board;
-    splitString;
+    position->board = board;
     
-    result->colorToGo = (strcmp(split, "w") == 0) ? WHITE : BLACK;
-    splitString;
-    result->castlingPerm = getCastlingPermFromFenString(split);
-    splitString;
-    result->enPassantTargetSquare = convertSquareToIndex(split);
-    splitString;
-    result->turnsForFiftyRule = (int) strtol(split, NULL, 10);
-    splitString;
-    result->nbMoves = (int) strtol(split, NULL, 10);
+    spaceIndex = nextSpaceTokenStartingAtIndex(fen, spaceIndex + 1, split);
+    if (spaceIndex == fenStringLength) { return false; }
+    position->colorToGo = (strcmp(split, "w") == 0) ? WHITE : BLACK;
 
-    calculateZobristKey(result);
+    spaceIndex = nextSpaceTokenStartingAtIndex(fen, spaceIndex + 1, split);
+    if (spaceIndex == fenStringLength) { return false; }  
+    position->castlingPerm = getCastlingPermFromFenString(split);
+
+    spaceIndex = nextSpaceTokenStartingAtIndex(fen, spaceIndex + 1, split);
+    if (spaceIndex == fenStringLength) { return false; }
+    position->enPassantTargetSquare = convertSquareToIndex(split);
+
+    spaceIndex = nextSpaceTokenStartingAtIndex(fen, spaceIndex + 1, split);
+    if (spaceIndex == fenStringLength) { return false; }
+    position->turnsForFiftyRule = (int) strtol(split, NULL, 10);
+
+    spaceIndex = nextSpaceTokenStartingAtIndex(fen, spaceIndex + 1, split);
+    // Here it makes sense if the space == fenStringLength since we could be at the end of the string
+    position->nbMoves = (int) strtol(split, NULL, 10);
+
+    calculateZobristKey(position);
 
     return true;
 }

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdarg.h>
 
 #include "UCICommandProcessing.h"
 #include "utils/Utils.h"
@@ -9,27 +10,15 @@
 // TODO: Also check if it is more performant to have a pointer or a value 
 ChessGame chessgame = (ChessGame) { 0 };
 
-// From: https://stackoverflow.com/a/2661788
-static void stringToLower(char* str) {
-    for (int i = 0; str[i]; i++) {
-        str[i] = tolower(str[i]);
-    }
+// Thank you to https://stackoverflow.com/a/1516384
+static void sendResponse(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
 }
 
-static void sendResponse(char *response) {
-    printf("%s\n", response);
-}
-
-// Here first word refers to the first letters before a space
-static void firstWord(char command[BUFFER_SIZE], char buffer[BUFFER_SIZE]) {
-    // Here we assume that BUFFER_SIZE == 256 which is U8_MAX
-    u8 index;
-    for (index = 0; command[index] != ' ' && command[index] != '\n'; index++) {
-        buffer[index] = command[index];
-    }
-}
-
-char pieceToFenChar(Piece piece) {
+static char pieceToFenChar(Piece piece) {
     char result;
     switch (pieceType(piece)) {
         case KING:
@@ -79,6 +68,46 @@ static void processDCommand() {
   printf("\n");
 }
 
+// Format: 'position startpos moves e2e4 e7e5'
+// Or: 'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5'
+// Note: 'moves' section is optional
+static void processPositionCommand(String command, size_t firstSpaceIndex) {
+    size_t commandLength = string_length(command);
+    // Smallest valid position command is: position startpos, with 17 non-zero characters
+    // If we have a fen it is: position fen 8/8/8/8/8/8/8/8 w - - 0 1 with 38 non-zero characters 
+    if (commandLength < 17) {
+        sendResponse("Invalid position command %s\n", command);
+        return;
+    }
+
+    String buffer;
+    size_t spaceIndex = string_nextSpaceTokenStartingAtIndex(command, firstSpaceIndex + 1, buffer);
+    
+
+    if (string_equalsCharArray(buffer, "startpos")) {
+        setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0);
+    } else if (string_equalsCharArray(buffer, "fen")) {
+        if (!setupChesGame(&chessgame, &chessgame.currentPosition, command + spaceIndex + 1, 0, 0)) {
+            sendResponse("ERROR: While initializing the position fen string");
+        }
+    } else {
+        sendResponse("Invalid position command %s\n", command);
+        return;
+    }
+    
+    if (spaceIndex == commandLength - 1) {
+        // There is no `move` part to this position command
+        return;
+    }
+
+    // Handle move command
+
+    // Note: We can only handle about 26 moves in our 256 length string
+    // so like this might be an issue later. Just keep that in mind
+    
+
+}
+
 /*
 These are all the uci commands this engine supports:
     uci
@@ -90,38 +119,38 @@ These are all the uci commands this engine supports:
     quit
     d
 */
-bool processUCICommand(char command[BUFFER_SIZE]) {
-    stringToLower(command);
+bool processUCICommand(String command) {
+    string_toLower(command);
 
     // I know this is too much but we are safe from any overflow with this
-    char messageType[BUFFER_SIZE] = { 0 };
-    firstWord(command, messageType);
+    String messageType;
+    size_t firstSpaceIndex = string_nextSpaceTokenStartingAtIndex(command, 0, messageType);
 
-    if (strcmp(command, "quit") == 0) {
+    if (string_equalsCharArray(command, "quit")) {
         return false;
 
-    } else if (strcmp(command, "uci") == 0) {
+    } else if (string_equalsCharArray(command, "uci")) {
         sendResponse("uciok");
     
-    } else if (strcmp(command, "isready") == 0) {
+    } else if (string_equalsCharArray(command, "isready")) {
         sendResponse("readyok");
 
-    } else if (strcmp(command, "ucinewgame") == 0) {
-        // I guess we gonna handle new game when it is necessary   
+    } else if (string_equalsCharArray(command, "ucinewgame")) {
+        // I guess we gonna handle uci new game when it is necessary   
     
-    } else if (strcmp(messageType, "position") == 0) {
+    } else if (string_equalsCharArray(messageType, "position")) {
+        processPositionCommand(command, firstSpaceIndex);
+    
+    } else if (string_equalsCharArray(messageType, "go")) {
         printf("Command is: %s\n", command);
     
-    } else if (strcmp(messageType, "go") == 0) {
-        printf("Command is: %s\n", command);
-    
-    } else if (strcmp(command, "stop") == 0) {
+    } else if (string_equalsCharArray(command, "stop")) {
         // Stop the bot from thinking
     
-    } else if (strcmp(command, "d") == 0) {
+    } else if (string_equalsCharArray(command, "d")) {
         processDCommand();
     } else {
-        sendResponse("Command invalid or not supported by this engine");
+        sendResponse("Command `%s` invalid or not supported by this engine\n", command);
     }
     
     return true;

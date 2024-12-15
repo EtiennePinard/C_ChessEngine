@@ -46,16 +46,4 @@ static inline int numBitSet_64(u64 x) {
 
 u64 random_u64();
 
-/**
- * @brief Copies the next space token in str to bufferToStoreToken starting at indexToStartAt and 
- * returns the index of the first space ' ' character from the indexToStartAt.
- * If there is no space from the indexToStartAt then it returns the length of the string minus one
- * 
- * @param str The string to extract the first word from
- * @param bufferToStoreToken The buffer to store the next space token in
- * @param indexToStartAt The index to start at
- * @return u8 The index of the first space from indexToStartAt 
- */
-u8 nextSpaceTokenStartingAtIndex(const char str[BUFFER_SIZE], u8 indexToStartAt, char bufferToStoreToken[BUFFER_SIZE]);
-
 #endif /* DB9C663F_7757_4E5F_9CDD_23E9A09D9515 */

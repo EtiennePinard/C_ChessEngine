@@ -15,13 +15,3 @@ u64 random_u64() {
   u64 u4 = (u64)(rand()) & 0xFFFF;
   return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
 }
-
-u8 nextSpaceTokenStartingAtIndex(const char str[BUFFER_SIZE], u8 indexToStartAt, char bufferToStoreToken[BUFFER_SIZE]) {
-    u8 index;
-    for (index = indexToStartAt; str[index] != ' ' && str[index] != '\0'; index++) {
-      bufferToStoreToken[index - indexToStartAt] = str[index];
-    }
-    bufferToStoreToken[index - indexToStartAt] = '\0';
-
-    return index;
-}

@@ -11,14 +11,14 @@
 
 #include "StockfishAPI.h"
 
-#define PIPE_READ_INDEX 0
-#define PIPE_WRITE_INDEX 1
+#define PIPE_READ_INDEX (0)
+#define PIPE_WRITE_INDEX (1)
 
-#define BUFFER_SIZE 256
+#define BUFFER_SIZE (256)
 
-#define UCIOK_LENGTH 5
+#define UCIOK_LENGTH (5)
 
-#define WHILE_LOOP_SAFEGUARD 1000
+#define WHILE_LOOP_SAFEGUARD (1000)
 
 #define returnOnFail(condition, message) \
     if (condition)                       \
@@ -37,16 +37,8 @@ typedef struct {
 
 StockfishUCIState stockfishUCIState;
 
-#define initResponse(response) \
-char buf[BUFFER_SIZE] = { 0 }; \
-response = (StockfishResponse) { \
-        .buffer = buf, \
-        .size = 0 \
-    };\
-
-// Note: The capacity of the buffer is always BUFFER_SIZE = 256
 typedef struct StockfishResponse {
-    char* buffer;
+    char buffer[BUFFER_SIZE];
     int size;
 } StockfishResponse;
 
@@ -61,6 +53,9 @@ void readResponse(StockfishResponse* response) {
     while (read(stockfishUCIState.inPipe, response->buffer + offset, 1) == 1) {
         if (response->buffer[offset] == '\n') break;
         offset += 1;
+        if (offset >= BUFFER_SIZE) {
+            fprintf(stderr, "ERROR: We have a buffer overflow in file %s because the response is bigger than BUFFER_SIZE = %d\n", __FILE__, BUFFER_SIZE);
+        }
     }
     response->size = offset + 1;
 }
@@ -103,8 +98,7 @@ bool findResponse(char* responseStart, StockfishResponse* response) {
 bool sendUCICommand() {
     sendCommand("uci");
 
-    StockfishResponse response;
-    initResponse(response);
+    StockfishResponse response = { 0 };
 
     return findResponse("uciok", &response);
 }
@@ -165,7 +159,7 @@ void terminate() {
     printf("Stockfish terminated.\n");
 }
 
-#define POSITION_FEN_LENGTH 13
+#define POSITION_FEN_LENGTH (13)
 void setStockfishPosition(char* fen) {
     sendCommand("ucinewgame");
 
@@ -180,8 +174,7 @@ void setStockfishPosition(char* fen) {
 
 float stockfishStaticEvaluation() {
     sendCommand("eval");
-    StockfishResponse response;
-    initResponse(response);
+    StockfishResponse response = { 0 };
     findResponse("Final", &response);
     
     // String has format: Final evaluation       (+ or -)xx.xx (who's side)
@@ -229,7 +222,7 @@ Move moveFromAlgebraic(const char *move) {
     return makeMove(from, to, NOFlAG);
 }
 
-#define GO_DEPTH_LENGTH 9
+#define GO_DEPTH_LENGTH (9)
 Move stockfishBestMove(int depth) {
     int depthLength = (int) ceilf(log10f((float) depth)) + (depth % 10 == 0 ? 1 : 0);
     char depthString[depthLength];
@@ -246,8 +239,7 @@ Move stockfishBestMove(int depth) {
 
     sendCommand(command);
 
-    StockfishResponse response;
-    initResponse(response);
+    StockfishResponse response = { 0 };
     findResponse("bestmove", &response);
     
     char* split;

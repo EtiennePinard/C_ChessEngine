@@ -15,6 +15,7 @@ set(SOURCE_FILES
     src/engine/moveGenerator.c
     src/utils/fenString.c
     src/utils/utils.c
+    src/utils/charBuffer.c
     src/state/board.c
     src/state/gameState.c
     src/state/zobristKey.c

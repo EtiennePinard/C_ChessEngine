@@ -24,12 +24,15 @@ void terminateEngine() {
 
 void readUCICommands() {
     char buffer[BUFFER_SIZE];
+    String command;
 
+    // TODO: Implement a way to an arbatrary amount of input from stdin
     while (fgets(buffer, BUFFER_SIZE, stdin)) {
         // fgets always puts the new line in buffer so we remove it
         buffer[strcspn(buffer, "\n")] = '\0';
 
-        if (!processUCICommand(buffer)) { break; }
+        string_fromCharArray(&command, buffer);
+        if (!processUCICommand(command)) { break; }
     }
 }
 

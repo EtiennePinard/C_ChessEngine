@@ -88,7 +88,7 @@ void playMove(Move move, ChessGame* game) {
   Piece piece;
   int enPassantPawnIndex;
   switch (flag) {
-  case NOFlAG:
+  case NOFLAG:
     // To be able to detect invalid flags
     break;
   case EN_PASSANT:

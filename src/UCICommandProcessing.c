@@ -2,9 +2,15 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "UCICommandProcessing.h"
+#include "engine/ChessGameEmulator.h"
+#include "engine/MoveGenerator.h"
+#include "state/Move.h"
 #include "utils/Utils.h"
+
+#include "../testing/LogChessStructs.h"
 
 // TODO: Make this the global current chessGame we are analyzing
 // TODO: Also check if it is more performant to have a pointer or a value 
@@ -68,43 +74,122 @@ static void processDCommand() {
   printf("\n");
 }
 
+static Move findMatchingMove(int startSquare, int endSquare, Flag moveFlag) {
+    Move moveToMake = (Move) 0;
+    Move moves[256];
+    int moveCount;
+    getValidMoves(moves, &moveCount, chessgame.currentPosition);
+    for (int index = 0; index < moveCount; index++) {
+        Move move = moves[index];
+        if (fromSquare(move) == startSquare && 
+            toSquare(move) == endSquare && 
+            (moveFlag == NOFLAG || flagFromMove(move) == moveFlag)) {
+            moveToMake = move;
+            break;
+        }
+    }
+    return moveToMake;
+}
+
+#define STARTPOS_LENGTH (9)
 // Format: 'position startpos moves e2e4 e7e5'
 // Or: 'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5'
 // Note: 'moves' section is optional
-static void processPositionCommand(String command, size_t firstSpaceIndex) {
-    size_t commandLength = string_length(command);
+static void processPositionCommand(char *command, size_t firstSpaceIndex) {
+    size_t commandLength = strlen(command);
     // Smallest valid position command is: position startpos, with 17 non-zero characters
     // If we have a fen it is: position fen 8/8/8/8/8/8/8/8 w - - 0 1 with 38 non-zero characters 
     if (commandLength < 17) {
-        sendResponse("Invalid position command %s\n", command);
+        sendResponse("ERROR: Invalid position command `%s`\n", command);
         return;
     }
 
-    String buffer;
-    size_t spaceIndex = string_nextSpaceTokenStartingAtIndex(command, firstSpaceIndex + 1, buffer);
-    
+    // Note: splitData is big enough to hold all notated moves
+    char splitData[STARTPOS_LENGTH] = { 0 };
+    size_t spaceIndex = string_nextSpaceCharacterFromIndex(command, firstSpaceIndex + 1); // After startpos or fen
+    memcpy(splitData, command + firstSpaceIndex + 1, min(spaceIndex - (firstSpaceIndex + 1), (size_t) STARTPOS_LENGTH));
+    string_toLower(splitData);
 
-    if (string_equalsCharArray(buffer, "startpos")) {
-        setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0);
-    } else if (string_equalsCharArray(buffer, "fen")) {
+    if (string_compareStrings(splitData, "startpos")) {
+        if (!setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0)) {
+            sendResponse("ERROR: While initializing the starting position");
+            return;
+        }
+    } else if (string_compareStrings(splitData, "fen")) {
         if (!setupChesGame(&chessgame, &chessgame.currentPosition, command + spaceIndex + 1, 0, 0)) {
             sendResponse("ERROR: While initializing the position fen string");
+            return;
         }
+        // Advancing the space index after the fen string
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after fen board
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after color to go
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after castling perm
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after en passant target square
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after fifty move rule
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after moves made
     } else {
-        sendResponse("Invalid position command %s\n", command);
+        sendResponse("ERROR: Invalid option `%s` in position command\n", splitData);
         return;
     }
-    
-    if (spaceIndex == commandLength - 1) {
-        // There is no `move` part to this position command
+    if (spaceIndex == commandLength) {
+        // There is no `moves` part to this position command
         return;
     }
 
-    // Handle move command
+    // Handle moves command
+    size_t oldSpaceIndex = spaceIndex;
+    spaceIndex = string_nextSpaceCharacterFromIndex(command, oldSpaceIndex + 1); // after moves string
+    memcpy(splitData, command + oldSpaceIndex + 1, min(spaceIndex - (oldSpaceIndex + 1), (size_t) 5));
+    splitData[5] = '\0';
+    string_toLower(splitData);
+    if (!string_compareStrings(splitData, "moves")) { 
+        sendResponse("ERROR: Invalid `moves` option of position command `%s`\n", splitData);
+        return;
+    }
 
-    // Note: We can only handle about 26 moves in our 256 length string
-    // so like this might be an issue later. Just keep that in mind
-    
+    while (spaceIndex < commandLength) {
+        oldSpaceIndex = spaceIndex;
+        spaceIndex = string_nextSpaceCharacterFromIndex(command, oldSpaceIndex + 1); // after move 
+        size_t algebraicMoveLength = spaceIndex - (oldSpaceIndex + 1);
+        if (algebraicMoveLength != 4 && algebraicMoveLength != 5) {
+            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
+            sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
+            break;
+        }
+
+        int startSquare = string_algebraicToIndex((char[]) { command[oldSpaceIndex + 1], command[oldSpaceIndex + 2], '\0' });
+        int endSquare = string_algebraicToIndex((char[]) { command[oldSpaceIndex + 3], command[oldSpaceIndex + 4], '\0' });
+        if (startSquare == -1 || endSquare == -1) {
+            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
+            sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
+            break;
+        }
+        Flag moveFlag = NOFLAG;
+        if (algebraicMoveLength == 5) {
+            char fenCharToPromote = command[oldSpaceIndex + 5];
+            if (fenCharToPromote == 'q') {
+                moveFlag = PROMOTE_TO_QUEEN;
+            } else if (fenCharToPromote == 'n') {
+                moveFlag = PROMOTE_TO_KNIGHT;
+            } else if (fenCharToPromote == 'r') {
+                moveFlag = PROMOTE_TO_ROOK;
+            } else if (fenCharToPromote == 'b') {
+                moveFlag = PROMOTE_TO_BISHOP;
+            } else {
+                command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
+                sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
+                break;
+            }
+        }
+        Move moveToMake = findMatchingMove(startSquare, endSquare, moveFlag);
+
+        if (moveToMake == (Move) 0) {
+            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
+            sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", command + oldSpaceIndex + 1);
+            break;
+        }
+        playMove(moveToMake, &chessgame);
+    }
 
 }
 
@@ -119,38 +204,42 @@ These are all the uci commands this engine supports:
     quit
     d
 */
-bool processUCICommand(String command) {
-    string_toLower(command);
 
-    // I know this is too much but we are safe from any overflow with this
-    String messageType;
-    size_t firstSpaceIndex = string_nextSpaceTokenStartingAtIndex(command, 0, messageType);
+#define MAX_UCI_COMMAND_WITH_OPTION_SIZE (9)
+bool processUCICommand(char *command) {
 
-    if (string_equalsCharArray(command, "quit")) {
+
+    size_t firstSpaceIndex = string_nextSpaceCharacterFromIndex(command, 0);
+    char messageType[MAX_UCI_COMMAND_WITH_OPTION_SIZE] = { 0 };
+    memcpy(messageType, command, min((size_t) MAX_UCI_COMMAND_WITH_OPTION_SIZE, firstSpaceIndex));
+    string_toLower(messageType);
+
+    if (string_compareStrings(messageType, "quit")) {
         return false;
+    }
 
-    } else if (string_equalsCharArray(command, "uci")) {
+    if (string_compareStrings(messageType, "uci")) {
         sendResponse("uciok");
     
-    } else if (string_equalsCharArray(command, "isready")) {
+    } else if (string_compareStrings(messageType, "isready")) {
         sendResponse("readyok");
 
-    } else if (string_equalsCharArray(command, "ucinewgame")) {
+    } else if (string_compareStrings(messageType, "ucinewgame")) {
         // I guess we gonna handle uci new game when it is necessary   
     
-    } else if (string_equalsCharArray(messageType, "position")) {
+    } else if (string_compareStrings(messageType, "position")) {
         processPositionCommand(command, firstSpaceIndex);
     
-    } else if (string_equalsCharArray(messageType, "go")) {
-        printf("Command is: %s\n", command);
+    } else if (string_compareStrings(messageType, "go")) {
+        sendResponse("Command is: %s\n", command);
     
-    } else if (string_equalsCharArray(command, "stop")) {
+    } else if (string_compareStrings(messageType, "stop")) {
         // Stop the bot from thinking
     
-    } else if (string_equalsCharArray(command, "d")) {
+    } else if (string_compareStrings(messageType, "d")) {
         processDCommand();
     } else {
-        sendResponse("Command `%s` invalid or not supported by this engine\n", command);
+        sendResponse("ERROR: Command `%s` invalid or not supported by this engine\n", command);
     }
     
     return true;

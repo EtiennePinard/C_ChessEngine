@@ -5,8 +5,6 @@
 #include "state/GameState.h"
 #include "utils/CharBuffer.h"
 
-#define BUFFER_SIZE (256)
-
 extern ChessGame chessgame;
 
 /**
@@ -16,6 +14,6 @@ extern ChessGame chessgame;
  * @return true if no error and no quit command occured
  * @return false if an error or a quit command occured  
  */
-bool processUCICommand(String command);
+bool processUCICommand(char *command);
 
 #endif /* BE5C3626_D8A7_4BB7_B7D4_8F70EF4329DB */

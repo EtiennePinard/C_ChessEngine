@@ -22,6 +22,7 @@ set(SOURCE_FILES
     src/magicBitBoard/magicBitBoard.c
     src/magicBitBoard/rook.c
     src/magicBitBoard/bishop.c
+    testing/logChessStructs.c
 )
 
 # Add executable target

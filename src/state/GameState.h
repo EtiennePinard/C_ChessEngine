@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "Board.h"
+#include "../utils/CharBuffer.h"
 
 #define PREVIOUS_STATE_CAPACITY (1 << 9)
 
@@ -14,7 +15,7 @@ typedef struct ChessPosition {
     Board board;
     PieceCharacteristics colorToGo;
     char castlingPerm; // 4 bits are used. The first bit is for white king side, second bit is for white queen side and pattern continues but for black
-    int enPassantTargetSquare; 
+    int enPassantTargetSquare; // enPassantTargetSquare is 0 when there is no pawn that has double pushed
     int turnsForFiftyRule; 
     int nbMoves;
     ZobristKey key;
@@ -54,8 +55,16 @@ typedef struct ChessGame {
 } ChessGame;
 
 /**
- * Setups a chess game from the position specified by the fen string
-*/
+ * @brief Setups a chess game from the specified fen string and time controls
+ * 
+ * @param result The ChessGame object to put the chess game data into
+ * @param currentPosition The ChessPosition object to put the chess position data into
+ * @param fenString The fen string to setup the chess position from
+ * @param whiteTimeInMs The time that white has in milliseconds
+ * @param blackTimeInMs The time that black has in milliseconds
+ * @return true If the game was setup correctly
+ * @return false If the game could not be setup correctly
+ */
 bool setupChesGame(ChessGame *result,
                    ChessPosition *currentPosition,
                    const char *fenString,

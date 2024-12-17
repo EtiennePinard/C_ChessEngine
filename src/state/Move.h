@@ -10,14 +10,14 @@
 * bit 6-11: to square (0 to 63)
 * bit 12-15: flag
 */
-typedef unsigned short Move;
+typedef u16 Move;
 
 /**
  * A flag is a 4 bit number which tells additional information
  * about move, e.g. that it leads to a promotion or a checkmate.
 */
 typedef enum {
-    NOFlAG, 
+    NOFLAG, 
     EN_PASSANT, 
     DOUBLE_PAWN_PUSH, 
     KING_SIDE_CASTLING, 

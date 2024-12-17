@@ -10,7 +10,7 @@ bool setupChesGame(ChessGame *result,
                    u32 whiteTimeInMs, u32 blackTimeInMs) {
     assert(result != NULL && "Result pointer is NULL");
     assert(fenString != NULL && "Fen string is NULL");
-    
+
     if (!setChessPositionFromFenString(fenString, currentPosition)) {
         printf("Invalid fen string %s\n", fenString);
         return false;

@@ -7,78 +7,49 @@
 #include <stdbool.h>
 
 /**
- * @brief Represents a character buffer
+ * @brief Check a two character buffer for equality
  * 
+ * @param string1 First character buffer
+ * @param string2 Second character buffer
+ * @return true If the two character buffers are equal
+ * @return false If the two character buffers are not equal
  */
-typedef char String[BUFFER_SIZE];
+bool string_compareStrings(const char *string1, const char* string2);
 
 /**
- * @brief Converts the charArray into a string and puts it into resultingString
- * 
- * @param resultingString The string containing the converted charArray
- * @param charArray The character array to convert into a string
- * @return true If the character array can be converted into a string
- * @return false If the character array cannot be converted into a string
- */
-bool string_fromCharArray(String *resultingString, const char *charArray);
-
-/**
- * @brief Returns the length of the specified string
- * 
- * @param string The string to get the length of
- * @return size_t The length of the string
- */
-size_t string_length(const String string);
-
-/**
- * @brief Returns the element at the index specified
- * 
- * @param string The string to get the element from
- * @param index The index of the element
- * @return char The character at the index. Returns -1 if the index is bigger than the length of the string
- */
-char string_characterAt(const String string, size_t index);
-
-/**
- * @brief Inserts the specified character in the given string at the given index
- * 
- * @param string The string to insert the character into
- * @param index The index to insert the character at
- * @param characterToInsert The character to insert
- * @return true If the index is between 0 and string_length(string) - 1
- * @return false If the index is out the bounds of the string
- */
-bool string_inserCharacterAt(String string, size_t index, char characterToInsert);
-
-/**
- * @brief Check a string and a charArray for equality
- * 
- * @param string The string to compare the charArray with
- * @param charArray The charArray to compare the string with
- * @return true If the string and charArray are equal
- * @return false If the string and charArray are not equal
- */
-bool string_equalsCharArray(String string, char* charArray);
-
-/**
- * @brief Copies the next space token in str to bufferToStoreToken starting at indexToStartAt and 
- * returns the index of the first space ' ' character from the indexToStartAt.
+ * @brief Returns the index of the first space ' ' character from the indexToStartAt.
  * If there is no space from the indexToStartAt then it returns the length of the string minus one
  * If indexToStartAt is out the bounds of the string then it returns indexToStartAt
- * Note: This could also happens string_characterAt(string, indexToStartAt) is a space or if 
  * 
  * @param str The string to extract the first word from
- * @param bufferToStoreToken The buffer to store the next space token in
  * @param indexToStartAt The index to start at
  * @return size_t The index of the first space from indexToStartAt
  */
-size_t string_nextSpaceTokenStartingAtIndex(const String string, size_t indexToStartAt, String bufferToStoreToken);
+size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStartAt);
 
 /**
  * @brief Converts all the characters in the string to lowercase
  * 
  * @param string The string to convert to lowercase
  */
-void string_toLower(String string);
+void string_toLower(char *string);
+
+/**
+ * @brief Parses a number from a string object.
+ * The format of the number is '{digit_1}...{digit_n}', where digit is a digit
+ * There is no minus sign, plus sign or white space allowed
+ * 
+ * @param string The number in string form to parse
+ * @return int The parsed number, or -1 if the string contained invalid characters
+ */
+int string_parseNumber(const char *string);
+
+/**
+ * @brief Converts a square in algebraic notation to a square index used in this program. Returns 0 if square == "-"
+ * 
+ * @param algebraic The square in algebraic notation
+ * @return int The square index of the square in algebraic notation, or -1 if the square char is not well formatted
+ */
+int string_algebraicToIndex(const char *algebraic);
 
 #endif /* C485539C_6204_42BC_B1A9_D330E7C34EBE */

@@ -1,5 +1,7 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "UCICommandProcessing.h"
 #include "magicBitBoard/MagicBitBoard.h"
@@ -9,30 +11,53 @@
 #define VERSION ("1.0")
 #define AUTHOR ("Etienne Pinard")
 
-void initEngine() {
+static void initEngine() {
     magicBitBoardInitialize();
     zobristKeyInitialize();
     pieceSquareTableInitialize();
-    setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 3 * 60 * 1000, 3 * 60 * 1000);
+    setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0);
 
     printf("Engine version %s by %s is initialized and ready to go!\n", VERSION, AUTHOR);
 }
 
-void terminateEngine() {
+static void terminateEngine() {
     magicBitBoardTerminate();
 }
 
-void readUCICommands() {
-    char buffer[BUFFER_SIZE];
-    String command;
+#define STARTING_BUFFER_SIZE (128)
 
-    // TODO: Implement a way to an arbatrary amount of input from stdin
-    while (fgets(buffer, BUFFER_SIZE, stdin)) {
-        // fgets always puts the new line in buffer so we remove it
-        buffer[strcspn(buffer, "\n")] = '\0';
+/**
+ * @brief Reads a line of arbitrary length from stdin
+ * 
+ * @return char* A heap allocated char containing the line. It is the caller responsability to free this memory.
+ */
+static char *readArbitraryLongLineFromStdin() {
+    char *buffer = calloc(STARTING_BUFFER_SIZE, sizeof(char));
+    assert(buffer != NULL && "Buffer is null, Buy more RAM LOL");
+    int numByteRead = 0;
+    int capacity = STARTING_BUFFER_SIZE;
 
-        string_fromCharArray(&command, buffer);
+    while (true) {
+        int byteRead = fgetc(stdin);
+        if (byteRead == '\n' || byteRead == EOF) { break; }
+        buffer[numByteRead] = (char) byteRead;        
+        numByteRead++;
+
+        if (numByteRead >= capacity) {
+            capacity *= 2;
+            buffer = realloc(buffer, capacity);
+            assert(buffer != NULL && "Buffer is null, Buy more RAM LOL");
+        }
+    }
+    buffer[numByteRead] = '\0';
+    return buffer;
+}
+
+static void readUCICommands() {
+    while (true) {
+        char *command = readArbitraryLongLineFromStdin();
         if (!processUCICommand(command)) { break; }
+        free(command);
     }
 }
 

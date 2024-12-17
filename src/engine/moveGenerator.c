@@ -282,7 +282,7 @@ void generateKingMoves() {
     while (bitboard) {
         int targetSquare = trailingZeros_64(bitboard);
         if (isKingIndexLegal(targetSquare)) {
-            appendMove(friendlyKingIndex, targetSquare, NOFlAG);
+            appendMove(friendlyKingIndex, targetSquare, NOFLAG);
         }
         bitboard &= bitboard - 1;
     }
@@ -446,7 +446,7 @@ void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves
         // Extract the position of the least significant bit
         int to = trailingZeros_64(pseudoLegalMoves);
         
-        appendMove(from, to, NOFlAG);
+        appendMove(from, to, NOFLAG);
         
         // Clearing the least significant bit to get the position of the next bit
         pseudoLegalMoves &= pseudoLegalMoves - 1;
@@ -549,7 +549,7 @@ void pawnMoves(int from) {
             appendMove(from, to, PROMOTE_TO_ROOK);
             appendMove(from, to, PROMOTE_TO_BISHOP);
         } else {
-            appendMove(from, to, NOFlAG);
+            appendMove(from, to, NOFLAG);
         }
         
         // Clearing the least significant bit to get the position of the next bit
@@ -610,5 +610,5 @@ void getValidMoves(Move result[256], int* numMoves, ChessPosition position) {
         generateSupportingPiecesMoves();
     }
     
-    *(numMoves) = currentMoveIndex;
+    *numMoves = currentMoveIndex;
 }

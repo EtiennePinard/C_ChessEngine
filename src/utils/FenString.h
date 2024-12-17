@@ -5,6 +5,9 @@
 #include "../state/GameState.h"
 #include "CharBuffer.h"
 
+// From https://chess.stackexchange.com/a/30006
+#define MAX_FEN_STRING_SIZE (87)
+
 /**
  * @brief Sets ups the chess position from a fen string.
  * 
@@ -13,6 +16,6 @@
  * @return true If the fen string is valid and position is not NULL
  * @return false If the fen string is invalid or position is NULL
  */
-bool setChessPositionFromFenString(const String fen, ChessPosition* position);
+bool setChessPositionFromFenString(const char *fen, ChessPosition* position);
 
 #endif

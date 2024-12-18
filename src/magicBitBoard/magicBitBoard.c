@@ -29,7 +29,7 @@ u16 bishopIndexOffset[BOARD_SIZE] = {0, 32, 48, 80, 112, 144, 176, 192, 224, 240
 u64* rookPseudoLegalMovesBitBoard = NULL;
 u64* bishopPseudoLegalMovesBitBoard = NULL;
 
-u64 getRookPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
+u64 MagicBitBoard_getRookPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
     u64 magic = rookMagics[position];
     u8 shift = rookShifts[position];
     u64 key = (blockingBitBoard * magic) >> shift;
@@ -38,7 +38,7 @@ u64 getRookPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
     return rookPseudoLegalMovesBitBoard[indexIntoPseudoLegalMovesArray];
 }
 
-u64 getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
+u64 MagicBitBoard_getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
     u64 magic = bishopMagics[position];
     u8 shift = bishopShifts[position];
     u64 key = (blockingBitBoard * magic) >> shift;
@@ -47,15 +47,16 @@ u64 getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard) {
     return bishopPseudoLegalMovesBitBoard[indexIntoPseudoLegalMovesArray];
 }
 
-void magicBitBoardInitialize() {
+bool MagicBitBoard_init() {
     if (rookPseudoLegalMovesBitBoard != NULL || bishopPseudoLegalMovesBitBoard != NULL) {
         // Magic Bit Boards are already initialized
-        return;
+        return true;
     }
     rookPseudoLegalMovesBitBoard = calloc(ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     bishopPseudoLegalMovesBitBoard = calloc(BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
-    assert(rookPseudoLegalMovesBitBoard != NULL && "rookPseudoLegalMovesBitBoard == NULL, Buy more RAM lol");
-    assert(bishopPseudoLegalMovesBitBoard != NULL && "bishopPseudoLegalMovesBitBoard == NULL, Buy more RAM lol");
+    if (rookPseudoLegalMovesBitBoard == NULL || bishopPseudoLegalMovesBitBoard == NULL) {
+        return false;
+    }
 
     // The max number of valid squares for a piece is 12
     // Thus the max number of blocking bit board 2^12 = 1 << 12
@@ -100,9 +101,15 @@ void magicBitBoardInitialize() {
     }
     free(blockingBitBoards);
     free(blockingBitBoardToPseudoLegalMove);
+
+    return true;
 }
 
-void magicBitBoardTerminate() {
-    free(rookPseudoLegalMovesBitBoard);
-    free(bishopPseudoLegalMovesBitBoard);
+void MagicBitBoard_terminate() {
+    if (rookPseudoLegalMovesBitBoard != NULL) {
+        free(rookPseudoLegalMovesBitBoard);
+    }
+    if (bishopPseudoLegalMovesBitBoard != NULL) {
+        free(bishopPseudoLegalMovesBitBoard);
+    }
 }

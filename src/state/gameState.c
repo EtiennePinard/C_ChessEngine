@@ -4,14 +4,14 @@
 #include "GameState.h"
 #include "../utils/FenString.h"
 
-bool setupChesGame(ChessGame *result,
+bool Game_setupChesGame(ChessGame *result,
                    ChessPosition *currentPosition,
                    const char *fenString,
                    u32 whiteTimeInMs, u32 blackTimeInMs) {
     assert(result != NULL && "Result pointer is NULL");
     assert(fenString != NULL && "Fen string is NULL");
 
-    if (!setChessPositionFromFenString(fenString, currentPosition)) {
+    if (!FenString_setChessPositionFromFenString(fenString, currentPosition)) {
         printf("Invalid fen string %s\n", fenString);
         return false;
     }
@@ -24,7 +24,7 @@ bool setupChesGame(ChessGame *result,
     return true;
 }
 
-bool isThereThreeFoldRepetition(ChessGame* game) {
+bool Game_isThereThreeFoldRepetition(ChessGame* game) {
     bool hasOneDuplicate = false;
     bool result = false;
     for (int i = 0; i < game->previousPositionsCount; i++) {

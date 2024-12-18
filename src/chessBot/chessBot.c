@@ -17,7 +17,7 @@
 
 static ChessGame* game;
 
-void provideGameStateForBot(ChessGame* state) {
+void Bot_provideGameStateForBot(ChessGame* state) {
     game = state;
 }
 
@@ -75,7 +75,7 @@ const int reducingKingMovementBonus[] = {
 #define TOTAL_PHASE 24
 
 // TODO: Static evaluation does not give positive/negative inf if one side is checkmated
-int staticEvaluation() {
+int Bot_staticEvaluation() {
 
     GamePhase phase = TOTAL_PHASE;
     int score = 15;
@@ -85,9 +85,9 @@ int staticEvaluation() {
     // Checking for mate:
     Move validMoves[256];
     int numMoves;
-    getValidMoves(validMoves, &numMoves, game->currentPosition);
+    Engine_getValidMoves(validMoves, &numMoves, game->currentPosition);
 
-    bool inCheck = isKingInCheck(); 
+    bool inCheck = Engine_isKingInCheck(); 
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
@@ -101,13 +101,13 @@ int staticEvaluation() {
         PieceCharacteristics color = WHITE * (i + 1);
         
         int view = color == WHITE ? 1 : -1;
-        int opposingKingIndex = trailingZeros_64(bitBoardForPiece(game->currentPosition.board, makePiece(BLACK / (i + 1), KING)));
+        int opposingKingIndex = trailingZeros_64(Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(BLACK / (i + 1), KING)));
         kingAttacks = kingMovementMask[opposingKingIndex];
-        friendlyBitBoard = specificColorBitBoard(game->currentPosition.board, color);
+        friendlyBitBoard = Board_specificColorBitBoard(game->currentPosition.board, color);
         
         for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
-            bitboard = bitBoardForPiece(game->currentPosition.board, makePiece(color, type));
+            bitboard = Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(color, type));
 
             while (bitboard) {
                 int square = trailingZeros_64(bitboard);
@@ -122,7 +122,7 @@ int staticEvaluation() {
                 // We do not include the piece that we are currently looking in the file bitboard
                 currentFileWithoutPiece = (file << file(square)) & ~(1UL << square);
                 
-                if ((currentFileWithoutPiece & bitBoardForPiece(game->currentPosition.board, makePiece(color, PAWN))) == 0) {
+                if ((currentFileWithoutPiece & Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(color, PAWN))) == 0) {
                     score += openFilesAndDoublePawns[type - 1] * view;
                 }
                 
@@ -132,8 +132,8 @@ int staticEvaluation() {
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     break;
                 case BISHOP:
-                    attack = getBishopPseudoLegalMovesBitBoard(
-                                 square, allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]
+                    attack = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
+                                 square, Board_allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -141,8 +141,8 @@ int staticEvaluation() {
                     break;
 
                 case ROOK:
-                    attack = getRookPseudoLegalMovesBitBoard(
-                                 square, allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square]
+                    attack = MagicBitBoard_getRookPseudoLegalMovesBitBoard(
+                                 square, Board_allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -150,10 +150,10 @@ int staticEvaluation() {
                     break;
 
                 case QUEEN:
-                    attack = (getBishopPseudoLegalMovesBitBoard(
-                                  square, allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]) |
-                              getRookPseudoLegalMovesBitBoard(
-                                  square, allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square])) &
+                    attack = (MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
+                                  square, Board_allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]) |
+                              MagicBitBoard_getRookPseudoLegalMovesBitBoard(
+                                  square, Board_allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square])) &
                              (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -174,7 +174,7 @@ int staticEvaluation() {
                 // Piece Square Table mixed with Material
                 // We combined the material score and the piece square table score in the PieceSquareTable.c file
                 // Note that all of the scores were taken from Stockfish 14
-                score += pieceSquareTable[makePiece(color, type) - 9][square];
+                score += pieceSquareTable[Piece_makePiece(color, type) - 9][square];
 
                 bitboard &= bitboard - 1;   
             }
@@ -198,18 +198,18 @@ int search(int alpha, int beta, int depth) {
     if (depth == 0) {
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
         int whoToMove = game->currentPosition.colorToGo == WHITE ? 1 : -1; 
-        return staticEvaluation() * whoToMove; 
+        return Bot_staticEvaluation() * whoToMove; 
     } // eventually do return quiesce(alpha, beta);
     int bestValue = MINUS_INFINITY;
 
     int nbOfMoves;
     Move validMoves[256];
-    getValidMoves(validMoves, &nbOfMoves, game->currentPosition);
+    Engine_getValidMoves(validMoves, &nbOfMoves, game->currentPosition);
     posHistory[maximumDepth - depth] = game->currentPosition;
 
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
-        playMove(move, game);
+        Engine_playMove(move, game);
         // We switch alpha and beta, because alpha is the lower bound for the color to go 
         // but it is the upper bound for the other color. Opposite is true for beta
         // thus we switch them so that it works for the opponent
@@ -230,7 +230,7 @@ int search(int alpha, int beta, int depth) {
     return bestValue;
 }
 
-Move think() {
+Move Bot_think() {
 
     Move bestMove = BOT_ERROR;
     int bestEval = MINUS_INFINITY;
@@ -246,7 +246,7 @@ Move think() {
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256];
     int numMoves;
-    getValidMoves(moves, &numMoves, lastPos);
+    Engine_getValidMoves(moves, &numMoves, lastPos);
     if (numMoves == 0) { // Game is done!
         return BOT_ERROR; 
     }
@@ -254,7 +254,7 @@ Move think() {
 
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
-        playMove(move, game);
+        Engine_playMove(move, game);
 
         int score = -search(MINUS_INFINITY, INFINITY, maximumDepth);
         if (score > bestEval) {

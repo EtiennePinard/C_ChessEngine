@@ -49,40 +49,40 @@ static bool setBoardArrayFromFenString(const char *fenBoard, Piece board[BOARD_S
       break;
 
     case 'P':
-      board[index++] = makePiece(WHITE, PAWN);
+      board[index++] = Piece_makePiece(WHITE, PAWN);
       break;
     case 'N':
-      board[index++] = makePiece(WHITE, KNIGHT);
+      board[index++] = Piece_makePiece(WHITE, KNIGHT);
       break;
     case 'B':
-      board[index++] = makePiece(WHITE, BISHOP);
+      board[index++] = Piece_makePiece(WHITE, BISHOP);
       break;
     case 'R':
-      board[index++] = makePiece(WHITE, ROOK);
+      board[index++] = Piece_makePiece(WHITE, ROOK);
       break;
     case 'Q':
-      board[index++] = makePiece(WHITE, QUEEN);
+      board[index++] = Piece_makePiece(WHITE, QUEEN);
       break;
     case 'K':
-      board[index++] = makePiece(WHITE, KING);
+      board[index++] = Piece_makePiece(WHITE, KING);
       break;
     case 'p':
-      board[index++] = makePiece(BLACK, PAWN);
+      board[index++] = Piece_makePiece(BLACK, PAWN);
       break;
     case 'n':
-      board[index++] = makePiece(BLACK, KNIGHT);
+      board[index++] = Piece_makePiece(BLACK, KNIGHT);
       break;
     case 'b':
-      board[index++] = makePiece(BLACK, BISHOP);
+      board[index++] = Piece_makePiece(BLACK, BISHOP);
       break;
     case 'r':
-      board[index++] = makePiece(BLACK, ROOK);
+      board[index++] = Piece_makePiece(BLACK, ROOK);
       break;
     case 'q':
-      board[index++] = makePiece(BLACK, QUEEN);
+      board[index++] = Piece_makePiece(BLACK, QUEEN);
       break;
     case 'k':
-      board[index++] = makePiece(BLACK, KING);
+      board[index++] = Piece_makePiece(BLACK, KING);
       break;
     default:
       // Note: do not increment index on '/' character
@@ -111,7 +111,7 @@ static inline size_t _getNextWord(const char *fen, size_t spaceIndex, char *spli
   return newSpaceIndex;
 }
 
-bool setChessPositionFromFenString(const char *fen, ChessPosition *position) {
+bool FenString_setChessPositionFromFenString(const char *fen, ChessPosition *position) {
   if (position == NULL || fen == NULL) { return false; }
 
   char splitData[MAX_FEN_STRING_SIZE] = { 0 };
@@ -120,7 +120,7 @@ bool setChessPositionFromFenString(const char *fen, ChessPosition *position) {
   Piece boardArray[BOARD_SIZE] = { 0 };
   if (!setBoardArrayFromFenString(splitData, boardArray)) { return false; } 
   Board board = { 0 };
-  fromArray(&board, boardArray);
+  Board_fromArray(&board, boardArray);
   position->board = board;
 
   spaceIndex = _getNextWord(fen, spaceIndex, splitData) + 1;
@@ -143,7 +143,7 @@ bool setChessPositionFromFenString(const char *fen, ChessPosition *position) {
   position->nbMoves = string_parseNumber(splitData);
   if (position->turnsForFiftyRule == -1) { return false; }
 
-  calculateZobristKey(position);
+  ZobristKey_calculateInitialKey(position);
 
   return true;
 }

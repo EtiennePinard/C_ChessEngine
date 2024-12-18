@@ -26,7 +26,7 @@ static void sendResponse(const char *format, ...) {
 
 static char pieceToFenChar(Piece piece) {
     char result;
-    switch (pieceType(piece)) {
+    switch (Piece_type(piece)) {
         case KING:
         result = 'k';
         break;
@@ -49,7 +49,7 @@ static char pieceToFenChar(Piece piece) {
         return ' ';
         break;
     }
-    if (pieceColor(piece) == WHITE) {
+    if (Piece_color(piece) == WHITE) {
         result = toupper(result);
     }
     return result;
@@ -62,7 +62,7 @@ static void processDCommand() {
       printf("%d ", 8 - index / 8);
     }
 
-    Piece pieceAtPosition = pieceAtIndex(chessgame.currentPosition.board, index);
+    Piece pieceAtPosition = Board_pieceAtIndex(chessgame.currentPosition.board, index);
     printf("[%c]", pieceToFenChar(pieceAtPosition));
     printf((index + 1) % 8 == 0 ? "\n" : " ");
   }
@@ -78,12 +78,12 @@ static Move findMatchingMove(int startSquare, int endSquare, Flag moveFlag) {
     Move moveToMake = (Move) 0;
     Move moves[256];
     int moveCount;
-    getValidMoves(moves, &moveCount, chessgame.currentPosition);
+    Engine_getValidMoves(moves, &moveCount, chessgame.currentPosition);
     for (int index = 0; index < moveCount; index++) {
         Move move = moves[index];
-        if (fromSquare(move) == startSquare && 
-            toSquare(move) == endSquare && 
-            (moveFlag == NOFLAG || flagFromMove(move) == moveFlag)) {
+        if (Move_fromSquare(move) == startSquare && 
+            Move_toSquare(move) == endSquare && 
+            (moveFlag == NOFLAG || Move_flag(move) == moveFlag)) {
             moveToMake = move;
             break;
         }
@@ -111,12 +111,12 @@ static void processPositionCommand(char *command, size_t firstSpaceIndex) {
     string_toLower(splitData);
 
     if (string_compareStrings(splitData, "startpos")) {
-        if (!setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0)) {
+        if (!Game_setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0)) {
             sendResponse("ERROR: While initializing the starting position");
             return;
         }
     } else if (string_compareStrings(splitData, "fen")) {
-        if (!setupChesGame(&chessgame, &chessgame.currentPosition, command + spaceIndex + 1, 0, 0)) {
+        if (!Game_setupChesGame(&chessgame, &chessgame.currentPosition, command + spaceIndex + 1, 0, 0)) {
             sendResponse("ERROR: While initializing the position fen string");
             return;
         }
@@ -188,27 +188,24 @@ static void processPositionCommand(char *command, size_t firstSpaceIndex) {
             sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", command + oldSpaceIndex + 1);
             break;
         }
-        playMove(moveToMake, &chessgame);
+        Engine_playMove(moveToMake, &chessgame);
     }
 
 }
 
 /*
 These are all the uci commands this engine supports:
-    uci
-    isready
-    ucinewgame
-    position
+    uci (done)
+    isready (done)
+    ucinewgame 
+    position (done)
     go
     stop
     quit
     d
 */
-
 #define MAX_UCI_COMMAND_WITH_OPTION_SIZE (9)
 bool processUCICommand(char *command) {
-
-
     size_t firstSpaceIndex = string_nextSpaceCharacterFromIndex(command, 0);
     char messageType[MAX_UCI_COMMAND_WITH_OPTION_SIZE] = { 0 };
     memcpy(messageType, command, min((size_t) MAX_UCI_COMMAND_WITH_OPTION_SIZE, firstSpaceIndex));

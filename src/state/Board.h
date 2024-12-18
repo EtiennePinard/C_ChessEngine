@@ -40,26 +40,26 @@ typedef struct Board {
 /**
  * Returns the bit board of a specific piece
 */
-u64 bitBoardForPiece(Board board, Piece piece);
-u64 specificColorBitBoard(Board board, PieceCharacteristics color);
-u64 allPiecesBitBoard(Board board);
+u64 Board_bitBoardForPiece(Board board, Piece piece);
+u64 Board_specificColorBitBoard(Board board, PieceCharacteristics color);
+u64 Board_allPiecesBitBoard(Board board);
 
 /**
  * Returns the piece at a specific index
 */
-Piece pieceAtIndex(Board board, int index);
+Piece Board_pieceAtIndex(Board board, int index);
 
 /**
  * Will toggle (XOR with 1) the bits at a specific index for a piece to the opposite state.
  * If you pass in the NOPIECE piece (0) it will lead to undefined behaviour
 */
-void togglePieceAtIndex(Board* board, int index, Piece piece);
+void Board_togglePieceAtIndex(Board* board, int index, Piece piece);
 
 /**
  * Converts and puts the information in the piece's `array` to the `result` board.
  * The index of a piece in the array represents its position on the board. 
  * 0 is the top left corner, and 63 is the bottom right corner.
 */
-void fromArray(Board* result, Piece array[BOARD_SIZE]);
+void Board_fromArray(Board* result, Piece array[BOARD_SIZE]);
 
 #endif /* E6F9D86C_5687_4DF1_9FEB_54DDB21FA54E */

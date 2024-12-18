@@ -7,6 +7,6 @@
  * Makes the move and updates the ChessGame
  * The move is assumed to be legal
 */
-void playMove(Move move, ChessGame* game);
+void Engine_playMove(Move move, ChessGame* game);
 
 #endif

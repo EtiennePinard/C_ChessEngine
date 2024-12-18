@@ -17,12 +17,21 @@ typedef struct ZobristRandomNumber {
 
 extern ZobristRandomNumber zobristRandomNumber;
 
-void zobristKeyInitialize();
+/**
+ * @brief Initializes the zobrist key random numbers
+ * 
+ * @return true If the zobrist key were initialize properly
+ * @return false If the zobrist key could not be initialize properly
+ */
+bool ZobristKey_init();
 
 /**
- * This function should be called only once when creating the your initial ChessGame struct
- * Subsequent Zobrist key will be calculated by the makeMove function incrementally
-*/
-void calculateZobristKey(ChessPosition* state);
+ * @brief Calculates the zobrist key for a given chess position and stores it in the position
+ * Note that this function should be only be called when you first create you chess position.
+ * The subsequent keys are create incrementally when you play a move
+ * 
+ * @param position The position to calculate the zobrist key of and store it in it
+ */
+void ZobristKey_calculateInitialKey(ChessPosition* position);
 
 #endif /* A2BCC12A_23A9_49F5_800A_DD78EE9CE23B */

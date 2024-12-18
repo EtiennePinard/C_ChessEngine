@@ -69,9 +69,9 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
     
-    magicBitBoardInitialize();
-    zobristKeyInitialize();
-    pieceSquareTableInitialize();
+    MagicBitBoard_init();
+    ZobristKey_init();
+    PieceSquareTable_init();
 
     u64 lineSize = countLinesInFile(positions);
     
@@ -86,13 +86,13 @@ int main(int argc, char* argv[]) {
     while (true) {
         rewind(positions);
         randomFenFromFile(positions, lineSize, fen);
-        setupChesGame(&game, &currentPosition, fen, (u32) 1, (u32) 1); // We don't care about time controls
+        Game_setupChesGame(&game, &currentPosition, fen, (u32) 1, (u32) 1); // We don't care about time controls
         
-        provideGameStateForBot(&game);
+        Bot_provideGameStateForBot(&game);
         setStockfishPosition(fen);
 
-        int score = staticEvaluation();
-        Move bestMove = think();
+        int score = Bot_staticEvaluation();
+        Move bestMove = Bot_think();
 
         float stockfishScore = stockfishStaticEvaluation();
         Move stockfishMove = stockfishBestMove(2); // Start with depth 2 for now
@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    magicBitBoardTerminate();
+    MagicBitBoard_terminate();
     fclose(positions);
     return 0;
 }

@@ -1,6 +1,8 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_timer.h>
 
+#include <stdio.h>
+
 #include "AppInit.h"
 #include "Events.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"
@@ -107,7 +109,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     appState->gameState.previousStateIndex = 0;
     appState->gameState.result = GAME_IS_NOT_DONE;
 
-    setupChesGame(&appState->gameState.currentState,
+    Game_setupChesGame(&appState->gameState.currentState,
                   &appState->gameState.currentState.currentPosition,
                   INITIAL_FEN,
                   TIME_CONTROL_MS, TIME_CONTROL_MS);
@@ -122,9 +124,9 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     // Chessboard position will not change while the app is running, so we can add it once at app startup
     da_append((&appEvents->clickableAreas), ((ClickableArea) { .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard}));
 
-    magicBitBoardInitialize();
-    zobristKeyInitialize();
-    pieceSquareTableInitialize();
+    MagicBitBoard_init();
+    ZobristKey_init();
+    PieceSquareTable_init();
 
     // We are officially running the app!
     appState->isRunning = true;
@@ -145,7 +147,7 @@ static void freeTextures(Textures textures) {
 }
 
 void cleanupApp(AppEvents *appEvents, AppState *appState) {
-    magicBitBoardTerminate();
+    MagicBitBoard_terminate();
     freeTextures(appState->textures);
 
     free(appState->gameState.previousStates);

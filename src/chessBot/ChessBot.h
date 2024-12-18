@@ -10,20 +10,20 @@
 /**
  * Call this function with the ChessGame that you want the bot to analyze
 */
-void provideGameStateForBot(ChessGame* game);
+void Bot_provideGameStateForBot(ChessGame* game);
 
 /**
  * Returns the best move in a position (according to the computer)
  * Returns BOT_ERROR if there was an error
  * TODO: Implement time control later
 */
-Move think();
+Move Bot_think();
 
 /**
  * Returns a score that was calculated by statically analyzing the position.
  * Static analysis means only looking at information curently available, not considering 
  * potential good moves in the score.
 */
-int staticEvaluation();
+int Bot_staticEvaluation();
 
 #endif /* A674C591_4B1F_47E1_8F49_FF09345BAD1D */

@@ -8,19 +8,19 @@
 
 /**
  * Returns true if the friendly king (for the current turn) is in check
- * Only valid after getValidMoves is called
+ * Only valid after Engine_getValidMoves is called
 */
-bool isKingInCheck();
+bool Engine_isKingInCheck();
 /**
  * Returns true if the friendly king (for the current turn) is in double check
- * Only valid after getValidMoves is called
+ * Only valid after Engine_getValidMoves is called
 */
-bool isKingInDoubleCheck();
+bool Engine_isKingInDoubleCheck();
 
 /**
  * Computes the valid moves in a given position and stores the moves in the result array
  * and the amount of moves in the numMoves pointer
 */
-void getValidMoves(Move result[256], int* numMoves, ChessPosition game);
+void Engine_getValidMoves(Move result[256], int* numMoves, ChessPosition game);
 
 #endif

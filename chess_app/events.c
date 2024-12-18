@@ -31,17 +31,17 @@ All insufficient material scenario are:
                 so I'll say it's draw
 */
 static inline bool insufficientMaterialScenario(const GameState *gameState) {
-    u64 piecesBitBoard = allPiecesBitBoard(gameState->currentState.currentPosition.board);
+    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->currentState.currentPosition.board);
     int nbPieces = numBitSet_64(piecesBitBoard);
     if (nbPieces > 4) { return false; }
 
     u64 rooksPawnsQueens = piecesBitBoard & (
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, QUEEN)) |
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, QUEEN)) |
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, ROOK)) |
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, ROOK)) |
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, PAWN)) |
-                            bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, PAWN))
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, QUEEN)) |
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, QUEEN)) |
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, ROOK)) |
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, ROOK)) |
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, PAWN)) |
+                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, PAWN))
                         );
     
     if (rooksPawnsQueens != (u64) 0) {
@@ -54,8 +54,8 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
         return true; 
     }
 
-    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(WHITE, KNIGHT)));
-    int nbKBlackKnights = numBitSet_64(piecesBitBoard & bitBoardForPiece(gameState->currentState.currentPosition.board, makePiece(BLACK, KNIGHT)));
+    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, KNIGHT)));
+    int nbKBlackKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, KNIGHT)));
     if (nbKWhiteKnights != nbKBlackKnights) { 
         // Handles case of two knights on either side and lone knight and lone bishop
         return true; 
@@ -82,14 +82,14 @@ static void computeGameEnd(GameState *gameState) {
 
     Move moves[256];
     int numMove;
-    getValidMoves(moves, &numMove, gameState->currentState.currentPosition);
+    Engine_getValidMoves(moves, &numMove, gameState->currentState.currentPosition);
     if (numMove == 0) {
-        if (isKingInCheck() || isKingInDoubleCheck()) {
+        if (Engine_isKingInCheck() || Engine_isKingInDoubleCheck()) {
             gameState->result = gameState->currentState.currentPosition.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
         } else {
             gameState->result = STALEMATE;
         }
-    } else if (isThereThreeFoldRepetition(&gameState->currentState)) {
+    } else if (Game_isThereThreeFoldRepetition(&gameState->currentState)) {
         gameState->result = THREE_MOVE_REPETITION;
     } else if (gameState->currentState.currentPosition.turnsForFiftyRule > 50) {
         // TODO: Check this case out
@@ -105,12 +105,12 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
         gameState->previousStateCapacity *= 2;
     }
     gameState->previousStates[gameState->previousStateIndex++] = gameState->currentState;
-    playMove(move, &gameState->currentState);
+    Engine_playMove(move, &gameState->currentState);
 }
 
 static inline void playBotMove(GameState *gameState) {
-    provideGameStateForBot(&gameState->currentState);
-    Move botMove = think();
+    Bot_provideGameStateForBot(&gameState->currentState);
+    Move botMove = Bot_think();
     
     u64 currentTick = SDL_GetTicks64();
     if (gameState->playerColor != WHITE) {
@@ -198,10 +198,10 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppStat
         int pieceIndex = rowIndex * 2 + colIndex;
         PieceCharacteristics currentColor = appState->gameState.currentState.currentPosition.colorToGo;
         switch (pieceIndex) {
-            case 0: move = makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_QUEEN); break;
-            case 1: move = makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_KNIGHT); break;
-            case 2: move = makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_ROOK); break;
-            case 3: move = makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_BISHOP); break;
+            case 0: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_QUEEN); break;
+            case 1: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_KNIGHT); break;
+            case 2: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_ROOK); break;
+            case 3: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_BISHOP); break;
             default: break;
         }
         break;
@@ -229,18 +229,18 @@ static void chessBoardMouseButtonUp(AppState *appState) {
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256];
     int numMoves;
-    getValidMoves(moves, &numMoves, appState->gameState.currentState.currentPosition);
+    Engine_getValidMoves(moves, &numMoves, appState->gameState.currentState.currentPosition);
 
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];
 
-        if (fromSquare(move) == appState->draggingState.from && toSquare(move) == draggingTo) {
+        if (Move_fromSquare(move) == appState->draggingState.from && Move_toSquare(move) == draggingTo) {
             // This is the move the player wants to play
             // This is true because their is only one move with a particular from and to square (except for promotion)
-            if (flagFromMove(move) == PROMOTE_TO_QUEEN || 
-                flagFromMove(move) == PROMOTE_TO_KNIGHT ||
-                flagFromMove(move) == PROMOTE_TO_ROOK ||
-                flagFromMove(move) == PROMOTE_TO_BISHOP) {
+            if (Move_flag(move) == PROMOTE_TO_QUEEN || 
+                Move_flag(move) == PROMOTE_TO_KNIGHT ||
+                Move_flag(move) == PROMOTE_TO_ROOK ||
+                Move_flag(move) == PROMOTE_TO_BISHOP) {
                 
                 appState->draggingState.to = draggingTo; // I set this to communicate it to the popup callback
 
@@ -271,9 +271,9 @@ static void chessBoardMouseButtonDown(GameState *gameState, DraggingState *dragg
     
     int square = squareFromxy(mouseX, mouseY, gameState->playerColor == BLACK);
 
-    if (pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
+    if (Board_pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
 
-    draggingState->draggedPiece = pieceAtIndex(gameState->currentState.currentPosition.board, square);
+    draggingState->draggedPiece = Board_pieceAtIndex(gameState->currentState.currentPosition.board, square);
     draggingState->from = square;
     draggingState->isDragging = true;
 }

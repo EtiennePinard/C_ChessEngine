@@ -26,7 +26,7 @@ u64 perft(int depth) {
 
   int nbOfMoves;
   Move validMoves[256];
-  getValidMoves(validMoves, &nbOfMoves, game.currentPosition); // We do not care about draw by repetition
+  Engine_getValidMoves(validMoves, &nbOfMoves, game.currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
   // Note that here we take into account the fifty move fule
@@ -47,7 +47,7 @@ u64 perft(int depth) {
 
     Move move = validMoves[moveIndex];
 
-    playMove(move, &game); // Move is made
+    Engine_playMove(move, &game); // Move is made
 
     u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
 
@@ -123,13 +123,13 @@ typedef struct testPosition {
 #define NUM_TEST_POSITIONS 6
 
 void test() {
-  magicBitBoardInitialize();
-  zobristKeyInitialize();
+  MagicBitBoard_init();
+  ZobristKey_init();
   
   int biggestDepth = 5;
   if (biggestDepth > MAXIMUM_DEPTH) {
     printf("The biggest depth of test %d exceeds the position history limit, %d\n", biggestDepth, MAXIMUM_DEPTH);
-    magicBitBoardTerminate();
+    MagicBitBoard_terminate();
     exit(EXIT_FAILURE);
   }
 
@@ -201,7 +201,7 @@ void test() {
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
     
-    setChessPositionFromFenString(testPosition.fenString, &game.currentPosition);
+    FenString_setChessPositionFromFenString(testPosition.fenString, &game.currentPosition);
     startingState = game.currentPosition;
 
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
@@ -231,7 +231,7 @@ void test() {
   double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
   printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
 
-  magicBitBoardTerminate();
+  MagicBitBoard_terminate();
 }
 
 // To compile and run the program: ./perft
@@ -297,12 +297,12 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  magicBitBoardInitialize();
-  zobristKeyInitialize();
+  MagicBitBoard_init();
+  ZobristKey_init();
 
   ChessPosition currentPosition = { 0 };
   // Note: We don't care about time in perft
-  if (!setupChesGame(&game, &currentPosition, fenString, (u32) 0, (u32) 0)) { 
+  if (!Game_setupChesGame(&game, &currentPosition, fenString, (u32) 0, (u32) 0)) { 
     printf("ERROR while setup of chess game state\n Exiting\n");
     exit(EXIT_FAILURE);
   }
@@ -337,6 +337,6 @@ int main(int argc, char* argv[]) {
     printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
   }
 
-  magicBitBoardTerminate();
+  MagicBitBoard_terminate();
   return 0;
 }

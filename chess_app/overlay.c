@@ -39,10 +39,10 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
     int nbTexture = 4;
     int indexOffSet = colorToPromote == WHITE ? 9 : 11;
     SDL_Texture *textures[nbTexture]; 
-    textures[0] = chessImages.data[makePiece(colorToPromote, QUEEN) - indexOffSet].texture;
-    textures[1] = chessImages.data[makePiece(colorToPromote, KNIGHT) - indexOffSet].texture;
-    textures[2] = chessImages.data[makePiece(colorToPromote, ROOK) - indexOffSet].texture;
-    textures[3] = chessImages.data[makePiece(colorToPromote, BISHOP) - indexOffSet].texture;
+    textures[0] = chessImages.data[Piece_makePiece(colorToPromote, QUEEN) - indexOffSet].texture;
+    textures[1] = chessImages.data[Piece_makePiece(colorToPromote, KNIGHT) - indexOffSet].texture;
+    textures[2] = chessImages.data[Piece_makePiece(colorToPromote, ROOK) - indexOffSet].texture;
+    textures[3] = chessImages.data[Piece_makePiece(colorToPromote, BISHOP) - indexOffSet].texture;
     
     for (int i = 0; i < nbTexture; i++) {
         int pieceCol = i % 2; // Column within the grid 

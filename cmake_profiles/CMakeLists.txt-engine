@@ -11,6 +11,7 @@ set(SOURCE_FILES
     src/UCICommandProcessing.c
     src/chessBot/chessBot.c
     src/chessBot/pieceSquareTable.c
+    src/chessBot/transpositionTable.c
     src/engine/chessGameEmulator.c
     src/engine/moveGenerator.c
     src/utils/fenString.c

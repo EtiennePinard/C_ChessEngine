@@ -6,8 +6,8 @@
  * The piece type is in the first 3 least significant bits.
  * The piece color is the next 2 bits that follow the piece type bits
  * The first 3 most significant bits of the char are unused.
- * Use the pieceColor(piece) function or pieceType(piece) function to extract those information
- * Use the makePiece(color, type) function to create a valid Piece
+ * Use the Piece_color(piece) function or Piece_type(piece) function to extract those information
+ * Use the Piece_makePiece(color, type) function to create a valid Piece
 */
 typedef char Piece;
 
@@ -30,8 +30,8 @@ typedef enum PieceCharacteristics {
 #define NB_PIECE_COLOR (2)
 #define NB_PIECES (NB_PIECE_COLOR * NB_PIECE_TYPE)
 
-#define pieceColor(piece) (PieceCharacteristics) (piece & 0b11000)
-#define pieceType(piece) (PieceCharacteristics) (piece & 0b111)
-#define makePiece(color, type) (Piece) (color | type)
+#define Piece_color(piece) ((PieceCharacteristics) (piece & 0b11000))
+#define Piece_type(piece) ((PieceCharacteristics) (piece & 0b111))
+#define Piece_makePiece(color, type) ((Piece) (color | type))
 
 #endif /* C61A945A_18DA_4DBE_85F9_7784EBEDF6AE */

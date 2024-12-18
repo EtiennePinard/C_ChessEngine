@@ -16,6 +16,6 @@
  * @return true If the fen string is valid and position is not NULL
  * @return false If the fen string is invalid or position is NULL
  */
-bool setChessPositionFromFenString(const char *fen, ChessPosition* position);
+bool FenString_setChessPositionFromFenString(const char *fen, ChessPosition* position);
 
 #endif

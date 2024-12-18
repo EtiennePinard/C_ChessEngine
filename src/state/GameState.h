@@ -65,7 +65,7 @@ typedef struct ChessGame {
  * @return true If the game was setup correctly
  * @return false If the game could not be setup correctly
  */
-bool setupChesGame(ChessGame *result,
+bool Game_setupChesGame(ChessGame *result,
                    ChessPosition *currentPosition,
                    const char *fenString,
                    u32 whiteTimeInMs, u32 blackTimeInMs);
@@ -77,6 +77,6 @@ bool setupChesGame(ChessGame *result,
  * @return true If the current position already happened twice
  * @return false If the current position did not already happened twice
  */
-bool isThereThreeFoldRepetition(ChessGame* game);
+bool Game_isThereThreeFoldRepetition(ChessGame* game);
 
 #endif /* BDF83061_7504_461E_BCDD_602085692048 */

@@ -16,7 +16,7 @@ static ChessPosition currentState;
 
 Move* validMoves;
 int currentMoveIndex;
-#define appendMove(startSquare, targetSquare, flag) validMoves[currentMoveIndex++] = makeMove((startSquare), (targetSquare), (flag));
+#define appendMove(startSquare, targetSquare, flag) validMoves[currentMoveIndex++] = Move_makeMove((startSquare), (targetSquare), (flag));
 
 PieceCharacteristics opponentColor;
 int friendlyKingIndex;
@@ -33,16 +33,16 @@ u64 pinMasks[BOARD_SIZE];
 u64 friendlyPieceBitBoard;
 u64 opponentBitBoard;
 
-bool isKingInCheck() {
+bool Engine_isKingInCheck() {
     return inCheck;
 }
-bool isKingInDoubleCheck() {
+bool Engine_isKingInDoubleCheck() {
     return inDoubleCheck;
 }
 
 void init() {
     opponentColor = currentState.colorToGo == WHITE ? BLACK : WHITE;
-    friendlyKingIndex = trailingZeros_64(bitBoardForPiece(currentState.board, makePiece(currentState.colorToGo, KING)));
+    friendlyKingIndex = trailingZeros_64(Board_bitBoardForPiece(currentState.board, Piece_makePiece(currentState.colorToGo, KING)));
     inCheck = false;
     inDoubleCheck = false;
     enPassantWillRemoveTheCheck = false;
@@ -51,8 +51,8 @@ void init() {
 
     checkBitBoard = ~((u64) 0); // There is no check (for now), so every square is valid, thus every bit is set
     memset(pinMasks, 0xFF, sizeof(u64) * BOARD_SIZE);
-    friendlyPieceBitBoard = specificColorBitBoard(currentState.board, currentState.colorToGo);
-    opponentBitBoard = specificColorBitBoard(currentState.board, opponentColor);
+    friendlyPieceBitBoard = Board_specificColorBitBoard(currentState.board, currentState.colorToGo);
+    opponentBitBoard = Board_specificColorBitBoard(currentState.board, opponentColor);
 }
 
 // Note: Could be inlined
@@ -73,36 +73,36 @@ void addBitBoardToAttackedSquares(u64 bitBoard) {
 
 void rookAttackedSquares(int from) {
     // Obtaining the blockingBitBoard
-    u64 friendlyKingBitBoard = bitBoardForPiece(currentState.board, makePiece(currentState.colorToGo, KING));
-    u64 allPieceNoFriendlyKingBB = allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
+    u64 friendlyKingBitBoard = Board_bitBoardForPiece(currentState.board, Piece_makePiece(currentState.colorToGo, KING));
+    u64 allPieceNoFriendlyKingBB = Board_allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
     u64 blockingBitBoard = (allPieceNoFriendlyKingBB & rookMovementMask[from]);
     // Getting the attacked bitboard, which will go pass the king if it checks him
     // Also note that this move bit boards hits friendly pieces, which is what we need
-    u64 attackedBitBoard = getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
+    u64 attackedBitBoard = MagicBitBoard_getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
     addBitBoardToAttackedSquares(attackedBitBoard);
 }
 
 void bishopAttackedSquares(int from) {
     // Obtaining the blockingBitBoard
-    u64 friendlyKingBitBoard = bitBoardForPiece(currentState.board, makePiece(currentState.colorToGo, KING));
-    u64 allPieceNoFriendlyKingBB = allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
+    u64 friendlyKingBitBoard = Board_bitBoardForPiece(currentState.board, Piece_makePiece(currentState.colorToGo, KING));
+    u64 allPieceNoFriendlyKingBB = Board_allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
     u64 blockingBitBoard = (allPieceNoFriendlyKingBB & bishopMovementMask[from]);
     // Getting the attacked bitboard, which will go pass the king if it checks him
     // Also note that this move bit boards hits friendly pieces, which is what we need
-    u64 attackedBitBoard = getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
+    u64 attackedBitBoard = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
     addBitBoardToAttackedSquares(attackedBitBoard);
 }
 
 void queenAttackedSquares(int from) {
     // Obtaining the blockingBitBoard
-    u64 friendlyKingBitBoard = bitBoardForPiece(currentState.board, makePiece(currentState.colorToGo, KING));
-    u64 allPieceNoFriendlyKingBB = allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
+    u64 friendlyKingBitBoard = Board_bitBoardForPiece(currentState.board, Piece_makePiece(currentState.colorToGo, KING));
+    u64 allPieceNoFriendlyKingBB = Board_allPiecesBitBoard(currentState.board) ^ friendlyKingBitBoard;
     u64 rookBlockingBitBoard = (allPieceNoFriendlyKingBB & rookMovementMask[from]);
     u64 bishopBlockingBitBoard = (allPieceNoFriendlyKingBB & bishopMovementMask[from]);
     // Getting the attacked bitboard, which will go pass the king if it checks him
     // Also note that this move bit boards hits friendly pieces, which is what we need
-    u64 rookAttackedBitBoard = getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
-    u64 bishopAttackedBitBoard = getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
+    u64 rookAttackedBitBoard = MagicBitBoard_getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
+    u64 bishopAttackedBitBoard = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
     u64 attackedBitBoard = rookAttackedBitBoard | bishopAttackedBitBoard;
     addBitBoardToAttackedSquares(attackedBitBoard);
 }
@@ -132,7 +132,7 @@ void calculateAttackSquares() {
     u64 opponentBitBoardCopy = opponentBitBoard;
     while (opponentBitBoardCopy) {
         int currentIndex = trailingZeros_64(opponentBitBoardCopy);
-        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
+        switch (Piece_type(Board_pieceAtIndex(currentState.board, currentIndex))) {
         case ROOK: 
             rookAttackedSquares(currentIndex);
             break;
@@ -162,7 +162,7 @@ void calculateAttackSquares() {
 
 bool isKingIndexLegal(int targetSquare) {
     // King does not land on a square which he will be eaten or does not eat one of his own square
-    return !attackedSquares[targetSquare] && pieceColor(pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
+    return !attackedSquares[targetSquare] && Piece_color(Board_pieceAtIndex(currentState.board, targetSquare)) != currentState.colorToGo;
 }
 
 // I am aware and I do not like the 6 deep indentation in this function. Will refactor later (lol)
@@ -190,12 +190,12 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
         rayMask ^= toggle << currentIndex;
 
         if (firstPiece == NOPIECE) {
-            if (pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
-                firstPiece = pieceAtIndex(currentState.board, currentIndex);
+            if (Board_pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+                firstPiece = Board_pieceAtIndex(currentState.board, currentIndex);
                 firstPieceIndex = currentIndex;
 
-                if (pieceColor(firstPiece) == opponentColor) {
-                    if (pieceType(firstPiece) == dangerousSlidingPiece || pieceType(firstPiece) == QUEEN) {
+                if (Piece_color(firstPiece) == opponentColor) {
+                    if (Piece_type(firstPiece) == dangerousSlidingPiece || Piece_type(firstPiece) == QUEEN) {
                         // This piece is checking the king
                         checkBitBoard |= rayMask;
                     }
@@ -205,10 +205,10 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
             }
         } else if (secondPiece == NOPIECE) {
 
-            if (pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
-                secondPiece = pieceAtIndex(currentState.board, currentIndex);
+            if (Board_pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+                secondPiece = Board_pieceAtIndex(currentState.board, currentIndex);
 
-                if (secondPiece == makePiece(opponentColor, dangerousSlidingPiece) || secondPiece == makePiece(opponentColor, QUEEN)) {
+                if (secondPiece == Piece_makePiece(opponentColor, dangerousSlidingPiece) || secondPiece == Piece_makePiece(opponentColor, QUEEN)) {
                     // The first piece is pinned!
                     // Creating the pin mask for this square
                     pinMasks[firstPieceIndex] = rayMask;
@@ -250,24 +250,24 @@ void generateCastle() {
         // Trusting the caller that the the king nor the rook has moved
         // Note the first check is redundant, if we assume 
         // that the caller has done some proper checks to set the castling perm, which I do not
-        if (pieceAtIndex(currentState.board, rookIndex) == makePiece(currentState.colorToGo, ROOK) &&
+        if (Board_pieceAtIndex(currentState.board, rookIndex) == Piece_makePiece(currentState.colorToGo, ROOK) &&
             !attackedSquares[friendlyKingIndex + 1] &&
             !attackedSquares[friendlyKingIndex + 2] &&
-            pieceAtIndex(currentState.board, friendlyKingIndex + 1) == NOPIECE &&
-            pieceAtIndex(currentState.board, friendlyKingIndex + 2) == NOPIECE) {
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 1) == NOPIECE &&
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 2) == NOPIECE) {
             // Castling is valid
             appendMove(friendlyKingIndex, friendlyKingIndex + 2, KING_SIDE_CASTLING);
         }
     }
     if (castlingBits & 1) { // Can castle queen side
         const int rookIndex = friendlyKingIndex - 4;
-        if (pieceAtIndex(currentState.board, rookIndex) == makePiece(currentState.colorToGo, ROOK) &&
+        if (Board_pieceAtIndex(currentState.board, rookIndex) == Piece_makePiece(currentState.colorToGo, ROOK) &&
             !attackedSquares[friendlyKingIndex - 1] &&
             !attackedSquares[friendlyKingIndex - 2] && 
             // The rook can pass trough an attacked square, which means that we don't need to check for the third square
-            pieceAtIndex(currentState.board, friendlyKingIndex - 1) == NOPIECE &&
-            pieceAtIndex(currentState.board, friendlyKingIndex - 2) == NOPIECE && 
-            pieceAtIndex(currentState.board, friendlyKingIndex - 3) == NOPIECE) {
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 1) == NOPIECE &&
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 2) == NOPIECE && 
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 3) == NOPIECE) {
             // Castling is valid
             appendMove(friendlyKingIndex, friendlyKingIndex - 2, QUEEN_SIDE_CASTLING);
         }
@@ -304,7 +304,7 @@ void generateKingMoves() {
     for (int i = 0; i < 2; i++) {
         // A kind of hacky way to get 7 if i == 0 and 9 if i == 1
         potentialPawn = friendlyKingIndex + (2 * i + 7) * delta;
-        if (pieceAtIndex(currentState.board, potentialPawn) == makePiece(opponentColor, PAWN)) {
+        if (Board_pieceAtIndex(currentState.board, potentialPawn) == Piece_makePiece(opponentColor, PAWN)) {
             checkBitBoard |= toggle << potentialPawn;
 
             // Adding this condition if en-passant were to remove the check
@@ -322,7 +322,7 @@ void generateKingMoves() {
     bitboard = knightMovementMask[friendlyKingIndex];
     while (bitboard) {
         int index = trailingZeros_64(bitboard);
-        if (pieceAtIndex(currentState.board, index) == makePiece(opponentColor, KNIGHT)) {
+        if (Board_pieceAtIndex(currentState.board, index) == Piece_makePiece(opponentColor, KNIGHT)) {
             checkBitBoard |= toggle << index;
             return; // Can return without checking the others since there is no double check
         }
@@ -368,7 +368,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     // Checking that there is not any piece between the pawn trying to do en-passant and king
     indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment; // I do a minus cause I want to go in the opposite direction
     while (indexToCheckIfNoPieceIsBetweenKingAndPawn != friendlyKingIndex) {
-        if (pieceAtIndex(currentState.board, indexToCheckIfNoPieceIsBetweenKingAndPawn) == NOPIECE) {
+        if (Board_pieceAtIndex(currentState.board, indexToCheckIfNoPieceIsBetweenKingAndPawn) == NOPIECE) {
             indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment;
         } else {
             // There is a piece between king and pawn, so pawn is not en-passant pinned
@@ -378,11 +378,11 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     Piece threateningPiece;
     do {
         indexToSearchForThreateningPiece += increment;
-        threateningPiece = pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
+        threateningPiece = Board_pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
     } while (threateningPiece == NOPIECE && rank(indexToSearchForThreateningPiece) == enPassantRank);
     
-    if (threateningPiece == makePiece(opponentColor, ROOK) || 
-        threateningPiece == makePiece(opponentColor, QUEEN)) {
+    if (threateningPiece == Piece_makePiece(opponentColor, ROOK) || 
+        threateningPiece == Piece_makePiece(opponentColor, QUEEN)) {
             return (u64) 0;
     } else {
         return bitBoard;
@@ -416,8 +416,8 @@ void generateEnPassant(int from) {
 
 void generatePawnDoublePush(int from, int increment) {
     int toSquareFromDoublePush = from + 2 * increment;
-    if (pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
-        pieceAtIndex(currentState.board, toSquareFromDoublePush) != NOPIECE) { return; }
+    if (Board_pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
+        Board_pieceAtIndex(currentState.board, toSquareFromDoublePush) != NOPIECE) { return; }
     
     u64 canDoublePawnPush = (u64) 1;
     canDoublePawnPush <<= toSquareFromDoublePush;
@@ -457,11 +457,11 @@ void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves
 // I loved Sebastian Lague!
 void rookMoves(int from) {
     // Obtaining the blockingBitBoard
-    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 allPieceBB = Board_allPiecesBitBoard(currentState.board);
     u64 blockingBitBoard = (allPieceBB & rookMovementMask[from]);
 
     // Getting the pseudo legal moves bitboard from the array
-    u64 movesBitBoard = getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
+    u64 movesBitBoard = MagicBitBoard_getRookPseudoLegalMovesBitBoard(from, blockingBitBoard);
 
     // Accounting for friendly pieces
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
@@ -471,10 +471,10 @@ void rookMoves(int from) {
 
 void bishopMoves(int from) {
     // Obtaining the blockingBitBoard
-    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 allPieceBB = Board_allPiecesBitBoard(currentState.board);
     u64 blockingBitBoard = (allPieceBB & bishopMovementMask[from]);
     // Getting the pseudo legal moves bitboard from the array
-    u64 movesBitBoard = getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
+    u64 movesBitBoard = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(from, blockingBitBoard);
 
     // Accounting for friendly pieces
     movesBitBoard &= ~friendlyPieceBitBoard; // We invert the bitboard so that we do not capture friendly pieces
@@ -484,13 +484,13 @@ void bishopMoves(int from) {
 
 void queenMoves(int from) {
     // Obtaining the blockingBitBoard
-    u64 allPieceBB = allPiecesBitBoard(currentState.board);
+    u64 allPieceBB = Board_allPiecesBitBoard(currentState.board);
     u64 rookBlockingBitBoard = (allPieceBB & rookMovementMask[from]);
     u64 bishopBlockingBitBoard = (allPieceBB & bishopMovementMask[from]);
 
     // Getting the pseudo legal moves bitboard from the array
-    u64 rookMovesBitBoard = getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
-    u64 bishopMovesBitBoard = getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
+    u64 rookMovesBitBoard = MagicBitBoard_getRookPseudoLegalMovesBitBoard(from, rookBlockingBitBoard);
+    u64 bishopMovesBitBoard = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(from, bishopBlockingBitBoard);
     u64 movesBitBoard = rookMovesBitBoard | bishopMovesBitBoard;
 
     // Accounting for friendly pieces
@@ -523,7 +523,7 @@ void pawnMoves(int from) {
     // Only making capture moves if we actually capture a piece
     pseudoLegalMoves &= opponentBitBoard;
     
-    if (pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
+    if (Board_pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
     
     // enPassantTargetSquare is 0 when there is no pawn that has double pushed
     if (pawnCanEnPassant && currentState.enPassantTargetSquare) { 
@@ -563,7 +563,7 @@ void generateSupportingPiecesMoves() {
     while (piecesBitBoard) {
         int currentIndex = trailingZeros_64(piecesBitBoard);
 
-        switch (pieceType(pieceAtIndex(currentState.board, currentIndex))) {
+        switch (Piece_type(Board_pieceAtIndex(currentState.board, currentIndex))) {
             case ROOK: 
                 rookMoves(currentIndex);
                 break;
@@ -595,7 +595,7 @@ We are not computing end of games in this function!!!!
 They are not needed for perft and so I did not write a function to compute just yet
 These function will probably in the board.c file
 */
-void getValidMoves(Move result[256], int* numMoves, ChessPosition position) {
+void Engine_getValidMoves(Move result[256], int* numMoves, ChessPosition position) {
 
     currentState = position;
 

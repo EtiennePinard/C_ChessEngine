@@ -3,15 +3,15 @@
 
 void printMove(Move move) {
     printf("Move: [From: %d, To: %d, Flag: %d]\n", 
-      fromSquare(move),
-      toSquare(move),
-      flagFromMove(move)
+      Move_fromSquare(move),
+      Move_toSquare(move),
+      Move_flag(move)
     );
 }
 
 void printMoveToAlgebraic(Move move) {
-  int from = fromSquare(move);
-  int to = toSquare(move);
+  int from = Move_fromSquare(move);
+  int to = Move_toSquare(move);
   char algebraic[6];
   int row1 = from / 8;
   int col1 = from % 8;
@@ -21,7 +21,7 @@ void printMoveToAlgebraic(Move move) {
   int col2 = to % 8;
   algebraic[2] = 'a' + col2;
   algebraic[3] = '1' + (7 - row2);
-  switch (flagFromMove(move)) {
+  switch (Move_flag(move)) {
   case PROMOTE_TO_BISHOP:
     algebraic[4] = 'b';
     algebraic[5] = '\0';
@@ -47,15 +47,15 @@ void printMoveToAlgebraic(Move move) {
 
 void writeMoveToFile(Move move, FILE *file) {
       fprintf(file, "[From: %d, To: %d, Flag: %d], ", 
-      fromSquare(move),
-      toSquare(move),
-      flagFromMove(move)
+      Move_fromSquare(move),
+      Move_toSquare(move),
+      Move_flag(move)
     );
 }
 
 void writeMoveToAlgebraicToFile(Move move, FILE *file) {
-  int from = fromSquare(move);
-  int to = toSquare(move);
+  int from = Move_fromSquare(move);
+  int to = Move_toSquare(move);
   char algebraic[5];
   int row1 = from / 8;
   int col1 = from % 8;
@@ -71,7 +71,7 @@ void writeMoveToAlgebraicToFile(Move move, FILE *file) {
 
 char pieceToFenChar(Piece piece) {
   char result;
-  switch (pieceType(piece)) {
+  switch (Piece_type(piece)) {
     case KING:
       result = 'k';
     break;
@@ -94,7 +94,7 @@ char pieceToFenChar(Piece piece) {
       return ' ';
     break;
   }
-  if (pieceColor(piece) == WHITE) {
+  if (Piece_color(piece) == WHITE) {
     result = toupper(result);
   }
   return result;
@@ -107,7 +107,7 @@ void printBoard(Board board) {
       printf("%d ", 8 - index / 8);
     }
 
-    Piece pieceAtPosition = pieceAtIndex(board, index);
+    Piece pieceAtPosition = Board_pieceAtIndex(board, index);
     printf("[%c]", pieceToFenChar(pieceAtPosition));
     printf((index + 1) % 8 == 0 ? "\n" : " ");
   }
@@ -121,7 +121,7 @@ void printBoard(Board board) {
 
 void writeBoardToFile(Board board, FILE *file) {
     for (int i = 0; i < BOARD_SIZE; i++) {
-    Piece pieceAtPosition = pieceAtIndex(board, i);
+    Piece pieceAtPosition = Board_pieceAtIndex(board, i);
     fprintf(file, "[ %c ]", pieceToFenChar(pieceAtPosition));
     if ((i + 1) % 8 == 0 && i != 63) fprintf(file, "\n");
   }
@@ -132,7 +132,7 @@ void printPosition(ChessPosition position, int score, Move bestMove, float stock
     if ((index % 8) == 0) {
       printf("%d ", 8 - index / 8);
     }
-    Piece pieceAtPosition = pieceAtIndex(position.board, index);
+    Piece pieceAtPosition = Board_pieceAtIndex(position.board, index);
     printf("[%c]", pieceToFenChar(pieceAtPosition));
 
     if ((index + 1) % 8 == 0) {
@@ -147,9 +147,9 @@ void printPosition(ChessPosition position, int score, Move bestMove, float stock
         break;
       case 3:
         printf(" best move: [From: %d, To: %d, Flag: %d] (",
-               fromSquare(bestMove),
-               toSquare(bestMove),
-               flagFromMove(bestMove));
+               Move_fromSquare(bestMove),
+               Move_toSquare(bestMove),
+               Move_flag(bestMove));
         printMoveToAlgebraic(bestMove);
         printf(")");
         break;
@@ -160,9 +160,9 @@ void printPosition(ChessPosition position, int score, Move bestMove, float stock
         break;
       case 6:
         printf(" Stockfish best move: [From: %d, To: %d, Flag: %d] (",
-               fromSquare(stockfishMove),
-               toSquare(stockfishMove),
-               flagFromMove(stockfishMove));
+               Move_fromSquare(stockfishMove),
+               Move_toSquare(stockfishMove),
+               Move_flag(stockfishMove));
         printMoveToAlgebraic(stockfishMove);
         printf(")");
         break;

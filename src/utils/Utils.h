@@ -1,22 +1,25 @@
 #ifndef DB9C663F_7757_4E5F_9CDD_23E9A09D9515
 #define DB9C663F_7757_4E5F_9CDD_23E9A09D9515
 
+#include <stdint-gcc.h> // For gcc
 #include <stdint.h>
 
 #define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
-#define BOARD_SIZE 64
-#define BOARD_LENGTH 8
-#define MAX_LEGAL_MOVES 218
-#define MAX_NB_LEGAL_MOVES_IN_GAME 6000
+#define BOARD_SIZE (64)
+#define BOARD_LENGTH (8)
+#define MAX_LEGAL_MOVES (218)
+#define MAX_NB_LEGAL_MOVES_IN_GAME (6000)
 
-#define u64 uint64_t
-#define u32 uint32_t
-#define u16 uint16_t
-#define u8  uint8_t
+typedef uint64_t u64;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t  u8;
 
-// This is the standard buffer size of buffers (fen strings, uci commands, etc.) in this program
-#define BUFFER_SIZE (256)
+typedef int64_t i64;
+typedef int32_t i32;
+typedef int16_t i16;
+typedef int8_t  i8;
 
 // The x coordinates
 #define file(square) (square & 7)

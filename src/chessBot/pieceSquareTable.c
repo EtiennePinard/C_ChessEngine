@@ -93,7 +93,7 @@ const int pieceValue[NB_PHASE][NB_PIECE_TYPE] = {
 // Total size is 832 bytes, so we are fine
 int pieceSquareTable[MAX_PIECE_INDEX - 9 + 1][BOARD_SIZE];
 
-void pieceSquareTableInitialize() {
+bool PieceSquareTable_init() {
     // Piece order influenced
     for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
@@ -119,10 +119,10 @@ void pieceSquareTableInitialize() {
         // Example: 56 -> 0  (111 000 -> 000 000) 
         // Example: 47 -> 23 (101 111 -> 010 111)
         // To achieve this state flipping, it requires to xor by 56 (111 000)
-        pieceSquareTable[makePiece(WHITE, type) - 9][square ^ 56] = finalScore;
+        pieceSquareTable[Piece_makePiece(WHITE, type) - 9][square ^ 56] = finalScore;
         
         // For black
-        pieceSquareTable[makePiece(BLACK, type) - 9][square] = -finalScore;
+        pieceSquareTable[Piece_makePiece(BLACK, type) - 9][square] = -finalScore;
 
         // Note: Why are we flipping the rank for white and not for black? Well it is because I use 
         // a different to give values to squares then what Stockfish uses. I set SQ_A8 = 0
@@ -133,4 +133,5 @@ void pieceSquareTableInitialize() {
       }
 
     }
+    return true;
 }

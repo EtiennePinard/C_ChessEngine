@@ -9,6 +9,7 @@
 #include "../src/utils/FenString.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
+#include "../src/utils/CharBuffer.h"
 
 #include "LogChessStructs.h"
 
@@ -16,17 +17,17 @@
 #define MAXIMUM_DEPTH 20
 
 int maximumDepth;
-ChessGame game = { 0 };
+ChessPosition currentPosition = { 0 };
 ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
-bool divide = true;
+bool divide = false;
 
 u64 perft(int depth) {
   if (depth == 0) { return 1; }
 
   int nbOfMoves;
   Move validMoves[256];
-  Engine_getValidMoves(validMoves, &nbOfMoves, game.currentPosition); // We do not care about draw by repetition
+  Engine_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
   // Note that here we take into account the fifty move fule
@@ -41,13 +42,13 @@ u64 perft(int depth) {
     return nbOfMoves;
   }
   
-  posHistory[maximumDepth - depth] = game.currentPosition;
+  posHistory[maximumDepth - depth] = currentPosition;
 
   for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
     Move move = validMoves[moveIndex];
 
-    Engine_playMove(move, &game); // Move is made
+    Engine_playMove(move, &currentPosition, false); // Move is made
 
     u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
 
@@ -57,25 +58,10 @@ u64 perft(int depth) {
     }
     nodes += moveOutput;
 
-    game.previousPositionsCount--;
-    memcpy(&game.currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+    memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
   }
   
   return nodes;
-}
-
-bool isStringValidPerftNumber(char* string) {
-  int index = 0;
-  char currentChar;
-  bool result = true;
-  while ((currentChar = *(string + index))) {
-    if (currentChar < '0' || currentChar > '9') {
-      result = false;
-      break;
-    }
-    index++;
-  }
-  return result;
 }
 
 /* Testing all the double pawn push case
@@ -184,11 +170,6 @@ void test() {
     pos6, 
   };
   
-  game.currentPosition = (ChessPosition) { 0 };
-  game.whiteTimeMs = 0; // We don't care about time in perft
-  game.blackTimeMs = 0;
-  game.previousPositionsCount = 0;
-
   ChessPosition startingState;
   u64 perftResult;
   double timeSpent;
@@ -201,8 +182,8 @@ void test() {
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
     
-    FenString_setChessPositionFromFenString(testPosition.fenString, &game.currentPosition);
-    startingState = game.currentPosition;
+    FenString_setChessPositionFromFenString(testPosition.fenString, &currentPosition);
+    startingState = currentPosition;
 
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
 
@@ -220,8 +201,7 @@ void test() {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
       }
 
-      memcpy(&game.currentPosition, &startingState, sizeof(ChessPosition));
-      game.previousPositionsCount = 0;
+      memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
     }
  
     printf("\n");
@@ -246,25 +226,22 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  char* fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  char* fenString = INITIAL_FEN;
   maximumDepth = -1;
 
   { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
     char* firstArg = argv[1];
     if (strcmp(firstArg, "test") == 0) {
-      divide = false;
       test();
       return 0;
     }
     if (strcmp(firstArg, "time") == 0) {
-      divide = false;
     } else if (strcmp(firstArg, "divide") != 0) {
       // No parameter is provided, so it is either a fen string of a depth
-      if (isStringValidPerftNumber(firstArg)) {
-        // No fen string is provided, so the first argument is just the depth
-        maximumDepth = atoi(firstArg);
-      } else {
-        // The first argument is a fen string
+      divide = true;
+      maximumDepth = string_parseNumber(firstArg);
+      if (maximumDepth == -1) {
+        // The first argument is probably a fen string
         fenString = firstArg;
       }
     }
@@ -272,23 +249,20 @@ int main(int argc, char* argv[]) {
 
   if (argc >= 3) {
     char* secondArg = argv[2];
-    if (isStringValidPerftNumber(secondArg)) {
-      // No fen string is provided, so the first argument is just the depth
-      maximumDepth = atoi(secondArg);
-    } else {
-      // The first argument is a fen string
+    maximumDepth = string_parseNumber(secondArg);
+    if (maximumDepth == -1) {
+      // The second argument is probably a fen string
       fenString = secondArg;
     }
   }
 
   if (argc >= 4) {
     char* thirdArgument = argv[3];
+    maximumDepth = string_parseNumber(thirdArgument);
     // This argument needs to be the depth
-    if (!isStringValidPerftNumber(thirdArgument)) {
+    if (maximumDepth == -1) {
       printf("The argument %s is not a valid perft number\n", thirdArgument);
       exit(EXIT_FAILURE);
-    } else {
-      maximumDepth = atoi(thirdArgument);
     }
   }
 
@@ -300,23 +274,19 @@ int main(int argc, char* argv[]) {
   MagicBitBoard_init();
   ZobristKey_init();
 
-  ChessPosition currentPosition = { 0 };
-  // Note: We don't care about time in perft
-  if (!Game_setupChesGame(&game, &currentPosition, fenString, (u32) 0, (u32) 0)) { 
+  if (!FenString_setChessPositionFromFenString(fenString, &currentPosition)) { 
     printf("ERROR while setup of chess game state\n Exiting\n");
     exit(EXIT_FAILURE);
   }
 
-  assert(posHistory != NULL && "Buy more RAM lol");
-
   u64 perftResult;
 
   if (divide) {
-    printBoard(game.currentPosition.board);
+    printBoard(currentPosition.board);
     perftResult = perft(maximumDepth);
     printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
   } else {
-    ChessPosition startingState = game.currentPosition;
+    ChessPosition startingState = currentPosition;
 
     double averageExecutionTime = 0;
     clock_t begin, end;
@@ -328,8 +298,7 @@ int main(int argc, char* argv[]) {
       double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       averageExecutionTime += timeSpent;
       
-      memcpy(&game.currentPosition, &startingState, sizeof(ChessPosition));
-      game.previousPositionsCount = 0;
+      memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
 
       printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
     }

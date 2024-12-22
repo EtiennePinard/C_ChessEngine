@@ -5,7 +5,7 @@
 #include "../state/GameState.h"
 #include "CharBuffer.h"
 
-// From https://chess.stackexchange.com/a/30006
+// Number taken from https://chess.stackexchange.com/a/30006
 #define MAX_FEN_STRING_SIZE (87)
 
 /**

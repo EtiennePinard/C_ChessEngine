@@ -6,8 +6,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "ChessBot.h"
-#include "../magicBitBoard/MagicBitBoard.h"
 #include "PieceSquareTable.h"
+#include "RepetitionTable.h"
+#include "../magicBitBoard/MagicBitBoard.h"
 #include "../engine/MoveGenerator.h"
 #include "../engine/ChessGameEmulator.h"
 #include "../../testing/LogChessStructs.h"
@@ -15,10 +16,10 @@
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
 
-static ChessGame* game;
+static ChessPosition* currentPosition;
 
-void Bot_provideGameStateForBot(ChessGame* state) {
-    game = state;
+void Bot_provideGameStateForBot(ChessPosition* state) {
+    currentPosition = state;
 }
 
 // Piece order influenced
@@ -85,13 +86,13 @@ int Bot_staticEvaluation() {
     // Checking for mate:
     Move validMoves[256];
     int numMoves;
-    Engine_getValidMoves(validMoves, &numMoves, game->currentPosition);
+    Engine_getValidMoves(validMoves, &numMoves, *currentPosition);
 
     bool inCheck = Engine_isKingInCheck(); 
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
-            return game->currentPosition.colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
+            return currentPosition->colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
         }
         // It is a stalemate
         return 0;
@@ -101,13 +102,13 @@ int Bot_staticEvaluation() {
         PieceCharacteristics color = WHITE * (i + 1);
         
         int view = color == WHITE ? 1 : -1;
-        int opposingKingIndex = trailingZeros_64(Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(BLACK / (i + 1), KING)));
+        int opposingKingIndex = trailingZeros_64(Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(BLACK / (i + 1), KING)));
         kingAttacks = kingMovementMask[opposingKingIndex];
-        friendlyBitBoard = Board_specificColorBitBoard(game->currentPosition.board, color);
+        friendlyBitBoard = Board_specificColorBitBoard(currentPosition->board, color);
         
         for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
-            bitboard = Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(color, type));
+            bitboard = Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(color, type));
 
             while (bitboard) {
                 int square = trailingZeros_64(bitboard);
@@ -122,7 +123,7 @@ int Bot_staticEvaluation() {
                 // We do not include the piece that we are currently looking in the file bitboard
                 currentFileWithoutPiece = (file << file(square)) & ~(1UL << square);
                 
-                if ((currentFileWithoutPiece & Board_bitBoardForPiece(game->currentPosition.board, Piece_makePiece(color, PAWN))) == 0) {
+                if ((currentFileWithoutPiece & Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(color, PAWN))) == 0) {
                     score += openFilesAndDoublePawns[type - 1] * view;
                 }
                 
@@ -133,7 +134,7 @@ int Bot_staticEvaluation() {
                     break;
                 case BISHOP:
                     attack = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
-                                 square, Board_allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]
+                                 square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -142,7 +143,7 @@ int Bot_staticEvaluation() {
 
                 case ROOK:
                     attack = MagicBitBoard_getRookPseudoLegalMovesBitBoard(
-                                 square, Board_allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square]
+                                 square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square]
                             ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -151,9 +152,9 @@ int Bot_staticEvaluation() {
 
                 case QUEEN:
                     attack = (MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
-                                  square, Board_allPiecesBitBoard(game->currentPosition.board) & bishopMovementMask[square]) |
+                                  square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]) |
                               MagicBitBoard_getRookPseudoLegalMovesBitBoard(
-                                  square, Board_allPiecesBitBoard(game->currentPosition.board) & rookMovementMask[square])) &
+                                  square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square])) &
                              (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
@@ -197,23 +198,24 @@ int maximumDepth;
 int search(int alpha, int beta, int depth) {
     if (depth == 0) {
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
-        int whoToMove = game->currentPosition.colorToGo == WHITE ? 1 : -1; 
+        int whoToMove = currentPosition->colorToGo == WHITE ? 1 : -1; 
         return Bot_staticEvaluation() * whoToMove; 
     } // eventually do return quiesce(alpha, beta);
     int bestValue = MINUS_INFINITY;
 
     int nbOfMoves;
     Move validMoves[256];
-    Engine_getValidMoves(validMoves, &nbOfMoves, game->currentPosition);
-    posHistory[maximumDepth - depth] = game->currentPosition;
+    Engine_getValidMoves(validMoves, &nbOfMoves, *currentPosition);
+    memcpy(&posHistory[maximumDepth - depth], currentPosition, sizeof(ChessPosition));
 
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
-        Engine_playMove(move, game);
+        Engine_playMove(move, currentPosition, true);
         // We switch alpha and beta, because alpha is the lower bound for the color to go 
         // but it is the upper bound for the other color. Opposite is true for beta
         // thus we switch them so that it works for the opponent
         int score = -search(-beta, -alpha, depth - 1);
+        memcpy(currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
         
         if (score > bestValue) {
             bestValue = score;
@@ -221,8 +223,6 @@ int search(int alpha, int beta, int depth) {
                 alpha = score; // alpha acts like max in MiniMax
             }
         }
-        game->previousPositionsCount--;
-        memcpy(&game->currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
         
         // fail soft beta-cutoff, existing the loop here is also 
         if (score >= beta) { return bestValue; }  
@@ -230,12 +230,12 @@ int search(int alpha, int beta, int depth) {
     return bestValue;
 }
 
-Move Bot_think() {
-
+Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingTime) {
     Move bestMove = BOT_ERROR;
     int bestEval = MINUS_INFINITY;
 
-    ChessPosition lastPos = game->currentPosition;
+    ChessPosition lastPos;
+    memcpy(&lastPos, currentPosition, sizeof(ChessPosition));
 
     maximumDepth = 2;
     if (maximumDepth >= 10) {
@@ -243,6 +243,7 @@ Move Bot_think() {
         exit(EXIT_FAILURE);
     }
 
+    
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256];
     int numMoves;
@@ -252,9 +253,10 @@ Move Bot_think() {
     }
     bestMove = moves[0]; // So that it always return a valid move if all moves have the same evaluation
 
+    RepetitionTable_setCurrentIndexAsRootPosition();
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
-        Engine_playMove(move, game);
+        Engine_playMove(move, currentPosition, true);
 
         int score = -search(MINUS_INFINITY, INFINITY, maximumDepth);
         if (score > bestEval) {
@@ -262,9 +264,8 @@ Move Bot_think() {
             bestMove = move;
         }
 
-        game->previousPositionsCount--; // Removing last zobrist key computed
-        memcpy(&game->currentPosition, &lastPos, sizeof(ChessPosition));
+        memcpy(currentPosition, &lastPos, sizeof(ChessPosition));
     }
-
+    RepetitionTable_returnToRootPosition();
     return bestMove; 
 }

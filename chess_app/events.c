@@ -7,6 +7,7 @@
 #include "../src/engine/MoveGenerator.h"
 #include "../src/engine/ChessGameEmulator.h"
 #include "../src/chessBot/ChessBot.h"
+#include "../src/chessBot/RepetitionTable.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
 inline static int squareFromxy(int x, int y, bool flip) {
@@ -31,17 +32,17 @@ All insufficient material scenario are:
                 so I'll say it's draw
 */
 static inline bool insufficientMaterialScenario(const GameState *gameState) {
-    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->currentState.currentPosition.board);
+    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->currentState.board);
     int nbPieces = numBitSet_64(piecesBitBoard);
     if (nbPieces > 4) { return false; }
 
     u64 rooksPawnsQueens = piecesBitBoard & (
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, QUEEN)) |
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, QUEEN)) |
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, ROOK)) |
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, ROOK)) |
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, PAWN)) |
-                            Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, PAWN))
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(WHITE, QUEEN)) |
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(BLACK, QUEEN)) |
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(WHITE, ROOK)) |
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(BLACK, ROOK)) |
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(WHITE, PAWN)) |
+                            Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(BLACK, PAWN))
                         );
     
     if (rooksPawnsQueens != (u64) 0) {
@@ -54,8 +55,8 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
         return true; 
     }
 
-    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(WHITE, KNIGHT)));
-    int nbKBlackKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.currentPosition.board, Piece_makePiece(BLACK, KNIGHT)));
+    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(WHITE, KNIGHT)));
+    int nbKBlackKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentState.board, Piece_makePiece(BLACK, KNIGHT)));
     if (nbKWhiteKnights != nbKBlackKnights) { 
         // Handles case of two knights on either side and lone knight and lone bishop
         return true; 
@@ -68,13 +69,13 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
 static void computeGameEnd(GameState *gameState) {
     // This checking of the currentState is pretty much only useful for 
     // the bot running out of time
-    if (gameState->currentState.currentPosition.colorToGo == WHITE) {
-        if (gameState->currentState.blackTimeMs <= (u32) 0) {
+    if (gameState->currentState.colorToGo == WHITE) {
+        if (gameState->blackRemainingTime <= (u32) 0) {
             gameState->result = WHITE_WON_ON_TIME;
             return;
         }
     } else {
-        if (gameState->currentState.whiteTimeMs <= (u32) 0) {
+        if (gameState->whiteRemainingTime <= (u32) 0) {
             gameState->result = BLACK_WON_ON_TIME;
             return;
         }
@@ -82,16 +83,16 @@ static void computeGameEnd(GameState *gameState) {
 
     Move moves[256];
     int numMove;
-    Engine_getValidMoves(moves, &numMove, gameState->currentState.currentPosition);
+    Engine_getValidMoves(moves, &numMove, gameState->currentState);
     if (numMove == 0) {
         if (Engine_isKingInCheck() || Engine_isKingInDoubleCheck()) {
-            gameState->result = gameState->currentState.currentPosition.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
+            gameState->result = gameState->currentState.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
         } else {
             gameState->result = STALEMATE;
         }
-    } else if (Game_isThereThreeFoldRepetition(&gameState->currentState)) {
+    } else if (RepetitionTable_isKeyContainedTwiceInTable(gameState->currentState.key)) {
         gameState->result = THREE_MOVE_REPETITION;
-    } else if (gameState->currentState.currentPosition.turnsForFiftyRule > 50) {
+    } else if (gameState->currentState.turnsForFiftyRule > 50) {
         // TODO: Check this case out
         gameState->result = FIFTY_MOVE_RULE;
     } else if (insufficientMaterialScenario(gameState)) {
@@ -105,18 +106,18 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
         gameState->previousStateCapacity *= 2;
     }
     gameState->previousStates[gameState->previousStateIndex++] = gameState->currentState;
-    Engine_playMove(move, &gameState->currentState);
+    Engine_playMove(move, &gameState->currentState, true);
 }
 
 static inline void playBotMove(GameState *gameState) {
     Bot_provideGameStateForBot(&gameState->currentState);
-    Move botMove = Bot_think();
+    Move botMove = Bot_think(gameState->whiteRemainingTime, gameState->whiteRemainingTime);
     
     u64 currentTick = SDL_GetTicks64();
     if (gameState->playerColor != WHITE) {
-        gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
+        gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
     } else {
-        gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
+        gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
     }
     gameState->turnStartTick = currentTick;
 
@@ -148,8 +149,8 @@ static void resetGame(GameState *gameState) {
     gameState->previousStateIndex = 0;
     gameState->result = GAME_IS_NOT_DONE;
     gameState->turnStartTick = SDL_GetTicks64();
-    gameState->currentState.blackTimeMs = TIME_CONTROL_MS;
-    gameState->currentState.whiteTimeMs = TIME_CONTROL_MS;
+    gameState->blackRemainingTime = STARTING_TIME_MS;
+    gameState->whiteRemainingTime = STARTING_TIME_MS;
     // Note that we are not changing the player color
 }
 
@@ -158,7 +159,7 @@ void clickedSwitchColorButton(SDL_Event event, AppState *appState) {
     case SDL_MOUSEBUTTONDOWN:
         appState->gameState.playerColor = appState->gameState.playerColor == WHITE ? BLACK : WHITE;
         resetGame(&appState->gameState);
-        if (appState->gameState.currentState.currentPosition.colorToGo != appState->gameState.playerColor) {
+        if (appState->gameState.currentState.colorToGo != appState->gameState.playerColor) {
             playBotMove(&appState->gameState);
         }
         break;
@@ -172,7 +173,7 @@ void clickedRestartButton(SDL_Event event, AppState *appState) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
         resetGame(&appState->gameState);
-        if (appState->gameState.currentState.currentPosition.colorToGo != appState->gameState.playerColor) {
+        if (appState->gameState.currentState.colorToGo != appState->gameState.playerColor) {
             playBotMove(&appState->gameState);
         }
         break;
@@ -196,7 +197,7 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppStat
 
         // Map the row and column to a piece
         int pieceIndex = rowIndex * 2 + colIndex;
-        PieceCharacteristics currentColor = appState->gameState.currentState.currentPosition.colorToGo;
+        PieceCharacteristics currentColor = appState->gameState.currentState.colorToGo;
         switch (pieceIndex) {
             case 0: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_QUEEN); break;
             case 1: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_KNIGHT); break;
@@ -229,7 +230,7 @@ static void chessBoardMouseButtonUp(AppState *appState) {
     // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
     Move moves[256];
     int numMoves;
-    Engine_getValidMoves(moves, &numMoves, appState->gameState.currentState.currentPosition);
+    Engine_getValidMoves(moves, &numMoves, appState->gameState.currentState);
 
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];
@@ -246,10 +247,9 @@ static void chessBoardMouseButtonUp(AppState *appState) {
 
                 Popup popup = { 0 };
                 popup.callback = &clickedPromotionOverlay;
-                // TODO: See if this thing renders
                 renderPromotionOverlay(appState->sdlState.renderer, 
                                        appState->textures, 
-                                       appState->gameState.currentState.currentPosition.colorToGo, 
+                                       appState->gameState.currentState.colorToGo, 
                                        draggingTo, 
                                        appState->gameState.playerColor,
                                        &popup);
@@ -271,9 +271,9 @@ static void chessBoardMouseButtonDown(GameState *gameState, DraggingState *dragg
     
     int square = squareFromxy(mouseX, mouseY, gameState->playerColor == BLACK);
 
-    if (Board_pieceAtIndex(gameState->currentState.currentPosition.board, square) == NOPIECE) { return; }
+    if (Board_pieceAtIndex(gameState->currentState.board, square) == NOPIECE) { return; }
 
-    draggingState->draggedPiece = Board_pieceAtIndex(gameState->currentState.currentPosition.board, square);
+    draggingState->draggedPiece = Board_pieceAtIndex(gameState->currentState.board, square);
     draggingState->from = square;
     draggingState->isDragging = true;
 }

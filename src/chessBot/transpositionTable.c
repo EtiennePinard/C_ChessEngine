@@ -32,3 +32,13 @@ Move TTable_getMoveFromKey(ZobristKey key) {
     u32 index = (u32) (key % NB_ELEMENTS_IN_TRANSPOSITION_TABLE);
     return transpositionTable[index].move;
 }
+
+int lookupEvaluation(ZobristKey key, int depth, int alpha, int beta) {
+    TranspositionTable entry = transpositionTable[key % NB_ELEMENTS_IN_TRANSPOSITION_TABLE];
+
+    // We are looking at a different position or at the same position with a higher depth, 
+    // which makes the evuluation at a lower depth not that useful to us
+    if (entry.key != key || entry.depth < depth) { return LOOKUP_FAILED; }
+
+    
+}

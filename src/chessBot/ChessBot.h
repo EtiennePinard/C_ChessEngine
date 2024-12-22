@@ -8,19 +8,29 @@
 #define BOT_ERROR ((Move) 0)
 
 /**
- * Call this function with the ChessGame that you want the bot to analyze
+* @brief Time control for a chess game in milliseconds. 
+* With this time control, the longest game possible will be 2^32 milliseconds, which is
+* 49 days 17 hours 2 minutes and 47.3 seconds.
+* This should be plently of time to play a pretty long game.
 */
-void Bot_provideGameStateForBot(ChessGame* game);
+typedef u32 TimeControl_MS;
 
 /**
- * Returns the best move in a position (according to the computer)
- * Returns BOT_ERROR if there was an error
- * TODO: Implement time control later
+ * Call this function with the ChessPosition that you want the bot to analyze
 */
-Move Bot_think();
+void Bot_provideGameStateForBot(ChessPosition* game);
 
 /**
- * Returns a score that was calculated by statically analyzing the position.
+ * @brief Computes the best move in the position given in the Bot_provideGameStateForBot function
+ * 
+ * @param whiteRemainingTime The time that white has remaining in milliseconds 
+ * @param blackRemainingTime The time that black has remaining in milliseconds
+ * @return Move The best move in this position according to the bot or BOT_ERROR if there was an error
+ */
+Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingTime);
+
+/**
+ * @brief Returns a score that was calculated by statically analyzing the position.
  * Static analysis means only looking at information curently available, not considering 
  * potential good moves in the score.
 */

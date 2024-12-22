@@ -73,19 +73,19 @@ static void renderTimeControls(SDL_Renderer *renderer, TTF_Font *font, GameState
     // Logic for game end in here cause I don't use threads for now
     if (gameState->result == GAME_IS_NOT_DONE) {
         u64 currentTick = SDL_GetTicks64();
-        if (gameState->currentState.currentPosition.colorToGo == WHITE) {
-            if (gameState->currentState.whiteTimeMs <= currentTick - gameState->turnStartTick) {
-                gameState->currentState.whiteTimeMs = 0;
+        if (gameState->currentState.colorToGo == WHITE) {
+            if (gameState->whiteRemainingTime <= currentTick - gameState->turnStartTick) {
+                gameState->whiteRemainingTime = 0;
                 gameState->result = BLACK_WON_ON_TIME;
             } else {
-                gameState->currentState.whiteTimeMs -= (currentTick - gameState->turnStartTick);
+                gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
             }
         } else {
-            if (gameState->currentState.blackTimeMs <= currentTick - gameState->turnStartTick) {
-                gameState->currentState.blackTimeMs = 0;
+            if (gameState->blackRemainingTime <= currentTick - gameState->turnStartTick) {
+                gameState->blackRemainingTime = 0;
                 gameState->result = WHITE_WON_ON_TIME;
             } else {
-                gameState->currentState.blackTimeMs -= (currentTick - gameState->turnStartTick);
+                gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
             }
         }
         gameState->turnStartTick = currentTick;
@@ -93,9 +93,9 @@ static void renderTimeControls(SDL_Renderer *renderer, TTF_Font *font, GameState
     }
 
     char blackTimeText[TIME_TEXT_LENGTH];
-    formatTime(gameState->currentState.blackTimeMs, blackTimeText, TIME_TEXT_LENGTH);
+    formatTime(gameState->blackRemainingTime, blackTimeText, TIME_TEXT_LENGTH);
     char whiteTimeText[TIME_TEXT_LENGTH]; 
-    formatTime(gameState->currentState.whiteTimeMs, whiteTimeText, TIME_TEXT_LENGTH);
+    formatTime(gameState->whiteRemainingTime, whiteTimeText, TIME_TEXT_LENGTH);
 
     renderTimeControl(renderer, font, gameState->playerColor == WHITE ? blackTimeText : whiteTimeText, TOP);
     renderTimeControl(renderer, font, gameState->playerColor == WHITE ? whiteTimeText : blackTimeText, BOTTOM);
@@ -318,7 +318,7 @@ static void renderChessboard(SDL_Renderer *renderer,
         // Don't render the dragged pieces at their position and at the mouse coordinates
         if (draggingState.isDragging && squareIndex == draggingState.from) { continue; } 
 
-        Piece piece = Board_pieceAtIndex(gameState->currentState.currentPosition.board, squareIndex);
+        Piece piece = Board_pieceAtIndex(gameState->currentState.board, squareIndex);
         if (piece != NOPIECE) {
             SDL_Rect pieceRect = {square.x, square.y, squareSize, squareSize};
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);

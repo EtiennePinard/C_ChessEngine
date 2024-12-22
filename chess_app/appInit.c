@@ -8,6 +8,7 @@
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
 #include "../src/chessBot/PieceSquareTable.h"
+#include "../src/utils/FenString.h"
 
 static const char* PIECE_NAMES[NB_PIECE_COLOR][NB_PIECE_TYPE] = {
     {"white_pawn", "white_knight", "white_bishop", "white_rook", "white_queen", "white_king"},
@@ -96,7 +97,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     appState->textures.count = 0;
     appState->textures.data = malloc(sizeof(TextureState) * appState->textures.capacity);
     if (!loadChessImages(&appState->sdlState, &appState->textures, CHESS_IMAGE_BASE_PATH)) {
-        fprintf(stderr, "Failed to load images.\n");
+        fprintf(stderr, "Failed to load images\n");
         SDL_DestroyRenderer(appState->sdlState.renderer);
         SDL_DestroyWindow(appState->sdlState.window);
         TTF_Quit();
@@ -104,16 +105,24 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
         return false;
     }
 
-    appState->gameState.previousStates = malloc(sizeof(ChessGame) * 64);
+    if (!FenString_setChessPositionFromFenString(INITIAL_FEN, &appState->gameState)) {
+        fprintf(stderr, "Failed to initialize the initial position\n");
+        SDL_DestroyRenderer(appState->sdlState.renderer);
+        SDL_DestroyWindow(appState->sdlState.window);
+        TTF_Quit();
+        SDL_Quit();
+        return false;
+    }
+
+    appState->gameState.playerColor = appState->gameState.currentState.colorToGo;
+    appState->gameState.whiteRemainingTime = STARTING_TIME_MS;
+    appState->gameState.blackRemainingTime = STARTING_TIME_MS;
+
+    appState->gameState.previousStates = malloc(sizeof(ChessPosition) * 64);
     appState->gameState.previousStateCapacity = 64;
     appState->gameState.previousStateIndex = 0;
     appState->gameState.result = GAME_IS_NOT_DONE;
 
-    Game_setupChesGame(&appState->gameState.currentState,
-                  &appState->gameState.currentState.currentPosition,
-                  INITIAL_FEN,
-                  TIME_CONTROL_MS, TIME_CONTROL_MS);
-    appState->gameState.playerColor = appState->gameState.currentState.currentPosition.colorToGo;
 
     appState->draggingState.isDragging = false;
 

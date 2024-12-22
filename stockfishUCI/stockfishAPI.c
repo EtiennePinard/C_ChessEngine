@@ -219,7 +219,7 @@ Move moveFromAlgebraic(const char *move) {
         return (Move) -1; // Invalid move, return max move value
     }
 
-    return makeMove(from, to, NOFlAG);
+    return Move_makeMove(from, to, NOFLAG);
 }
 
 #define GO_DEPTH_LENGTH (9)

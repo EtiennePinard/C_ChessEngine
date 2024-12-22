@@ -7,12 +7,24 @@
 #include "../state/Move.h"
 #include "../state/ZobristKey.h"
 
+#define LOOKUP_FAILED (-1)
+
+// See https://github.com/SebLague/Chess-Coding-Adventure/blob/f346d2d2ee92422614de063724796537337d702b/Chess-Coding-Adventure/src/Core/Search/TranspositionTable.cs
+typedef enum EntryType {
+    EXACT,
+    LOWER_BOUND,
+    UPPER_BOUND
+} EntryType;
+
 typedef struct TranspositionTable {
     ZobristKey key;
-    char depth;
+    u8 depth;
+    EntryType type;
     Move move;
-    int score;
+    int evaluation;
 } TranspositionTable;
+
+#define B sizeof(TranspositionTable);
 
 #define TRANSPOSITION_TABLE_SIZE_IN_MB (1)
  

@@ -7,6 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "../src/state/GameState.h"
+#include "../src/chessBot/ChessBot.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
@@ -15,7 +16,7 @@
 #define CHESS_IMAGE_BASE_PATH ("./assets/png")
 #define TITLE ("Chess")
 
-#define TIME_CONTROL_MS ((u32) (3 * 60 * 1000))
+#define STARTING_TIME_MS ((TimeControl_MS) (3 * 60 * 1000))
 
 #define PLACEHOLDER_X (0)
 #define PLACEHOLDER_Y (0)
@@ -67,11 +68,13 @@ typedef enum GameResult {
 } GameResult;
 
 typedef struct GameState {
-    ChessGame currentState;
+    ChessPosition currentState;
     PieceCharacteristics playerColor;
     u64 turnStartTick;
+    TimeControl_MS whiteRemainingTime;
+    TimeControl_MS blackRemainingTime;
 
-    ChessGame* previousStates;
+    ChessPosition* previousStates;
     int previousStateCapacity;
     int previousStateIndex;
 

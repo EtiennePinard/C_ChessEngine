@@ -1,6 +1,8 @@
 #ifndef A2BCC12A_23A9_49F5_800A_DD78EE9CE23B
 #define A2BCC12A_23A9_49F5_800A_DD78EE9CE23B
 
+#include <stdbool.h>
+#include "Piece.h"
 #include "GameState.h"
 
 typedef struct ZobristRandomNumber {

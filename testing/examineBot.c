@@ -9,14 +9,13 @@
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
 
+#include "../src/utils/FenString.h"
+
 #include "../stockfishUCI/StockfishAPI.h"
 
 #include "LogChessStructs.h"
 
-#define BUF_SIZE 65536
-// Number taken from https://chess.stackexchange.com/a/30006
-// The post states an answer of 87, but's let's add 3 more characters just to be sure
-#define LARGEST_FEN 90
+#define BUF_SIZE (1 << 16)
 
 u64 countLinesInFile(FILE* file) {
     char buf[BUF_SIZE];
@@ -43,7 +42,7 @@ u64 countLinesInFile(FILE* file) {
 void randomFenFromFile(FILE* file, u64 numLines, char* fenString) {
     u64 targetLine = random_u64() % (numLines + 1);
 
-    char line[LARGEST_FEN];
+    char line[MAX_FEN_STRING_SIZE];
     u64 currentLine = 0;
     while (currentLine < targetLine && fgets(line, sizeof(line), file) != NULL) {
         currentLine++;
@@ -80,25 +79,24 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    char fen[LARGEST_FEN] = { 0 };
-    ChessGame game = { 0 };
+    char fen[MAX_FEN_STRING_SIZE] = { 0 };
     ChessPosition currentPosition = { 0 };
     while (true) {
         rewind(positions);
         randomFenFromFile(positions, lineSize, fen);
-        Game_setupChesGame(&game, &currentPosition, fen, (u32) 1, (u32) 1); // We don't care about time controls
+        FenString_setChessPositionFromFenString(fen, &currentPosition);
         
-        Bot_provideGameStateForBot(&game);
+        Bot_provideGameStateForBot(&currentPosition);
         setStockfishPosition(fen);
 
         int score = Bot_staticEvaluation();
-        Move bestMove = Bot_think();
+        Move bestMove = Bot_think(0, 0); // We don't care about time control now
 
         float stockfishScore = stockfishStaticEvaluation();
         Move stockfishMove = stockfishBestMove(2); // Start with depth 2 for now
 
         printf("\n");
-        printPosition(game.currentPosition, score, bestMove, stockfishScore, stockfishMove); 
+        printPosition(currentPosition, score, bestMove, stockfishScore, stockfishMove); 
 
         printf("Enter q to quit (Any key to continue): ");
         int c = getc(stdin);

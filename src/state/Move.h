@@ -4,7 +4,7 @@
 #include "../utils/Utils.h"
 
 /**
-* The structure is copied from Sebastian Lague chess program
+* @brief The structure is copied from Sebastian Lague chess program
 * A move is a 16 bit number
 * bit 0-5: from square (0 to 63)
 * bit 6-11: to square (0 to 63)
@@ -13,7 +13,7 @@
 typedef u16 Move;
 
 /**
- * A flag is a 4 bit number which tells additional information
+ * @brief A flag is a 4 bit number which tells additional information
  * about move, e.g. that it leads to a promotion or a checkmate.
 */
 typedef enum {

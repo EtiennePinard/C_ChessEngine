@@ -23,11 +23,11 @@ typedef struct PerftTranspositionTable {
     ChessPosition chessPosition;
     #endif
     ZobristKey key;
-    u64 perft;
     u8 depth;
+    u64 perft;
 } PerftTranspositionTable;
 
-#define TRANSPOSITION_TABLE_SIZE_IN_MB (1)
+#define TRANSPOSITION_TABLE_SIZE_IN_MB (32)
  
 /**
  * @brief Initialize the transposition table
@@ -68,7 +68,7 @@ void PerftTranspositionTable_recordPerft(ZobristKey key, u8 depth, u64 perft, Ch
  * @brief Records the perft entry in the table
  * 
  * @param key The Zobrist key of the position associated with the perft value 
- * @param depth The depth the perft value was calculated at
+ * @par8 depth T8 depth the perft value was calculated at
  * @param perft The perft value calculated
  */
 void PerftTranspositionTable_recordPerft(ZobristKey key, u8 depth, u64 perft);

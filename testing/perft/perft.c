@@ -26,6 +26,7 @@ FILE* loggingFile = NULL;
 #endif
 
 bool divide = false;
+u32 hashHits = 0; 
 
 u64 perft(u8 depth) {
   if (depth == 0) { return 1; }
@@ -79,6 +80,8 @@ u64 perft(u8 depth) {
       , currentPosition
       #endif
       );
+    } else {
+      hashHits++;
     }
 
     if (divide && depth == maximumDepth) {
@@ -234,18 +237,18 @@ void test() {
 
     for (int depth = 0; depth < testPosition.nbTest; depth++) {
       maximumDepth = depth;
+      hashHits = 0;
       begin = clock();
       perftResult = perft(depth);
       end = clock();
       timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       
-      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, timeSpent * 1000);
+      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%lu" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
       if (perftResult == (u64) testPosition.perftResults[depth]) {
         printf("%s" RESET "\n", testPassed);
       } else {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
       }
-
       memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
     }
  
@@ -340,13 +343,14 @@ int main(int argc, char* argv[]) {
   if (divide) {
     printBoard(currentPosition.board);
     perftResult = perft(maximumDepth);
-    printf("Perft depth %d returned a total number of moves of %lu\n", maximumDepth, perftResult);
+    printf("Perft depth %d returned a total number of moves of %lu and had %lu hash hits\n", maximumDepth, perftResult, hashHits);
   } else {
     ChessPosition startingState = currentPosition;
 
     double averageExecutionTime = 0;
     clock_t begin, end;
     for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
+      hashHits = 0;
       begin = clock();
       perftResult = perft(maximumDepth);
       end = clock();
@@ -356,7 +360,7 @@ int main(int argc, char* argv[]) {
       
       memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
 
-      printf("ITERATION #%d, Time: %fs, Perft: %lu\n", iterations, timeSpent, perftResult);
+      printf("ITERATION #%d, Time: %fs, Perft: %lu, HashHits: %lu\n", iterations, timeSpent, perftResult, hashHits);
     }
     averageExecutionTime /= TEST_ITERATION;
     printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);

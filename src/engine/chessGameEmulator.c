@@ -83,6 +83,12 @@ void Engine_playMove(Move move, ChessPosition* position, bool storePositionInRep
 
   PieceCharacteristics oppositeColor = colorToGo == WHITE ? BLACK : WHITE;
 
+  // Handling enPassant
+  int zobristRandomNumberEnPassantIndex = file(position->enPassantTargetSquare);
+  if (position->enPassantTargetSquare > 0) { zobristRandomNumberEnPassantIndex++; }
+  newZobristKey ^= zobristRandomNumber.enPassantFile[zobristRandomNumberEnPassantIndex];
+  position->enPassantTargetSquare = 0;
+
   // Handling flags
   int rookIndex;
   Piece piece;
@@ -100,6 +106,7 @@ void Engine_playMove(Move move, ChessPosition* position, bool storePositionInRep
   case DOUBLE_PAWN_PUSH:
     enPassantPawnIndex = colorToGo == WHITE ? to + 8 : to - 8;
     position->enPassantTargetSquare = enPassantPawnIndex;
+    newZobristKey ^= zobristRandomNumber.enPassantFile[file(enPassantPawnIndex) + 1];
     break;
   case KING_SIDE_CASTLING:
     rookIndex = from + 3;
@@ -150,11 +157,6 @@ void Engine_playMove(Move move, ChessPosition* position, bool storePositionInRep
     return;
   }
   
-  if (flag != DOUBLE_PAWN_PUSH && position->enPassantTargetSquare != 0) {
-    position->enPassantTargetSquare = 0;
-  }
-  newZobristKey ^= zobristRandomNumber.enPassantFile[position->enPassantTargetSquare % 8];
-
   position->colorToGo = oppositeColor;
   if (position->colorToGo == WHITE) {
     position->nbMoves++; // Only recording full moves

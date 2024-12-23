@@ -9,23 +9,13 @@ main.c
 
 chess_position_extraction
 
-perftTesting
-test
-test.txt
-s.txt
-t.txt
-testing/testChessComputer.txt
-testBoard
+log.txt
 
 precomputedMasks/generateMagic
 precomputedMasks/generateMask
 precomputedMasks/MagicBitBoardOutput.txt
 precomputedMasks/precomputedMaskOutput.txt
 
-diffPerft.bash
-
-deploy
-examineBot
 tbot
 
 chess_app/assets/svg

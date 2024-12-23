@@ -4,14 +4,15 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
-#include "../src/engine/MoveGenerator.h"
-#include "../src/engine/ChessGameEmulator.h"
-#include "../src/utils/FenString.h"
-#include "../src/magicBitBoard/MagicBitBoard.h"
-#include "../src/state/ZobristKey.h"
-#include "../src/utils/CharBuffer.h"
+#include "../../src/engine/MoveGenerator.h"
+#include "../../src/engine/ChessGameEmulator.h"
+#include "../../src/utils/FenString.h"
+#include "../../src/magicBitBoard/MagicBitBoard.h"
+#include "../../src/state/ZobristKey.h"
+#include "../../src/utils/CharBuffer.h"
 
-#include "LogChessStructs.h"
+#include "PerftTranspositionTable.h"
+#include "../LogChessStructs.h"
 
 #define TEST_ITERATION 100
 #define MAXIMUM_DEPTH 20
@@ -20,9 +21,13 @@ int maximumDepth;
 ChessPosition currentPosition = { 0 };
 ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
+#ifdef DEBUG
+FILE* loggingFile = NULL;
+#endif
+
 bool divide = false;
 
-u64 perft(int depth) {
+u64 perft(u8 depth) {
   if (depth == 0) { return 1; }
 
   int nbOfMoves;
@@ -30,27 +35,51 @@ u64 perft(int depth) {
   Engine_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
-  // Note that here we take into account the fifty move fule
+  // Note that here we do not take into account the fifty move fule
   // This could make it so that our perft result differ from other engine
   // Thus let us be aware of this potential bug
   if (nbOfMoves == 0) {
-      // There is a checkmate, continuing to next move
+      // There is a checkmate or a draw, continuing to next move
       return 0;
   }
 
-  if (!divide && depth == 1) {
+  if (depth == 1) {
     return nbOfMoves;
   }
   
   posHistory[maximumDepth - depth] = currentPosition;
+  
 
   for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
     Move move = validMoves[moveIndex];
 
+    
     Engine_playMove(move, &currentPosition, false); // Move is made
 
-    u64 moveOutput = perft(depth - 1); // We generate the moves for the next perft
+    #ifdef DEBUG
+    for (int tab = 0; tab < maximumDepth - depth; tab++) {
+      fprintf(loggingFile, "\t");
+    }
+    fprintf(loggingFile, "Made move ");
+    writeMoveToAlgebraicToFile(move, loggingFile);
+    fprintf(loggingFile, ", flag: %d, enPassantTargetSquare: %d\n", Move_flag(move), currentPosition.enPassantTargetSquare);
+    #endif
+
+    u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth
+    #ifdef DEBUG
+    , currentPosition
+    #endif
+    );
+
+    if (moveOutput == LOOKUP_FAILED) {
+      moveOutput = perft(depth - 1); // We generate the moves for the next perft
+      PerftTranspositionTable_recordPerft(currentPosition.key, depth, moveOutput
+      #ifdef DEBUG
+      , currentPosition
+      #endif
+      );
+    }
 
     if (divide && depth == maximumDepth) {
       printMoveToAlgebraic(move);
@@ -59,6 +88,16 @@ u64 perft(int depth) {
     nodes += moveOutput;
 
     memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+    
+    #ifdef DEBUG
+    for (int tab = 0; tab < maximumDepth - depth; tab++) {
+      fprintf(loggingFile, "\t");
+    }
+    fprintf(loggingFile, "Unmade move ");
+    writeMoveToAlgebraicToFile(move, loggingFile);
+    fprintf(loggingFile, "\n");
+    #endif
+
   }
   
   return nodes;
@@ -111,6 +150,11 @@ typedef struct testPosition {
 void test() {
   MagicBitBoard_init();
   ZobristKey_init();
+  PerftTranspositionTable_init();
+
+  #ifdef DEBUG
+  loggingFile = fopen("../log.txt", "w");
+  #endif
   
   int biggestDepth = 5;
   if (biggestDepth > MAXIMUM_DEPTH) {
@@ -181,6 +225,7 @@ void test() {
   
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
+    PerftTranspositionTable_clear();
     
     FenString_setChessPositionFromFenString(testPosition.fenString, &currentPosition);
     startingState = currentPosition;
@@ -212,6 +257,11 @@ void test() {
   printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
 
   MagicBitBoard_terminate();
+  PerftTranspositionTable_terminate();
+
+  #ifdef DEBUG
+  fclose(loggingFile);
+  #endif
 }
 
 // To compile and run the program: ./perft
@@ -231,13 +281,14 @@ int main(int argc, char* argv[]) {
 
   { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
     char* firstArg = argv[1];
-    if (strcmp(firstArg, "test") == 0) {
+    if (string_compareStrings(firstArg, "test")) {
       test();
       return 0;
     }
-    if (strcmp(firstArg, "time") == 0) {
-    } else if (strcmp(firstArg, "divide") != 0) {
-      // No parameter is provided, so it is either a fen string of a depth
+    if (string_compareStrings(firstArg, "divide")) {
+      divide = true;
+    } else if (!string_compareStrings(firstArg, "time")) {
+      // No mode parameter is provided, so the mode is divide and the first argument is either a fen string of a depth
       divide = true;
       maximumDepth = string_parseNumber(firstArg);
       if (maximumDepth == -1) {
@@ -273,6 +324,11 @@ int main(int argc, char* argv[]) {
 
   MagicBitBoard_init();
   ZobristKey_init();
+  PerftTranspositionTable_init();
+
+  #ifdef DEBUG
+  loggingFile = fopen("../log.txt", "w");
+  #endif
 
   if (!FenString_setChessPositionFromFenString(fenString, &currentPosition)) { 
     printf("ERROR while setup of chess game state\n Exiting\n");
@@ -307,5 +363,9 @@ int main(int argc, char* argv[]) {
   }
 
   MagicBitBoard_terminate();
+  PerftTranspositionTable_terminate();
+  #ifdef DEBUG
+  fclose(loggingFile);
+  #endif
   return 0;
 }

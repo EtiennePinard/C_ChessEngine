@@ -8,7 +8,8 @@ project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
 
 # Define source files
 set(SOURCE_FILES
-    testing/perft.c 
+    testing/perft/perft.c 
+    testing/perft/perftTranspositionTable.c 
     testing/logChessStructs.c
     src/engine/chessGameEmulator.c
     src/engine/moveGenerator.c

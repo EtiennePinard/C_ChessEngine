@@ -1,6 +1,7 @@
 #include "TestCharBuffer.h"
 #include "TestFenString.h"
 #include "TestUtils.h"
+#include "testBoard.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,6 +27,12 @@ int main(void) {
     printf("Starting Utils test...\n");
     if (!Test_Utils()) {
         printf("ERROR: Utils tests failed :(\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Starting Board test...\n");
+    if (!Test_Board()) {
+        printf("ERROR: Board tests failed :(\n");
         exit(EXIT_FAILURE);
     }
 

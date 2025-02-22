@@ -7,7 +7,7 @@
  * @brief Runs all test for the functions in the CharBuffer.h file
  * 
  * @return true If all test pass
- * @return false Actually cannot return false because the program will exit if a test fails
+ * @return false If a test fails
  */
 bool Test_CharBuffer();
 

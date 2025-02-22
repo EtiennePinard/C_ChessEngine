@@ -1,7 +1,7 @@
 #include "Board.h"
 
 // TODO: This should be a great place for SIMD, right?
-Piece Board_pieceAtIndex(Board board, int index) {
+Piece Board_pieceAtIndex(Board board, u8 index) {
 
     Piece P = ((board.bitboards[0] >> index) & 1UL) * Piece_makePiece(WHITE, PAWN);
     Piece N = ((board.bitboards[1] >> index) & 1UL) * Piece_makePiece(WHITE, KNIGHT);
@@ -21,12 +21,12 @@ Piece Board_pieceAtIndex(Board board, int index) {
                     k + q + n + b + r + p);
 }
 
-u64 Board_bitBoardForPiece(Board board, Piece piece) {
+BitBoard Board_bitBoardForPiece(Board board, Piece piece) {
     int arrayIndex = piece - 9; // The best hash function there is!
     return board.bitboards[arrayIndex];
 }
 
-u64 Board_specificColorBitBoard(Board board, PieceCharacteristics color) {
+BitBoard Board_specificColorBitBoard(Board board, PieceCharacteristics color) {
     return 
     board.bitboards[Piece_makePiece(color, PAWN  ) - 9] |
     board.bitboards[Piece_makePiece(color, KNIGHT) - 9] |
@@ -36,11 +36,11 @@ u64 Board_specificColorBitBoard(Board board, PieceCharacteristics color) {
     board.bitboards[Piece_makePiece(color, KING  ) - 9]; 
 }
 
-u64 Board_allPiecesBitBoard(Board board) {
+BitBoard Board_allPiecesBitBoard(Board board) {
     return Board_specificColorBitBoard(board, BLACK) | Board_specificColorBitBoard(board, WHITE);
 }
 
-void Board_togglePieceAtIndex(Board* board, int index, Piece piece) {
+void Board_togglePieceAtIndex(Board* board, u8 index, Piece piece) {
     u64 toggle = (u64) 1; // I need to do this else the shift overflows the 32 bits of int
     toggle <<= index;
 

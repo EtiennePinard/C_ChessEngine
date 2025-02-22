@@ -5,7 +5,7 @@
 typedef u64 ZobristKey;
 
 /**
- * @brief Reperents a chess position. This structs holds the same information that is in a fen string
+ * @brief Represents a chess position. This structs holds the same information that is in a fen string
  * with the Zobrist key of the position.
  */
 typedef struct ChessPosition {

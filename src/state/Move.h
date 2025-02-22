@@ -33,4 +33,6 @@ typedef enum {
 #define Move_flag(move) ((Flag) (move >> 12))
 #define Move_makeMove(from, to, flag) (Move) (from + (to << 6) + (flag << 12))
 
+#define NULL_MOVE ((Move) 0)
+
 #endif /* A267B67F_4ECE_456A_A4EB_C6E73ACF11E0 */

@@ -181,7 +181,7 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
     // The last valid square in each direction is not set in the directionMask
     // We can then know that we are on the edge of the direction when we hit that unset bit
     // We then set hitEdge to true and do one last pass, which we know is valid
-    // If we did not have this feature, we could potentialy include invalid squares for the direction that we are handling
+    // If we did not have this feature, we could potentially include invalid squares for the direction that we are handling
     while (true) {
         if (((directionMask >> currentIndex) & 1) == 0) {
             hitEdge = true;
@@ -393,7 +393,7 @@ void generateEnPassant(int from) {
     int difference = currentState.colorToGo == WHITE ? from - currentState.enPassantTargetSquare : currentState.enPassantTargetSquare - from;
     if ((difference != 7) && (difference != 9)) { return; }
 
-    // Note that canEnPasant is never 0, because pawns can only en passant on the third or fourth rank
+    // Note that canEnPassant is never 0, because pawns can only en passant on the third or fourth rank
     u64 toggle = ((u64) 1) << currentState.enPassantTargetSquare;
     u64 canEnPassant = toggle;
     
@@ -595,7 +595,7 @@ We are not computing end of games in this function!!!!
 They are not needed for perft and so I did not write a function to compute just yet
 These function will probably in the board.c file
 */
-void Engine_getValidMoves(Move result[256], int* numMoves, ChessPosition position) {
+void Engine_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position) {
 
     currentState = position;
 

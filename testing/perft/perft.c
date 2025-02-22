@@ -32,7 +32,7 @@ u64 perft(u8 depth) {
   if (depth == 0) { return 1; }
 
   int nbOfMoves;
-  Move validMoves[256];
+  Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
   Engine_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 

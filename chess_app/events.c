@@ -62,7 +62,7 @@ static inline bool insufficientMaterialScenario(const GameState *gameState) {
         return true; 
     }
 
-    // The remaning scenarios are one bishop or knight for each player
+    // The remaining scenarios are one bishop or knight for each player
     return false;
 }
 
@@ -81,7 +81,7 @@ static void computeGameEnd(GameState *gameState) {
         }
     }
 
-    Move moves[256];
+    Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMove;
     Engine_getValidMoves(moves, &numMove, gameState->currentState);
     if (numMove == 0) {
@@ -227,8 +227,7 @@ static void chessBoardMouseButtonUp(AppState *appState) {
 
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so
-    // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
-    Move moves[256];
+    Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
     Engine_getValidMoves(moves, &numMoves, appState->gameState.currentState);
 

@@ -36,7 +36,7 @@ u64 perft(u8 depth) {
   Engine_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
-  // Note that here we do not take into account the fifty move fule
+  // Note that here we do not take into account the fifty move rule
   // This could make it so that our perft result differ from other engine
   // Thus let us be aware of this potential bug
   if (nbOfMoves == 0) {
@@ -75,11 +75,15 @@ u64 perft(u8 depth) {
 
     if (moveOutput == LOOKUP_FAILED) {
       moveOutput = perft(depth - 1); // We generate the moves for the next perft
-      PerftTranspositionTable_recordPerft(currentPosition.key, depth, moveOutput
-      #ifdef DEBUG
-      , currentPosition
-      #endif
-      );
+
+      PerftTranspositionTable_recordPerft((PerftTranspositionTable) { 
+        .key = currentPosition.key, 
+        .depth = depth, 
+        .perft = moveOutput,
+      #ifdef DEBUG 
+        .chessPosition = currentPosition
+      #endif 
+      });
     } else {
       hashHits++;
     }
@@ -180,17 +184,17 @@ void test() {
     .perftResults = pos2Result
   };
   
-  int pos3Result[6] = {1, 14, 191, 2812, 43238, 674624};
+  int pos3Result[7] = {1, 14, 191, 2812, 43238, 674624, 11030083};
   TestPosition pos3 = {
     .fenString = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
-    .nbTest = 6,
+    .nbTest = 7,
     .perftResults = pos3Result
   };
 
-  int pos4Result[5] = {1, 6, 264, 9467, 422333};
+  int pos4Result[6] = {1, 6, 264, 9467, 422333, 15833292};
   TestPosition pos4 = {
     .fenString = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-    .nbTest = 5,
+    .nbTest = 6,
     .perftResults = pos4Result
   };
 

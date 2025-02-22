@@ -67,17 +67,7 @@ u64 PerftTranspositionTable_getPerftFromKey(
     return transpositionTable[index].perft;
 }
 
-void PerftTranspositionTable_recordPerft(ZobristKey key, u8 depth, u64 perft
-#ifdef DEBUG
-, ChessPosition pos
-#endif
-) {
-    u32 index = (u32) (key % NB_ELEMENTS_IN_TRANSPOSITION_TABLE);
-
-    transpositionTable[index].key = key;
-    transpositionTable[index].depth = depth;
-    transpositionTable[index].perft = perft;
-    #ifdef DEBUG
-    transpositionTable[index].chessPosition = pos;
-    #endif
+void PerftTranspositionTable_recordPerft(PerftTranspositionTable entry) {
+    u32 index = (u32) (entry.key % NB_ELEMENTS_IN_TRANSPOSITION_TABLE);
+    memcpy(&transpositionTable[index], &entry, sizeof(PerftTranspositionTable));
 }

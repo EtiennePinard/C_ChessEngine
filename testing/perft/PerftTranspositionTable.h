@@ -3,8 +3,6 @@
 
 // From https://web.archive.org/web/20071031100051/http://www.brucemo.com/compchess/programming/hashing.htm
 
-#include <stdbool.h>
-
 #include "../../src/state/ZobristKey.h"
 
 /*
@@ -13,11 +11,20 @@ Define DEBUG to debug Zobrist key collisions
 #define DEBUG
 */
 
-// Here we cannot define lookup failed as a negative number because perft is unsigne
+// Here we cannot define lookup failed as a negative number because perft is unsigned
 // So we define it as 0. We should never see a perft of 0 in the perft function because we 
 // exit early when that happens
 #define LOOKUP_FAILED (0)
 
+/**
+ * @brief A perft transposition table entry
+ * 
+ * @param key The Zobrist key of the position associated with the perft value 
+ * @param depth The depth the perft value was calculated at
+ * @param perft The perft value calculated
+ * @param chessPosition If DEBUG is defined, then we store the chess position to look for 
+ * collisions
+ */
 typedef struct PerftTranspositionTable {
     #ifdef DEBUG
     ChessPosition chessPosition;
@@ -55,23 +62,18 @@ u64 PerftTranspositionTable_getPerftFromKey(ZobristKey key, u8 depth, ChessPosit
 /**
  * @brief Get the Stored Move object
  * 
- * @param key 
+ * @param key The zobrist key of the position to get the perft of
+ * @param depth The depth the key is stored at
  * @return Move The move from the key or LOOKUP_FAILED 
  */
 u64 PerftTranspositionTable_getPerftFromKey(ZobristKey key, u8 depth);
 #endif
 
-#ifdef DEBUG
-void PerftTranspositionTable_recordPerft(ZobristKey key, u8 depth, u64 perft, ChessPosition pos);
-#else
 /**
  * @brief Records the perft entry in the table
  * 
- * @param key The Zobrist key of the position associated with the perft value 
- * @par8 depth T8 depth the perft value was calculated at
- * @param perft The perft value calculated
+ * @param entry The perft transposition table entry to record
  */
-void PerftTranspositionTable_recordPerft(ZobristKey key, u8 depth, u64 perft);
-#endif
+void PerftTranspositionTable_recordPerft(PerftTranspositionTable entry);
 
 #endif /* F5D96C5E_E343_4A14_B3F3_5D269E6250AC */

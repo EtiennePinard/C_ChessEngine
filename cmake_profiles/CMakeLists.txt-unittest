@@ -1,0 +1,26 @@
+# Minimum CMake version
+cmake_minimum_required(VERSION 3.10)
+
+set(PROJECT unittest)
+
+# Project name and language
+project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
+
+# Define source files
+set(SOURCE_FILES
+    testing/unitTest/unitTest.c
+    testing/unitTest/testCharBuffer.c
+    testing/unitTest/testFenString.c 
+    testing/logChessStructs.c 
+    src/utils/utils.c 
+    src/utils/fenString.c 
+    src/utils/charBuffer.c 
+    src/state/zobristKey.c 
+    src/state/board.c
+)
+
+# Add executable target
+add_executable(${PROJECT} ${SOURCE_FILES})
+
+# Specify the output name for the executable
+set_target_properties(${PROJECT} PROPERTIES OUTPUT_NAME "${PROJECT}")

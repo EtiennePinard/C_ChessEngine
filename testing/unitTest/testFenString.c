@@ -1,8 +1,7 @@
-#include "../src/utils/FenString.h"
-#include "../src/state/GameState.h"
-#include "../src/state/Board.h"
-#include "LogChessStructs.h"
-
+#include "../../src/utils/FenString.h"
+#include "../../src/state/GameState.h"
+#include "../../src/state/Board.h"
+#include "../LogChessStructs.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -219,27 +218,21 @@ TestCase tests[NB_TEST] = {
     },
 };
 
-// gcc testing/testFenString.c testing/logChessStructs.c src/utils/utils.c src/utils/fenString.c src/utils/charBuffer.c src/state/zobristKey.c src/state/board.c && ./a.out
-int main(int argc, char const *argv[]) {
-
+bool Test_FenString() {
     ChessPosition position = { 0 };
     for (int testIndex = 0; testIndex < NB_TEST; testIndex++) {
         TestCase testCase = tests[testIndex];
         bool returnValue = FenString_setChessPositionFromFenString(testCase.fen, &position);
-
+    
         if (returnValue == false) {
-            if (testCase.setPositionReturnValue == returnValue) {
-                printf("TEST #%d passed!\n", testIndex + 1);
-            } else {
+            if (testCase.setPositionReturnValue != returnValue) {
                 printf("TEST #%d failed\n", testIndex + 1);
                 printf("\tReturn value is false when it should be true\n");
             }
             continue;
         }
-
-        if (testCase.test_func(&position)) {
-            printf("TEST #%d passed!\n", testIndex + 1);
-        } else {
+    
+        if (!testCase.test_func(&position)) {
             printf("TEST #%d failed!\n", testIndex + 1);
             printf("\tColor to go: %s\n", position.colorToGo == WHITE ? "white" : "black");
             printf("\tCastling perm: 0b%d%d%d%d\n", position.castlingPerm >> 3 & 1, position.castlingPerm >> 2 & 1, position.castlingPerm >> 1 & 1, position.castlingPerm & 1);
@@ -249,6 +242,5 @@ int main(int argc, char const *argv[]) {
             printBoard(position.board);
         }
     }
-
-    return 0;
+    return true;
 }

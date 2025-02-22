@@ -6,6 +6,21 @@
 // Total size of the struct is 57.6 kb, which is a lot but not too bad 
 ZobristRandomNumber zobristRandomNumber = (ZobristRandomNumber) { 0 };
 
+/**
+ * @brief Returns a pseudo-random unsigned 64 bit number. 
+ * This function uses rand() to generate pseudo-random numbers
+ * so make sure to set the random seed before calling this function.
+ * 
+ * @return u64 A pseudo-random 64 bit number
+ */
+u64 random_u64() {
+    u64 u1 = (u64)(rand()) & 0xFFFF; 
+    u64 u2 = (u64)(rand()) & 0xFFFF;
+    u64 u3 = (u64)(rand()) & 0xFFFF; 
+    u64 u4 = (u64)(rand()) & 0xFFFF;
+    return u1 | (u2 << 16) | (u3 << 32) | (u4 << 48);
+  }
+
 bool ZobristKey_init() {
     srand(time(NULL));
 

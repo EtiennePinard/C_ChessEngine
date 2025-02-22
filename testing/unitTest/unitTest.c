@@ -1,5 +1,6 @@
 #include "TestCharBuffer.h"
 #include "TestFenString.h"
+#include "TestUtils.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,17 +11,21 @@ int main(void) {
 
     clock_t begin = clock();
 
-    printf("Starting Char Buffer tests ...\n");
-    
+    printf("Starting Char Buffer tests...\n");
     if (!Test_CharBuffer()) {
         printf("ERROR: Char Buffer tests failed :(\n");
         exit(EXIT_FAILURE);
     }
 
-    printf("Starting Fen String test ...\n");
-
+    printf("Starting Fen String test...\n");
     if (!Test_FenString()) {
         printf("ERROR: Fen String tests failed :(\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Starting Utils test...\n");
+    if (!Test_Utils()) {
+        printf("ERROR: Utils tests failed :(\n");
         exit(EXIT_FAILURE);
     }
 

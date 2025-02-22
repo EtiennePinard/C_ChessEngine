@@ -11,6 +11,7 @@ set(SOURCE_FILES
     testing/unitTest/unitTest.c
     testing/unitTest/testCharBuffer.c
     testing/unitTest/testFenString.c 
+    testing/unitTest/testUtils.c 
     testing/logChessStructs.c 
     src/utils/fenString.c 
     src/utils/charBuffer.c 

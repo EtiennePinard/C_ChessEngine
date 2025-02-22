@@ -18,8 +18,8 @@ bool string_compareStrings(const char *string1, const char* string2);
 
 /**
  * @brief Returns the index of the first space ' ' character from the indexToStartAt.
- * If there is no space from the indexToStartAt then it returns the length of the string minus one
- * If indexToStartAt is out the bounds of the string then it returns indexToStartAt
+ * If there is no space from the indexToStartAt then it returns the length of the string.
+ * If indexToStartAt is out the bounds of the string then it returns the length of the string.
  * 
  * @param str The string to extract the first word from
  * @param indexToStartAt The index to start at
@@ -45,7 +45,31 @@ void string_toLower(char *string);
 int string_parseNumber(const char *string);
 
 /**
- * @brief Converts a square in algebraic notation to a square index used in this program. Returns 0 if square == "-"
+ * @brief Converts a square in algebraic notation to a square index used in this program. Returns 0 if square == "-".
+ * 
+ * A string in algebraic notation is of the type: "c_1c_2" with c_1 begin a character from 'a' to 'h' and c_2 begin a digit from 1 to 9.
+ * 
+ * In this program the indices are flipped from the conventional of assigning indices to a chessboard, meaning that 
+ * the chess board is:
+ * 
+ *   +----+----+----+----+----+----+----+----+ 
+ *   |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 
+ *   +----+----+----+----+----+----+----+----+
+ *   |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |  7
+ *   +----+----+----+----+----+----+----+----+
+ *   | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 |  6
+ *   +----+----+----+----+----+----+----+----+
+ *   | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 |  5
+ *   +----+----+----+----+----+----+----+----+
+ *   | 32 | 33 | 34 | 35 | 36 | 37 | 38 | 39 |  4
+ *   +----+----+----+----+----+----+----+----+
+ *   | 40 | 41 | 42 | 43 | 44 | 45 | 46 | 47 |  3
+ *   +----+----+----+----+----+----+----+----+
+ *   | 48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 |  2
+ *   +----+----+----+----+----+----+----+----+
+ *   | 56 | 57 | 58 | 59 | 60 | 61 | 62 | 63 |  1
+ *   +----+----+----+----+----+----+----+----+
+ *      a    b    c    d    e    f    g    h  
  * 
  * @param algebraic The square in algebraic notation
  * @return int The square index of the square in algebraic notation, or -1 if the square char is not well formatted

@@ -57,7 +57,7 @@ int string_algebraicToIndex(const char *algebraic) {
   if (lengthOfSquare != 2) { return -1; }
 
   if (algebraic[0] < 'a' || algebraic[0] > 'h') { return -1; }
-  if (algebraic[1] < '0' || algebraic[1] > '9') { return -1; }
+  if (algebraic[1] < '1' || algebraic[1] > '9') { return -1; }
   int file = algebraic[0] - 'a';
   int rank = 8 - (algebraic[1] - '0');
   return rank * 8 + file;

@@ -53,7 +53,6 @@ void randomFenFromFile(FILE* file, u64 numLines, char* fenString) {
 
 #define KEY_Q 113
 
-// TODO: When this is called the previousState explodes to a number bigger than 512, which is not supposed to happen
 int main(int argc, char* argv[]) {
     if (argc == 1) {
         printf("Usage: %s <fen strings file path> <stockfish executable path>\n", argv[0]);

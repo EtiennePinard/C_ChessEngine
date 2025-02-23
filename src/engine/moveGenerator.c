@@ -2,6 +2,7 @@
 // https://github.com/SebLague/Chess-Coding-Adventure/blob/Chess-V2-UCI/Chess-Coding-Adventure/src/Core/Move%20Generation/MoveGenerator.cs
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 #include "MoveGenerator.h"
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "../utils/Math.h"
@@ -592,6 +593,8 @@ They are not needed for perft and so I did not write a function to compute just 
 These function will probably in the board.c file
 */
 void Engine_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position) {
+    assert(result != NULL);
+    assert(numMoves != NULL);
 
     currentState = position;
 

@@ -1,7 +1,11 @@
 #include "Board.h"
+#include <assert.h>
+#include <stdlib.h>
 
 // TODO: This should be a great place for SIMD, right?
 Piece Board_pieceAtIndex(Board board, u8 index) {
+    assert(index <= 13);
+    assert(board.bitboards != NULL);
 
     Piece P = ((board.bitboards[0] >> index) & 1UL) * Piece_makePiece(WHITE, PAWN);
     Piece N = ((board.bitboards[1] >> index) & 1UL) * Piece_makePiece(WHITE, KNIGHT);
@@ -22,6 +26,10 @@ Piece Board_pieceAtIndex(Board board, u8 index) {
 }
 
 BitBoard Board_bitBoardForPiece(Board board, Piece piece) {
+    assert(board.bitboards != NULL);
+    assert(Piece_color(piece) == WHITE || Piece_color(piece) == BLACK);
+    assert(PAWN <= Piece_type(piece) && Piece_type(piece) <= KING);
+
     int arrayIndex = piece - 9; // The best hash function there is!
     return board.bitboards[arrayIndex];
 }
@@ -41,6 +49,11 @@ BitBoard Board_allPiecesBitBoard(Board board) {
 }
 
 void Board_togglePieceAtIndex(Board* board, u8 index, Piece piece) {
+    assert(board != NULL);
+    assert(board->bitboards != NULL);
+    assert(Piece_color(piece) == WHITE || Piece_color(piece) == BLACK);
+    assert(PAWN <= Piece_type(piece) && Piece_type(piece) <= KING);
+
     u64 toggle = (u64) 1; // I need to do this else the shift overflows the 32 bits of int
     toggle <<= index;
 
@@ -49,6 +62,10 @@ void Board_togglePieceAtIndex(Board* board, u8 index, Piece piece) {
 }
 
 void Board_fromArray(Board* result, Piece array[BOARD_SIZE]) {
+    assert(result != NULL);
+    assert(result->bitboards != NULL);
+    assert(array != NULL);
+
     for (int index = 0; index < BOARD_SIZE; index++) {
         Piece piece = array[index];
         if (piece != NOPIECE) {

@@ -6,6 +6,9 @@
 #include "CharBuffer.h"
 
 bool string_compareStrings(const char *string1, const char* string2) {
+    assert(string1 != NULL);
+    assert(string2 != NULL);
+
     if (string1[0] != string2[0]) { return false; }
     size_t length1 = strlen(string1);
     size_t length2 = strlen(string2);
@@ -14,6 +17,8 @@ bool string_compareStrings(const char *string1, const char* string2) {
 }
 
 size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStartAt) {
+    assert(string != NULL);
+
     size_t lengthOfString = strlen(string);
     if (indexToStartAt >= lengthOfString) { return lengthOfString; }
 
@@ -23,12 +28,16 @@ size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStar
 }
 
 void string_toLower(char *string) {
+  assert(string != NULL);
+
     for (size_t index = 0; index < strlen(string); index++) {
         string[index] = tolower(string[index]);
     }
 }
 
 int string_parseNumber(const char *num) {
+  assert(num != NULL);
+
   size_t lengthOfNum = strlen(num);
   if (lengthOfNum == 0) { return -1; }
 
@@ -51,6 +60,8 @@ int string_parseNumber(const char *num) {
 }
 
 int string_algebraicToIndex(const char *algebraic) {
+  assert(algebraic != NULL);
+
   size_t lengthOfSquare = strlen(algebraic);
   if (lengthOfSquare == 0) { return -1; }
   if (algebraic[0] == '-') { return 0; }

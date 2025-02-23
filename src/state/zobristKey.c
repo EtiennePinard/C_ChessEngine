@@ -47,6 +47,8 @@ bool ZobristKey_init() {
 // Only use this function to set the initial Zobrist key
 // The subsequent keys are computed incrementally by the playMove function
 void ZobristKey_calculateInitialKey(ChessPosition* state) {
+    assert(state != NULL);
+
     u64 zobristKey = (u64) 0;
 
     for (int square = 0; square < BOARD_SIZE; square++) {

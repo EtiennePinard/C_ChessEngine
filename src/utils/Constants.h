@@ -13,4 +13,7 @@
 // From http://wismuth.com/chess/longest-game.html
 #define MAX_NB_LEGAL_MOVES_IN_GAME (8849)
 
+// Number taken from https://chess.stackexchange.com/a/30006
+#define MAX_FEN_STRING_SIZE (87)
+
 #endif /* E8619F73_510A_4F85_B1F4_77DA454B0DE5 */

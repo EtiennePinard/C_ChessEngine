@@ -3,6 +3,7 @@
 #include <string.h>
 #include <assert.h>
 #include "FenString.h"
+#include "../utils/Constants.h"
 #include "../state/ZobristKey.h"
 
 static int getCastlingPermFromFenString(const char *castlingPerm) {

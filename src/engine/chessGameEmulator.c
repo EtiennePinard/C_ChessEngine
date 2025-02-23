@@ -56,6 +56,10 @@ void _updateFiftyMoveRule(int pieceToMove, int to, ChessPosition* state) {
 
 // Note: The __attribute__ ((unused)) is there so that gcc don't put us a warning if we don't include the repetition table
 void Engine_playMove(Move move, ChessPosition* position, __attribute__ ((unused)) bool storePositionInRepetitionTable) {
+  assert(position != NULL);
+  assert(move != NULL_MOVE);
+  assert(Move_fromSquare(move) != Move_toSquare(move));
+
   PieceCharacteristics colorToGo = position->colorToGo;
   int from = Move_fromSquare(move);
   int to = Move_toSquare(move);

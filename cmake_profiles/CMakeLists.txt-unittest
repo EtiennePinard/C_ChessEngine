@@ -9,11 +9,12 @@ project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
 # Define source files
 set(SOURCE_FILES
     testing/unitTest/unitTest.c
-    testing/unitTest/testCharBuffer.c
-    testing/unitTest/testFenString.c 
-    testing/unitTest/testMath.c 
-    testing/unitTest/testBoard.c 
-    testing/unitTest/testTranspositionTable.c
+
+    testing/unitTest/tests/testCharBuffer.c
+    testing/unitTest/tests/testFenString.c 
+    testing/unitTest/tests/testMath.c 
+    testing/unitTest/tests/testBoard.c 
+    testing/unitTest/tests/testTranspositionTable.c
 
     testing/logChessStructs.c 
 

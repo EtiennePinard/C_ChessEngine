@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "../../src/state/Board.h"
+#include "../../../src/state/Board.h"
 
 bool test_Board_bitBoardForPiece() {
     Board board = { 0 };

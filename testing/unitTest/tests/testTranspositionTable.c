@@ -1,4 +1,4 @@
-#include "../../src/chessBot/TranspositionTable.h"
+#include "../../../src/chessBot/TranspositionTable.h"
 
 bool test_TranspositionTable_init() {
     bool actual = TranspositionTable_init();

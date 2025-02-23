@@ -1,7 +1,7 @@
-#include "../../src/utils/FenString.h"
-#include "../../src/state/GameState.h"
-#include "../../src/state/Board.h"
-#include "../LogChessStructs.h"
+#include "../../../src/utils/FenString.h"
+#include "../../../src/state/GameState.h"
+#include "../../../src/state/Board.h"
+#include "../../LogChessStructs.h"
 
 #include <assert.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "../../src/utils/Math.h"
+#include "../../../src/utils/Math.h"
 
 // Test file() macro
 bool test_file() {

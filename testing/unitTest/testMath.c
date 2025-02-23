@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "../../src/utils/Utils.h"
+#include "../../src/utils/Math.h"
 
 // Test file() macro
 bool test_file() {
@@ -153,7 +153,7 @@ bool test_numBitSet_64() {
     return true;
 }
 
-bool Test_Utils() {
+bool Test_Math() {
     if (!test_file()) return false;
     if (!test_rank()) return false;
     if (!test_max()) return false;

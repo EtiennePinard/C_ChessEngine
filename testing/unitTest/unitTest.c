@@ -1,39 +1,44 @@
 #include "TestCharBuffer.h"
 #include "TestFenString.h"
-#include "TestUtils.h"
+#include "TestMath.h"
 #include "testBoard.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 
+typedef bool (*TestFunction)(void);
+
+typedef struct Test {
+    TestFunction testFunction;
+    char* name;
+} Test;
+
+
+void runTest(Test test) {
+    printf("Starting %s tests...\n", test.name);
+    if (!test.testFunction()) {
+        printf("ERROR: %s tests failed :(\n", test.name);
+        exit(EXIT_FAILURE);
+    }
+}
+
+Test tests[] = {
+    { Test_CharBuffer, "Char Buffer" },
+    { Test_FenString, "Fen String" },
+    { Test_Math, "Math" },
+    { Test_Board, "Board" }
+};
+
 // To run: ./unit
 int main(void) {
 
+    size_t nbTests = sizeof(tests) / sizeof(Test);
+
     clock_t begin = clock();
 
-    printf("Starting Char Buffer tests...\n");
-    if (!Test_CharBuffer()) {
-        printf("ERROR: Char Buffer tests failed :(\n");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Starting Fen String test...\n");
-    if (!Test_FenString()) {
-        printf("ERROR: Fen String tests failed :(\n");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Starting Utils test...\n");
-    if (!Test_Utils()) {
-        printf("ERROR: Utils tests failed :(\n");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Starting Board test...\n");
-    if (!Test_Board()) {
-        printf("ERROR: Board tests failed :(\n");
-        exit(EXIT_FAILURE);
+    for (int testIndex = 0; testIndex < nbTests; testIndex++) {
+        runTest(tests[testIndex]);
     }
 
     clock_t end = clock();

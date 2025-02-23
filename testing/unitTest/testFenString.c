@@ -134,8 +134,7 @@ bool test2(ChessPosition *position) {
 
 #define TEST3 ("")
 
-bool test3(ChessPosition *position) {
-    // This is unreachable
+bool test3(__attribute__ ((unused)) ChessPosition *position) {
     return false;
 }
 
@@ -157,8 +156,7 @@ bool test4(ChessPosition *position) {
 
 #define TEST5 ("8/8/8/8/8/8/8/8 t")
 
-bool test5(ChessPosition *position) {
-    // This is unreachable
+bool test5(__attribute__ ((unused)) ChessPosition *position) {
     return false;
 }
 
@@ -178,40 +176,40 @@ bool test6(ChessPosition *position) {
     return true;
 }
 
-typedef struct TestCase {
+typedef struct FenStringTestCase {
     char *fen;
     bool (*test_func)(ChessPosition*);
     bool setPositionReturnValue;
-} TestCase;
+} FenStringTestCase;
 
 #define NB_TEST (6)
-TestCase tests[NB_TEST] = {
-    (TestCase) {
+FenStringTestCase fenStringTests[NB_TEST] = {
+    (FenStringTestCase) {
         .fen = TEST_1,
         .test_func = &test1,
         .setPositionReturnValue = true
     }, 
-    (TestCase) {
+    (FenStringTestCase) {
         .fen = TEST_2,
         .test_func = &test2,
         .setPositionReturnValue = true
     },
-    (TestCase) {
+    (FenStringTestCase) {
         .fen = TEST3,
         .test_func = &test3,
         .setPositionReturnValue = false
     }, 
-    (TestCase) {
+    (FenStringTestCase) {
         .fen = TEST4,
         .test_func = &test4,
         .setPositionReturnValue = true
     },     
-    (TestCase) {
+    (FenStringTestCase) {
         .fen = TEST5,
         .test_func = &test5,
         .setPositionReturnValue = false
     }, 
-    (TestCase) {
+    (FenStringTestCase) {
         .fen = TEST6,
         .test_func = &test6,
         .setPositionReturnValue = true
@@ -221,7 +219,7 @@ TestCase tests[NB_TEST] = {
 bool Test_FenString() {
     ChessPosition position = { 0 };
     for (int testIndex = 0; testIndex < NB_TEST; testIndex++) {
-        TestCase testCase = tests[testIndex];
+        FenStringTestCase testCase = fenStringTests[testIndex];
         bool returnValue = FenString_setChessPositionFromFenString(testCase.fen, &position);
     
         if (returnValue == false) {

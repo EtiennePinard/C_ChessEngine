@@ -4,7 +4,7 @@
 #define REPETITION_TABLE_CAPACITY (1 << 9)
 
 /*
-    IMPORTANT! Notice that previousStates is initialized to 512.
+    IMPORTANT! Notice that REPETITION_TABLE_CAPACITY is 512.
     This means that we only support games which are 512 moves long.
     This could be like a huge flaw in the engine, since legal games
     can theoretically go to 6000 moves.

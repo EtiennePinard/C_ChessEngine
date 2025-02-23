@@ -13,11 +13,16 @@ set(SOURCE_FILES
     testing/unitTest/testFenString.c 
     testing/unitTest/testMath.c 
     testing/unitTest/testBoard.c 
+    testing/unitTest/testTranspositionTable.c
+
     testing/logChessStructs.c 
+
     src/utils/fenString.c 
     src/utils/charBuffer.c 
+    
     src/state/zobristKey.c 
     src/state/board.c
+    src/chessBot/transpositionTable.c
 )
 
 # Add executable target

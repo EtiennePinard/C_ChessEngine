@@ -1,11 +1,12 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+
 #include "TestCharBuffer.h"
 #include "TestFenString.h"
 #include "TestMath.h"
 #include "testBoard.h"
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
+#include "TestTranspositionTable.h"
 
 typedef bool (*TestFunction)(void);
 
@@ -27,7 +28,8 @@ Test tests[] = {
     { Test_CharBuffer, "Char Buffer" },
     { Test_FenString, "Fen String" },
     { Test_Math, "Math" },
-    { Test_Board, "Board" }
+    { Test_Board, "Board" },
+    { Test_TranspositionTable, "Transposition Table"}
 };
 
 // To run: ./unit
@@ -37,7 +39,7 @@ int main(void) {
 
     clock_t begin = clock();
 
-    for (int testIndex = 0; testIndex < nbTests; testIndex++) {
+    for (size_t testIndex = 0; testIndex < nbTests; testIndex++) {
         runTest(tests[testIndex]);
     }
 

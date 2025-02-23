@@ -217,6 +217,8 @@ FenStringTestCase fenStringTests[NB_TEST] = {
 };
 
 bool Test_FenString() {
+    // Note: We do not care about the Zobrist keys of the positions so we don't call ZobristKey_init here
+
     ChessPosition position = { 0 };
     for (int testIndex = 0; testIndex < NB_TEST; testIndex++) {
         FenStringTestCase testCase = fenStringTests[testIndex];

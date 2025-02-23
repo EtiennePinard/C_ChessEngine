@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "ChessGameEmulator.h"
 #include "../state/ZobristKey.h"
+#include "../utils/Math.h"
 
 void _updateCastlePerm(int pieceToMove, int from, ChessPosition* state) {
   if (state->castlingPerm == 0) { return; }
@@ -19,15 +20,15 @@ void _updateCastlePerm(int pieceToMove, int from, ChessPosition* state) {
       if (from == kingSideWhiteRookPosition) {
         state->castlingPerm &= 0b0111; // Removing white king side castling perm
       } else if (from == queenSideWhiteRookPosition) {
-        state->castlingPerm &= 0b1011; // Removing white queen side caslting perm
+        state->castlingPerm &= 0b1011; // Removing white queen side castling perm
       }
       break;
 
     case BLACK | ROOK:
       if (from == kingSideBlackRookPosition) {
-        state->castlingPerm &= 0b1101; // Removing black king side caslting perm
+        state->castlingPerm &= 0b1101; // Removing black king side castling perm
       } else if (from == queenSideBlackRookPosition) {
-        state->castlingPerm &= 0b1110; // Removing black queen side caslting perm
+        state->castlingPerm &= 0b1110; // Removing black queen side castling perm
       }
       break;
 
@@ -49,11 +50,12 @@ void _updateFiftyMoveRule(int pieceToMove, int to, ChessPosition* state) {
   if (Piece_type(pieceToMove) == PAWN || Board_pieceAtIndex(state->board, to) != NOPIECE) {
     state->turnsForFiftyRule = 0; // A pawn has moved or a capture has happened
   } else {
-    state->turnsForFiftyRule++; // No captures or pawn advance happenned
+    state->turnsForFiftyRule++; // No captures or pawn advance happened
   }
 }
 
-void Engine_playMove(Move move, ChessPosition* position, bool storePositionInRepetitionTable) {
+// Note: The __attribute__ ((unused)) is there so that gcc don't put us a warning if we don't include the repetition table
+void Engine_playMove(Move move, ChessPosition* position, __attribute__ ((unused)) bool storePositionInRepetitionTable) {
   PieceCharacteristics colorToGo = position->colorToGo;
   int from = Move_fromSquare(move);
   int to = Move_toSquare(move);

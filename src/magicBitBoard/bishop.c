@@ -1,5 +1,7 @@
 #include "Bishop.h"
 
+#include "../utils/Math.h"
+
 int minShiftBishop[BOARD_SIZE] = {
   6, 5, 5, 5, 5, 5, 5, 6,
   5, 5, 5, 5, 5, 5, 5, 5,
@@ -90,12 +92,12 @@ static inline u64 generateBlockingBitBoardFromIndex(int index, int nbValidSquare
     return result;
 }
 
-void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalmoves) {
+void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalMoves) {
     int nbValidSquareForBishop = minShiftBishop[position];
     int nbBlockingBitBoard = 1 << nbValidSquareForBishop;
     u64 movementMask = bishopMovementMaskFromPosition(position);
     for (int i = 0; i < nbBlockingBitBoard; i++) {
         blockingBitBoards[i] = generateBlockingBitBoardFromIndex(i, nbValidSquareForBishop, movementMask);
-        blockingBitBoardToPseudoLegalmoves[i] = bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);
+        blockingBitBoardToPseudoLegalMoves[i] = bishopPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);
     }
 }

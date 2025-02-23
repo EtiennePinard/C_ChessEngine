@@ -8,10 +8,10 @@
 static int getCastlingPermFromFenString(const char *castlingPerm) {
   int result = 0;
 
-  size_t lengthOfCasltingPerm = strlen(castlingPerm);
-  if (lengthOfCasltingPerm == 0) { return -1; }
+  size_t lengthOfCastlingPerm = strlen(castlingPerm);
+  if (lengthOfCastlingPerm == 0) { return -1; }
   if (castlingPerm[0] == '-') { return 0; }
-  if (lengthOfCasltingPerm > 4) { return -1; }
+  if (lengthOfCastlingPerm > 4) { return -1; }
 
   // We only take characters 'K' = 75, 'Q' = 81, 'k' = 107 and 'q' = 113
   // The shift amounts are:  'K' -> 3, 'Q' -> 2, 'k' -> 1 and 'q' -> 0
@@ -20,7 +20,7 @@ static int getCastlingPermFromFenString(const char *castlingPerm) {
   // f('K') = 6, f('Q') = 5, f('k') = 1, f('q') = 0
   // This justifies the weird shape of shiftAmounts
   int shiftAmounts[7] = {0, 1, 0, 0, 0, 2, 3};
-  for (size_t index = 0; index < lengthOfCasltingPerm; index++) {
+  for (size_t index = 0; index < lengthOfCastlingPerm; index++) {
     int hashedCharacter = (113 - castlingPerm[index]) / 6;
     result |= (1 << shiftAmounts[hashedCharacter]);
   }

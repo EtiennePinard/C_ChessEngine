@@ -3,12 +3,13 @@
 
 #include <stdbool.h>
 
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
+#include "../utils/Constants.h"
 #include "../state/Piece.h"
 
 typedef int GamePhase;
 #define MIDGAME ((GamePhase) 0)
-#define ENGGAME ((GamePhase) 1)
+#define ENDGAME ((GamePhase) 1)
 #define NB_PHASE ((GamePhase) 2)
 
 // This packs the midgame and endgame into one integer

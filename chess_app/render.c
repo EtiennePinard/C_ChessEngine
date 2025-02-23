@@ -10,7 +10,8 @@
 
 #include "../src/engine/MoveGenerator.h"
 #include "../src/state/Piece.h"
-
+#include "../src/utils/Types.h"
+#include "../src/utils/Math.h"
 
 static void formatTime(u32 milliseconds, char *output, size_t outputSize) {
     if (!output || outputSize < 6) {

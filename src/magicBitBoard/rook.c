@@ -1,5 +1,7 @@
 #include "Rook.h"
 
+#include "../utils/Math.h"
+
 int minShiftRook[BOARD_SIZE] = {
   12, 11, 11, 11, 11, 11, 11, 12,
   11, 10, 10, 10, 10, 10, 10, 11,
@@ -88,12 +90,12 @@ static inline u64 generateBlockingBitBoardFromIndex(int index, int nbValidSquare
     return result;
 }
 
-void fillRookBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalmoves) {
+void fillRookBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalMoves) {
     int nbValidSquareForRook = minShiftRook[position];
     u64 movementMask = rookMovementMaskFromPosition(position);
     int nbBlockingBitBoard = 1 << nbValidSquareForRook;
     for (int i = 0; i < nbBlockingBitBoard; i++) {
         blockingBitBoards[i] = generateBlockingBitBoardFromIndex(i, nbValidSquareForRook, movementMask);
-        blockingBitBoardToPseudoLegalmoves[i] = rookPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);;
+        blockingBitBoardToPseudoLegalMoves[i] = rookPseudoLegalMovesBitBoardFromBlockingBitBoard(position, blockingBitBoards[i]);;
     }
 }

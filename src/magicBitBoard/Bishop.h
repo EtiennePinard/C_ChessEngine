@@ -1,7 +1,10 @@
 #ifndef BFF9D0FF_89E9_404D_BAB7_475DDDC1578B
 #define BFF9D0FF_89E9_404D_BAB7_475DDDC1578B
 
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
+#include "../utils/Constants.h"
+
+extern int minShiftBishop[BOARD_SIZE];
 
 /**
  * Returns a bitboard which contains the bishop valid moves if the board was empty.
@@ -10,8 +13,6 @@
 */
 u64 bishopMovementMaskFromPosition(int position);
 
-void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalmoves);
-
-extern int minShiftBishop[BOARD_SIZE];
+void fillBishopBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalMoves);
 
 #endif /* BFF9D0FF_89E9_404D_BAB7_475DDDC1578B */

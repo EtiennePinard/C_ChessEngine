@@ -1,14 +1,10 @@
 // This file is heavily inspired by this file from Sebastian Lague
 // https://github.com/SebLague/Chess-Coding-Adventure/blob/Chess-V2-UCI/Chess-Coding-Adventure/src/Core/Move%20Generation/MoveGenerator.cs
-#include <math.h>
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
+#include <string.h>
 #include "MoveGenerator.h"
 #include "../magicBitBoard/MagicBitBoard.h"
+#include "../utils/Math.h"
 
 // NOTE: All of these global variables are there so that we don't have to pass around so many variables to functions
 

@@ -4,7 +4,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include "AppState.h"
-#include "../src/utils/Utils.h"
 #include "../src/state/Piece.h"
 #include "../src/state/GameState.h"
 

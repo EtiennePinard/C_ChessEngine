@@ -1,7 +1,7 @@
 #ifndef A267B67F_4ECE_456A_A4EB_C6E73ACF11E0
 #define A267B67F_4ECE_456A_A4EB_C6E73ACF11E0
 
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
 
 /**
 * @brief The structure is copied from Sebastian Lague chess program

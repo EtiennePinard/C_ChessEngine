@@ -8,6 +8,7 @@
 #include "../src/engine/ChessGameEmulator.h"
 #include "../src/chessBot/ChessBot.h"
 #include "../src/chessBot/RepetitionTable.h"
+#include "../src/utils/Math.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
 inline static int squareFromxy(int x, int y, bool flip) {

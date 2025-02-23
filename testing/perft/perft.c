@@ -10,6 +10,7 @@
 #include "../../src/magicBitBoard/MagicBitBoard.h"
 #include "../../src/state/ZobristKey.h"
 #include "../../src/utils/CharBuffer.h"
+#include "../../src/utils/Constants.h"
 
 #include "PerftTranspositionTable.h"
 #include "../LogChessStructs.h"

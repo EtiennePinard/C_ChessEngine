@@ -1,7 +1,8 @@
 #ifndef DCBCA724_033D_43CB_B729_61FB3A609CD3
 #define DCBCA724_033D_43CB_B729_61FB3A609CD3
 
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
+#include "../utils/Constants.h"
 
 extern int minShiftRook[BOARD_SIZE];
 
@@ -12,6 +13,6 @@ extern int minShiftRook[BOARD_SIZE];
 */
 u64 rookMovementMaskFromPosition(int position);
 
-void fillRookBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalmoves);
+void fillRookBlockingBitBoardAndPseudoLegalMoveArray(int position, u64* blockingBitBoards, u64* blockingBitBoardToPseudoLegalMoves);
 
 #endif /* DCBCA724_033D_43CB_B729_61FB3A609CD3 */

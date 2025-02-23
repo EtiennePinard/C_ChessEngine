@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "../src/utils/Utils.h"
+#include "../src/utils/Types.h"
 #include "../src/chessBot/ChessBot.h"
 #include "../src/chessBot/PieceSquareTable.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"

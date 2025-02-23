@@ -5,13 +5,13 @@
 #include "../state/GameState.h"
 
 // Move from square 0 to square 0 with NOFLAG
-#define BOT_ERROR ((Move) 0)
+#define BOT_ERROR NULL_MOVE
 
 /**
 * @brief Time control for a chess game in milliseconds. 
 * With this time control, the longest game possible will be 2^32 milliseconds, which is
 * 49 days 17 hours 2 minutes and 47.3 seconds.
-* This should be plently of time to play a pretty long game.
+* This should be plenty of time to play a pretty long game.
 */
 typedef u32 TimeControl_MS;
 
@@ -31,7 +31,7 @@ Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingT
 
 /**
  * @brief Returns a score that was calculated by statically analyzing the position.
- * Static analysis means only looking at information curently available, not considering 
+ * Static analysis means only looking at information currently available, not considering 
  * potential good moves in the score.
 */
 int Bot_staticEvaluation();

@@ -1,7 +1,7 @@
 #ifndef C61A945A_18DA_4DBE_85F9_7784EBEDF6AE
 #define C61A945A_18DA_4DBE_85F9_7784EBEDF6AE
 
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
 
 /**
  * @brief A piece is an unsigned 8 bit integer that contains the color and the type of the piece.

@@ -1,5 +1,6 @@
 #include "PieceSquareTable.h"
 #include "../state/Piece.h"
+#include "../utils/Math.h"
 
 // The piece square is gotten from https://github.com/official-stockfish/Stockfish/blob/sf_14/src/psqt.cpp
 const int _pieceSquareTableIntermediate[][BOARD_LENGTH][BOARD_LENGTH / 2] = {
@@ -97,7 +98,7 @@ bool PieceSquareTable_init() {
     // Piece order influenced
     for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
-      int score = S(pieceValue[MIDGAME][type - 1], pieceValue[ENGGAME][type - 1]);
+      int score = S(pieceValue[MIDGAME][type - 1], pieceValue[ENDGAME][type - 1]);
 
       int finalScore;
       for (int square = 0; square < BOARD_SIZE; square++) {
@@ -128,7 +129,7 @@ bool PieceSquareTable_init() {
         // a different to give values to squares then what Stockfish uses. I set SQ_A8 = 0
         // and SQ_H1 = 63, but Stockfish uses SQ_A1 = 0 and SQ_H8 = 63. Thus either I switch 
         // the elements in the _pieceSquareTableIntermediate array or I treat white as black
-        // and black as white when assining scores to the pieceSquareTable. Since the former 
+        // and black as white when assigning scores to the pieceSquareTable. Since the former 
         // is tedious and error prone, I just did the latter.
       }
 

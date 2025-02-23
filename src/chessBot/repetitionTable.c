@@ -7,7 +7,7 @@
     IMPORTANT! Notice that previousStates is initialized to 512.
     This means that we only support games which are 512 moves long.
     This could be like a huge flaw in the engine, since legal games
-    can theoriticaly go to 6000 moves.
+    can theoretically go to 6000 moves.
 
     However it is important to note that 6000 * 64 bit * 1kb / 1024 bit = 375kb,
     which is a bit too much memory to store on the stack for my taste.

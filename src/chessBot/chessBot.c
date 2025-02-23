@@ -12,6 +12,7 @@
 #include "../engine/MoveGenerator.h"
 #include "../engine/ChessGameEmulator.h"
 #include "../../testing/LogChessStructs.h"
+#include "../utils/Math.h"
 
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
@@ -75,7 +76,6 @@ const int reducingKingMovementBonus[] = {
 
 #define TOTAL_PHASE 24
 
-// TODO: Static evaluation does not give positive/negative inf if one side is checkmated
 int Bot_staticEvaluation() {
 
     GamePhase phase = TOTAL_PHASE;
@@ -84,7 +84,7 @@ int Bot_staticEvaluation() {
     u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;  
 
     // Checking for mate:
-    Move validMoves[256];
+    Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
     Engine_getValidMoves(validMoves, &numMoves, *currentPosition);
 
@@ -204,7 +204,7 @@ int search(int alpha, int beta, int depth) {
     int bestValue = MINUS_INFINITY;
 
     int nbOfMoves;
-    Move validMoves[256];
+    Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     Engine_getValidMoves(validMoves, &nbOfMoves, *currentPosition);
     memcpy(&posHistory[maximumDepth - depth], currentPosition, sizeof(ChessPosition));
 
@@ -230,7 +230,8 @@ int search(int alpha, int beta, int depth) {
     return bestValue;
 }
 
-Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingTime) {
+// The time control are unused for now
+Move Bot_think(__attribute__ ((unused)) TimeControl_MS whiteRemainingTime, __attribute__ ((unused)) TimeControl_MS blackRemainingTime) {
     Move bestMove = BOT_ERROR;
     int bestEval = MINUS_INFINITY;
 
@@ -243,9 +244,7 @@ Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingT
         exit(EXIT_FAILURE);
     }
 
-    
-    // Here I used 256 because it is the closest power of 2 from MAX_LEGAL_MOVES
-    Move moves[256];
+    Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
     Engine_getValidMoves(moves, &numMoves, lastPos);
     if (numMoves == 0) { // Game is done!

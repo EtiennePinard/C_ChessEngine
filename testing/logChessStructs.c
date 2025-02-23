@@ -1,4 +1,5 @@
 #include "LogChessStructs.h"
+#include "../src/utils/Constants.h"
 #include <ctype.h>
 
 void printMove(Move move) {

@@ -1,5 +1,9 @@
+#ifndef CE2C8456_546C_4843_994D_B006E3A86782
+#define CE2C8456_546C_4843_994D_B006E3A86782
+
 #include <stdbool.h>
-#include "../utils/Utils.h"
+#include "../utils/Types.h"
+#include "../utils/Constants.h"
 
 /**
  * @brief Initializes the magic bit boards 
@@ -20,3 +24,4 @@ u64 MagicBitBoard_getRookPseudoLegalMovesBitBoard(int position, u64 blockingBitB
 extern u64 bishopMovementMask[BOARD_SIZE];
 u64 MagicBitBoard_getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBitBoard);
 
+#endif /* CE2C8456_546C_4843_994D_B006E3A86782 */

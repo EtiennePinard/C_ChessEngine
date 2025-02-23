@@ -2,6 +2,7 @@
 #define LOGCHESSSTRCUTS_H
 
 #include <stdio.h>
+
 #include "../src/state/GameState.h"
 #include "../src/state/Move.h"
 #include "../src/state/Board.h"

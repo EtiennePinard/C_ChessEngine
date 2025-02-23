@@ -2,7 +2,8 @@
 #define E6F9D86C_5687_4DF1_9FEB_54DDB21FA54E
 
 #include "Piece.h"
-#include "../utils/Utils.h"
+#include "../../src/utils/Constants.h"
+#include "../utils/Types.h"
 
 typedef u64 BitBoard;
 

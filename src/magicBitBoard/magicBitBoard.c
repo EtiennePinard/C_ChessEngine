@@ -48,13 +48,13 @@ u64 MagicBitBoard_getBishopPseudoLegalMovesBitBoard(int position, u64 blockingBi
 }
 
 bool MagicBitBoard_init() {
-    if (rookPseudoLegalMovesBitBoard != NULL || bishopPseudoLegalMovesBitBoard != NULL) {
-        // Magic Bit Boards are already initialized
-        return true;
-    }
+    assert(rookPseudoLegalMovesBitBoard == NULL);
+    assert(bishopPseudoLegalMovesBitBoard == NULL);
+
     rookPseudoLegalMovesBitBoard = calloc(ROOK_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     bishopPseudoLegalMovesBitBoard = calloc(BISHOP_PSEUDO_LEGAL_MOVES_ARRAY_SIZE, sizeof(u64));
     if (rookPseudoLegalMovesBitBoard == NULL || bishopPseudoLegalMovesBitBoard == NULL) {
+        // Failed to allocate the required amount of memory
         return false;
     }
 
@@ -62,6 +62,10 @@ bool MagicBitBoard_init() {
     // Thus the max number of blocking bit board 2^12 = 1 << 12
     u64* blockingBitBoards = malloc((1 << 12) * sizeof(u64));
     u64* blockingBitBoardToPseudoLegalMove = malloc((1 << 12) * sizeof(u64));
+    if (blockingBitBoards == NULL || blockingBitBoardToPseudoLegalMove == NULL) {
+        // Failed to allocate blockingBitBoards or blockingBitBoardToPseudoLegalMove
+        return false;
+    }
 
     // Filling the rook pseudo legal moves bit board array
     for (int position = 0; position < BOARD_SIZE; position++) {
@@ -106,10 +110,12 @@ bool MagicBitBoard_init() {
 }
 
 void MagicBitBoard_terminate() {
-    if (rookPseudoLegalMovesBitBoard != NULL) {
-        free(rookPseudoLegalMovesBitBoard);
-    }
-    if (bishopPseudoLegalMovesBitBoard != NULL) {
-        free(bishopPseudoLegalMovesBitBoard);
-    }
+    assert(rookPseudoLegalMovesBitBoard != NULL);
+    assert(bishopPseudoLegalMovesBitBoard != NULL);
+
+    free(rookPseudoLegalMovesBitBoard);
+    rookPseudoLegalMovesBitBoard = NULL;
+
+    free(bishopPseudoLegalMovesBitBoard);
+    bishopPseudoLegalMovesBitBoard = NULL;
 }

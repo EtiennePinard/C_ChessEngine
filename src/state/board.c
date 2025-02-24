@@ -4,7 +4,7 @@
 
 // TODO: This should be a great place for SIMD, right?
 Piece Board_pieceAtIndex(Board board, u8 index) {
-    assert(index <= 13);
+    assert(index <= 63);
     assert(board.bitboards != NULL);
 
     Piece P = ((board.bitboards[0] >> index) & 1UL) * Piece_makePiece(WHITE, PAWN);

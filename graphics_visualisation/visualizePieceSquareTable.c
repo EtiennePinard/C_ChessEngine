@@ -9,7 +9,7 @@ and did not want to read documentation.
 #include <limits.h>
 #include <math.h>
 
-#include "../src/utils/Utils.h"
+#include "../src/utils/Math.h"
 #include "../src/chessBot/PieceSquareTable.h"
 
 #define WINDOW_WIDTH 640
@@ -188,7 +188,7 @@ void updateButtonText(char* buttonText, PieceCharacteristics color, PieceCharact
     case MIDGAME:
         memcpy(buttonText + currentIndex, "Midgame", 8);
         break;
-    case ENGGAME:
+    case ENDGAME:
         memcpy(buttonText + currentIndex, "Endgame", 8);
         break;
     default:
@@ -246,13 +246,13 @@ int main() {
         .text = buttonText};
 
 
-    pieceSquareTableInitialize();
+    PieceSquareTable_init();
 
     PieceCharacteristics currentPieceType = PAWN;
     PieceCharacteristics currentPieceColor = WHITE;
     GamePhase currentPhase = MIDGAME;
 
-    sendPieceSquareTableForDrawing(renderer, font, makePiece(currentPieceColor, currentPieceType), currentPhase);
+    sendPieceSquareTableForDrawing(renderer, font, Piece_makePiece(currentPieceColor, currentPieceType), currentPhase);
     drawButton(renderer, font, button);
     SDL_RenderPresent(renderer);
     
@@ -274,7 +274,7 @@ int main() {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
 
-        sendPieceSquareTableForDrawing(renderer, font, makePiece(currentPieceColor, currentPieceType), currentPhase);
+        sendPieceSquareTableForDrawing(renderer, font, Piece_makePiece(currentPieceColor, currentPieceType), currentPhase);
         updateButtonText(buttonText, currentPieceColor, currentPieceType, currentPhase);
         drawButton(renderer, font, button);
         SDL_RenderPresent(renderer);

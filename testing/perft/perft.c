@@ -272,109 +272,101 @@ void test() {
   #endif
 }
 
+void usage(char* programName) {
+  printf("Usage: ./%s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
+  printf("\tIf `mode` is not provided it will default to divide mode\n");
+  printf("\tIf `position` is not provided it will default to the starting position\n");
+  printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
+  printf("\t`depth` needs to be provided for the modes it applies to\n");
+}
+
 // To compile and run the program: ./perft
 // To check for memory leaks: valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./perftTesting <args>
 int main(int argc, char* argv[]) {
-  if (argc == 1) {
-    printf("Usage: ./%s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", argv[0]);
-    printf("\tIf `mode` is not provided it will default to divide mode\n");
-    printf("\tIf `position` is not provided it will default to the starting position\n");
-    printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
-    printf("\t`depth` needs to be provided for the modes it applies to\n");
-    exit(EXIT_FAILURE);
-  }
-
-  char* fenString = INITIAL_FEN;
-  maximumDepth = -1;
-
-  { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
-    char* firstArg = argv[1];
-    if (string_compareStrings(firstArg, "test")) {
-      test();
-      return 0;
-    }
-    if (string_compareStrings(firstArg, "divide")) {
-      divide = true;
-    } else if (!string_compareStrings(firstArg, "time")) {
-      // No mode parameter is provided, so the mode is divide and the first argument is either a fen string of a depth
-      divide = true;
-      maximumDepth = string_parseNumber(firstArg);
-      if (maximumDepth == -1) {
-        // The first argument is probably a fen string
-        fenString = firstArg;
-      }
-    }
-  }
-
-  if (argc >= 3) {
-    char* secondArg = argv[2];
-    maximumDepth = string_parseNumber(secondArg);
-    if (maximumDepth == -1) {
-      // The second argument is probably a fen string
-      fenString = secondArg;
-    }
-  }
-
-  if (argc >= 4) {
-    char* thirdArgument = argv[3];
-    maximumDepth = string_parseNumber(thirdArgument);
-    // This argument needs to be the depth
-    if (maximumDepth == -1) {
-      printf("The argument %s is not a valid perft number\n", thirdArgument);
+    if (argc == 1) {
+      usage(argv[0]);
       exit(EXIT_FAILURE);
     }
-  }
 
-  if (maximumDepth < 0) {
-    printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
-    exit(EXIT_FAILURE);
-  }
+    char* fenString = INITIAL_FEN;
+    maximumDepth = -1;
 
-  MagicBitBoard_init();
-  ZobristKey_init();
-  PerftTranspositionTable_init();
-
-  #ifdef DEBUG
-  loggingFile = fopen("../log.txt", "w");
-  #endif
-
-  if (!FenString_setChessPositionFromFenString(fenString, &currentPosition)) { 
-    printf("ERROR while setup of chess game state\n Exiting\n");
-    exit(EXIT_FAILURE);
-  }
-
-  u64 perftResult;
-
-  if (divide) {
-    printBoard(currentPosition.board);
-    perftResult = perft(maximumDepth);
-    printf("Perft depth %d returned a total number of moves of %lu and had %lu hash hits\n", maximumDepth, perftResult, hashHits);
-  } else {
-    ChessPosition startingState = currentPosition;
-
-    double averageExecutionTime = 0;
-    clock_t begin, end;
-    for (int iterations = 0; iterations < TEST_ITERATION; iterations++) {
-      hashHits = 0;
-      begin = clock();
-      perftResult = perft(maximumDepth);
-      end = clock();
-      
-      double timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
-      averageExecutionTime += timeSpent;
-      
-      memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
-
-      printf("ITERATION #%d, Time: %fs, Perft: %lu, HashHits: %lu\n", iterations, timeSpent, perftResult, hashHits);
+    { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
+      char* firstArg = argv[1];
+      if (string_compareStrings(firstArg, "test")) {
+        test();
+        return 0;
+      }
+      if (string_compareStrings(firstArg, "divide")) {
+        divide = true;
+      } else if (!string_compareStrings(firstArg, "time")) {
+        // No mode parameter is provided, so the mode is divide and the first argument is either a fen string of a depth
+        divide = true;
+        maximumDepth = string_parseNumber(firstArg);
+        if (maximumDepth == -1) {
+          // The first argument is probably a fen string
+          fenString = firstArg;
+        }
+      }
     }
-    averageExecutionTime /= TEST_ITERATION;
-    printf("Perft depth %d took on average %fms (%fs)\n", maximumDepth, averageExecutionTime * 1000, averageExecutionTime);
-  }
 
-  MagicBitBoard_terminate();
-  PerftTranspositionTable_terminate();
-  #ifdef DEBUG
-  fclose(loggingFile);
-  #endif
-  return 0;
+    if (argc >= 3) {
+      char* secondArg = argv[2];
+      maximumDepth = string_parseNumber(secondArg);
+      if (maximumDepth == -1) {
+        // The second argument is probably a fen string
+        fenString = secondArg;
+      }
+    }
+
+    if (argc >= 4) {
+      char* thirdArgument = argv[3];
+      maximumDepth = string_parseNumber(thirdArgument);
+      // This argument needs to be the depth
+      if (maximumDepth == -1) {
+        printf("The argument %s is not a valid perft number\n", thirdArgument);
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    if (maximumDepth < 0) {
+      printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
+      exit(EXIT_FAILURE);
+    }
+
+    MagicBitBoard_init();
+    ZobristKey_init();
+    PerftTranspositionTable_init();
+
+    #ifdef DEBUG
+    loggingFile = fopen("../log.txt", "w");
+    #endif
+
+    if (!FenString_setChessPositionFromFenString(fenString, &currentPosition)) { 
+      printf("ERROR while setup of chess game state\n Exiting\n");
+      exit(EXIT_FAILURE);
+    }
+
+    printBoard_stockfish(currentPosition.board);
+
+    u64 perftResult;
+    clock_t begin, end;
+
+    hashHits = 0;
+    begin = clock();
+    perftResult = perft(maximumDepth);
+    end = clock();
+        
+    double timeSpent_ms = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
+    
+    printf("Perft depth %d returned a total number of moves of %lu, had %lu hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
+
+    MagicBitBoard_terminate();
+    PerftTranspositionTable_terminate();
+
+    #ifdef DEBUG
+    fclose(loggingFile);
+    #endif
+    
+    return 0;
 }

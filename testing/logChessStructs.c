@@ -101,6 +101,33 @@ char pieceToFenChar(Piece piece) {
   return result;
 }
 
+#define LINE_SEPARATOR "+---+---+---+---+---+---+---+---+"
+#define COLUMN_SEPARATOR "|"
+#define BOARD_PREFIX " "
+
+void printBoard_stockfish(Board board) {
+    printf(BOARD_PREFIX LINE_SEPARATOR "\n" BOARD_PREFIX);
+
+    for (int index = 0; index < BOARD_SIZE; index++) {
+
+        
+        printf(COLUMN_SEPARATOR " ");
+        
+        Piece pieceAtPosition = Board_pieceAtIndex(board, index);
+        printf("%c ", pieceToFenChar(pieceAtPosition));
+
+        if (((index + 1) & 0b111) == 0) {
+            printf(COLUMN_SEPARATOR " %d\n", 8 - (index >> 3));
+            printf(BOARD_PREFIX LINE_SEPARATOR "\n" BOARD_PREFIX);
+        }
+    }
+
+    for (int i = 0; i < BOARD_LENGTH; i++) {
+        printf(BOARD_PREFIX BOARD_PREFIX "%c" BOARD_PREFIX, 'a' + i);
+    }
+    printf("\n");
+}
+
 void printBoard(Board board) {
   for (int index = 0; index < BOARD_SIZE; index++) {
 

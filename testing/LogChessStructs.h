@@ -13,6 +13,8 @@ void printMoveToAlgebraic(Move move);
 
 void printBoard(Board board);
 
+void printBoard_stockfish(Board board);
+
 void writeMoveToFile(Move move, FILE *file);
 
 void writeMoveToAlgebraicToFile(Move move, FILE *file);

@@ -5,21 +5,35 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+
+// #define DEBUG
+
 #include "ChessBot.h"
 #include "PieceSquareTable.h"
 #include "RepetitionTable.h"
+#include "TranspositionTable.h"
+
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "../engine/MoveGenerator.h"
 #include "../engine/ChessGameEmulator.h"
 #include "../../testing/LogChessStructs.h"
 #include "../utils/Math.h"
 
+
+#ifdef DEBUG
+    FILE* loggingFile = NULL;
+#endif
+
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
 
 static ChessPosition* currentPosition;
 
+bool useTranspositionTable = true;
+
 void Bot_provideGameStateForBot(ChessPosition* state) {
+    assert(state != NULL);
+
     currentPosition = state;
 }
 
@@ -168,7 +182,7 @@ int Bot_staticEvaluation() {
                     score += reducingKingMovementBonus[type - 3] * numBitSet_64(attack & kingAttacks) * view;
                     break;
                 default:
-                    // Pawn mobilty is not considered
+                    // Pawn mobility is not considered
                     break;
                 }
 
@@ -189,19 +203,46 @@ int Bot_staticEvaluation() {
 
 // Max depth is 10 for now
 ChessPosition posHistory[10];
-int maximumDepth;
+int maximumDepth = 4;
+Move currentBestMove = NULL_MOVE;
 
 // A negamax search with alpha-beta pruning
 // TODO: This is slow!
 // Move ordering will be important to implement to speed it up
 // TODO: Implement transposition table
+
+// Note: Using the fail-hard alpha-beta algo because it is easier to do with transposition table
 int search(int alpha, int beta, int depth) {
+    int score;
+
+    EntryType ttEntryType = UPPER_BOUND;
+
+    if (useTranspositionTable) {
+        if ((score = TranspositionTable_getEvaluationFromKey(
+            currentPosition->key, depth, alpha, beta)) != LOOKUP_FAILED) {
+                currentBestMove = TranspositionTable_getMoveFromKey(currentPosition->key);
+
+                #ifdef DEBUG
+                    for (int tab = 0; tab < maximumDepth - depth; tab++) {
+                        fprintf(loggingFile, "\t");
+                    }
+                    fprintf(loggingFile, "TT table with score: %d\n", score);
+                #endif
+
+                return score;
+        }
+    }
+
     if (depth == 0) {
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
         int whoToMove = currentPosition->colorToGo == WHITE ? 1 : -1; 
-        return Bot_staticEvaluation() * whoToMove; 
+        score = Bot_staticEvaluation() * whoToMove; 
+    
+        TranspositionTable_recordEntry(currentPosition->key, maximumDepth, EXACT, 
+            currentBestMove, score);
+
+        return score;
     } // eventually do return quiesce(alpha, beta);
-    int bestValue = MINUS_INFINITY;
 
     int nbOfMoves;
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
@@ -211,38 +252,72 @@ int search(int alpha, int beta, int depth) {
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
         Engine_playMove(move, currentPosition, true);
+
+        #ifdef DEBUG
+            for (int tab = 0; tab < maximumDepth - depth; tab++) {
+            fprintf(loggingFile, "\t");
+            }
+            fprintf(loggingFile, "Made move ");
+            writeMoveToAlgebraicToFile(move, loggingFile);
+            fprintf(loggingFile, "\n");
+        #endif
+
         // We switch alpha and beta, because alpha is the lower bound for the color to go 
         // but it is the upper bound for the other color. Opposite is true for beta
         // thus we switch them so that it works for the opponent
-        int score = -search(-beta, -alpha, depth - 1);
+        score = -search(-beta, -alpha, depth - 1);
         memcpy(currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
         
-        if (score > bestValue) {
-            bestValue = score;
-            if (score > alpha ) {
-                alpha = score; // alpha acts like max in MiniMax
+        #ifdef DEBUG
+            for (int tab = 0; tab < maximumDepth - depth; tab++) {
+            fprintf(loggingFile, "\t");
             }
+            fprintf(loggingFile, "Unmade move ");
+            writeMoveToAlgebraicToFile(move, loggingFile);
+            fprintf(loggingFile, ", score: %d, alpha: %d, beta: %d, bestValue: %d\n", score, alpha, beta, score);
+        #endif
+        
+        // fail hard beta-cutoff
+        if (score >= beta) { 
+            TranspositionTable_recordEntry(currentPosition->key, maximumDepth, LOWER_BOUND, 
+                currentBestMove, score);
+            return score; 
+        }  
+
+        if (score > alpha) {
+            ttEntryType = EXACT;
+            alpha = score; // alpha acts like max in MiniMax
         }
         
-        // fail soft beta-cutoff, existing the loop here is also 
-        if (score >= beta) { return bestValue; }  
     }
-    return bestValue;
+
+    TranspositionTable_recordEntry(currentPosition->key, maximumDepth, ttEntryType, 
+        currentBestMove, score);
+
+    return score;
 }
 
 // The time control are unused for now
 Move Bot_think(__attribute__ ((unused)) TimeControl_MS whiteRemainingTime, __attribute__ ((unused)) TimeControl_MS blackRemainingTime) {
-    Move bestMove = BOT_ERROR;
+    
+    currentBestMove = BOT_ERROR;
     int bestEval = MINUS_INFINITY;
-
+    
     ChessPosition lastPos;
     memcpy(&lastPos, currentPosition, sizeof(ChessPosition));
 
-    maximumDepth = 2;
     if (maximumDepth >= 10) {
-        printf("ERROR: Maximum is bigger than 10 in chessbot.c!\n");
+        printf("ERROR: Maximum depth is bigger than 10 in chessbot.c!\n");
         exit(EXIT_FAILURE);
     }
+
+    #ifdef DEBUG
+        loggingFile = fopen("../search_log.txt", "w");
+        
+        fprintf(loggingFile, "Search settings: useTranspositionTable = %s, depth = %d\n\n", useTranspositionTable ? "true" : "false", maximumDepth);
+        
+        totalHashHits = 0;
+    #endif
 
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
@@ -250,21 +325,57 @@ Move Bot_think(__attribute__ ((unused)) TimeControl_MS whiteRemainingTime, __att
     if (numMoves == 0) { // Game is done!
         return BOT_ERROR; 
     }
-    bestMove = moves[0]; // So that it always return a valid move if all moves have the same evaluation
+    currentBestMove = moves[0]; // So that it always return a valid move if all moves have the same evaluation
 
     RepetitionTable_setCurrentIndexAsRootPosition();
     for (int i = 0; i < numMoves; i++) {
         Move move = moves[i];
         Engine_playMove(move, currentPosition, true);
 
+        #ifdef DEBUG 
+            fprintf(loggingFile, "Checking out move: ");
+            writeMoveToAlgebraicToFile(move, loggingFile);
+            fprintf(loggingFile, "\n----------------------------------------------------------------------------------------------------------\n");
+        #endif
+
         int score = -search(MINUS_INFINITY, INFINITY, maximumDepth);
+
+        #ifdef DEBUG 
+            fprintf(loggingFile, "\nFinal score for ");
+            writeMoveToAlgebraicToFile(move, loggingFile);
+            fprintf(loggingFile, " is %d", score);
+        #endif
+
         if (score > bestEval) {
+
+            #ifdef DEBUG
+                fprintf(loggingFile, " > %d (bestEval)\n", bestEval);
+            #endif
+
             bestEval = score;
-            bestMove = move;
+            currentBestMove = move;
+        } else {
+            #ifdef DEBUG
+                fprintf(loggingFile, " <= %d (bestEval)\n", bestEval);
+            #endif
         }
+        #ifdef DEBUG 
+            fprintf(loggingFile, "======================================================================================================\n");
+        #endif
 
         memcpy(currentPosition, &lastPos, sizeof(ChessPosition));
     }
     RepetitionTable_returnToRootPosition();
-    return bestMove; 
+
+    #ifdef DEBUG
+        fprintf(loggingFile, "\nWe are choosing the move ");
+        writeMoveToAlgebraicToFile(currentBestMove, loggingFile);
+        fprintf(loggingFile, " with score %d\n", bestEval);
+
+        fclose(loggingFile);
+
+        printf("Total hash hits: %ld\n", totalHashHits);
+    #endif
+
+    return currentBestMove; 
 }

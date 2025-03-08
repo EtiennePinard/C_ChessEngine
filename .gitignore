@@ -10,6 +10,7 @@ main.c
 chess_position_extraction
 
 log.txt
+search_log.txt
 
 precomputedMasks/generateMagic
 precomputedMasks/generateMask

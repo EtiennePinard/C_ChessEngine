@@ -16,9 +16,12 @@
 typedef u32 TimeControl_MS;
 
 /**
- * Call this function with the ChessPosition that you want the bot to analyze
-*/
-void Bot_provideGameStateForBot(ChessPosition* game);
+ * @brief Sets the position that the bot will analyze.
+ * Call this function before any call to Bot_think or Bot_staticEvaluation.  
+ * 
+ * @param position The position that the bot will analyze
+ */
+void Bot_provideGameStateForBot(ChessPosition* position);
 
 /**
  * @brief Computes the best move in the position given in the Bot_provideGameStateForBot function
@@ -35,5 +38,10 @@ Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingT
  * potential good moves in the score.
 */
 int Bot_staticEvaluation();
+
+#ifdef DEBUG
+    extern bool useTranspositionTable;
+    extern int maximumDepth;
+#endif
 
 #endif /* A674C591_4B1F_47E1_8F49_FF09345BAD1D */

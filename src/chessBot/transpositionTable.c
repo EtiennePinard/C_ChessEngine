@@ -4,6 +4,12 @@
 
 #include "TranspositionTable.h"
 
+
+
+#ifdef DEBUG
+    u64 totalHashHits = 0;
+#endif
+
 #define TRANSPOSITION_TABLE_SIZE_IN_BYTES (TRANSPOSITION_TABLE_SIZE_IN_MB * 1024 * 1024)
 #define NB_ELEMENTS_IN_TRANSPOSITION_TABLE (TRANSPOSITION_TABLE_SIZE_IN_BYTES / sizeof(TranspositionTable))
 
@@ -46,6 +52,10 @@ int TranspositionTable_getEvaluationFromKey(ZobristKey key, int depth, int alpha
     // We are looking at a different position or at the same position with a higher depth, 
     // which makes the evaluation at a lower depth not that useful to us
     if (entry.key != key || entry.depth < depth) { return LOOKUP_FAILED; }
+
+    #ifdef DEBUG
+        totalHashHits++;
+    #endif
 
     // TODO: See if we need to correct the score for mates
     if (entry.type == EXACT) { return entry.evaluation; }

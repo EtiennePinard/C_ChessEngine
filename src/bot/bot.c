@@ -8,7 +8,7 @@
 
 // #define DEBUG
 
-#include "ChessBot.h"
+#include "Bot.h"
 #include "PieceSquareTable.h"
 #include "RepetitionTable.h"
 #include "TranspositionTable.h"

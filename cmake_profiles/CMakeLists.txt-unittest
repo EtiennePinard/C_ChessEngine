@@ -23,7 +23,8 @@ set(SOURCE_FILES
     
     src/state/zobristKey.c 
     src/state/board.c
-    src/chessBot/transpositionTable.c
+    
+    src/bot/transpositionTable.c
 )
 
 # Add executable target

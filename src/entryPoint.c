@@ -6,8 +6,8 @@
 #include "magicBitBoard/MagicBitBoard.h"
 #include "state/ZobristKey.h"
 #include "state/EngineState.h"
-#include "chessBot/PieceSquareTable.h"
-#include "chessBot/TranspositionTable.h"
+#include "bot/PieceSquareTable.h"
+#include "bot/TranspositionTable.h"
 #include "utils/FenString.h"
 
 #include "UCICommandProcessing.h"

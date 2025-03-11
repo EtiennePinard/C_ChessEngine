@@ -14,9 +14,9 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lm")
 set(SOURCE_FILES
     testing/examineBot.c
     testing/logChessStructs.c
-    src/chessBot/chessBot.c
-    src/chessBot/pieceSquareTable.c
-    src/chessBot/repetitionTable.c
+    src/bot/bot.c
+    src/bot/pieceSquareTable.c
+    src/bot/repetitionTable.c
     src/engine/chessGameEmulator.c
     src/engine/moveGenerator.c
     src/utils/fenString.c

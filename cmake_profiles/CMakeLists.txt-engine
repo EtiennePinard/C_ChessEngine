@@ -10,10 +10,10 @@ set(SOURCE_FILES
 src/entryPoint.c
 src/UCICommandProcessing.c
 
-src/chessBot/chessBot.c
-src/chessBot/pieceSquareTable.c
-src/chessBot/transpositionTable.c
-src/chessBot/repetitionTable.c
+src/bot/bot.c
+src/bot/pieceSquareTable.c
+src/bot/transpositionTable.c
+src/bot/repetitionTable.c
 
 src/engine/chessGameEmulator.c
 src/engine/moveGenerator.c

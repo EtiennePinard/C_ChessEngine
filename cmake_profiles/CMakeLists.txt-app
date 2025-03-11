@@ -12,17 +12,24 @@ project(${PROJECT} VERSION 1.0.0 LANGUAGES C)
 set(SOURCE_FILES
     src/engine/chessGameEmulator.c
     src/engine/moveGenerator.c
+    
     src/utils/fenString.c
     src/utils/charBuffer.c
+   
     src/state/board.c
     src/state/zobristKey.c
+
     src/magicBitBoard/magicBitBoard.c
     src/magicBitBoard/rook.c
     src/magicBitBoard/bishop.c
-    src/chessBot/chessBot.c
-    src/chessBot/pieceSquareTable.c
-    src/chessBot/repetitionTable.c
+
+    src/bot/bot.c
+    src/bot/pieceSquareTable.c
+    src/bot/repetitionTable.c
+    src/bot/transpositionTable.c
+    
     testing/logChessStructs.c
+    
     chess_app/app.c 
     chess_app/appInit.c 
     chess_app/eventHandler.c

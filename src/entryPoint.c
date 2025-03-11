@@ -3,31 +3,32 @@
 #include <string.h>
 #include <assert.h>
 
-#include "UCICommandProcessing.h"
 #include "magicBitBoard/MagicBitBoard.h"
 #include "state/ZobristKey.h"
+#include "state/EngineState.h"
 #include "chessBot/PieceSquareTable.h"
 #include "chessBot/TranspositionTable.h"
+#include "utils/FenString.h"
 
-#define VERSION ("1.0")
-#define AUTHOR ("Etienne Pinard")
+#include "UCICommandProcessing.h"
 
 static void initEngine() {
     if (!MagicBitBoard_init() ||
         !ZobristKey_init() ||
         !PieceSquareTable_init() ||
-        !TTable_init() ||
-        !Game_setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0)) {
-        printf("Failed to initialize the engine properly, terminating the program...\n");
+        !TranspositionTable_init() ||
+        !FenString_setChessPositionFromFenString(INITIAL_FEN, &ourCurrentPosition)) {
+        
+        sendResponse("Failed to initialize the engine properly, terminating the program...\n");
         exit(EXIT_FAILURE);
     }
 
-    printf("Engine version %s by %s is initialized and ready to go!\n", VERSION, AUTHOR);
+    sendResponse("%s version %s by %s is initialized and ready to go!\n", ENGINE_NAME, VERSION, AUTHOR);
 }
 
 static void terminateEngine() {
     MagicBitBoard_terminate();
-    TTable_terminate();
+    TranspositionTable_terminate();
 }
 
 #define STARTING_BUFFER_SIZE (128)
@@ -35,19 +36,17 @@ static void terminateEngine() {
 /**
  * @brief Reads a line of arbitrary length from stdin
  * 
- * @return char* A heap allocated char containing the line. It is the caller responsability to free this memory.
+ * @return char* A heap allocated char containing the line. It is the caller responsibility to free this memory.
  */
-static char *readArbitraryLongLineFromStdin() {
-    char *buffer = calloc(STARTING_BUFFER_SIZE, sizeof(char));
+static char *readArbitraryLongLineFromStdin(char *buffer, int capacity) {
     assert(buffer != NULL && "Buffer is null, Buy more RAM LOL");
     int numByteRead = 0;
-    int capacity = STARTING_BUFFER_SIZE;
 
     while (true) {
         int byteRead = fgetc(stdin);
         if (byteRead == '\n' || byteRead == EOF) { break; }
-        buffer[numByteRead] = (char) byteRead;        
-        numByteRead++;
+
+        buffer[numByteRead++] = (char) byteRead;
 
         if (numByteRead >= capacity) {
             capacity *= 2;
@@ -60,11 +59,12 @@ static char *readArbitraryLongLineFromStdin() {
 }
 
 static void readUCICommands() {
+    char *command = calloc(STARTING_BUFFER_SIZE, sizeof(char));
     while (true) {
-        char *command = readArbitraryLongLineFromStdin();
+        command = readArbitraryLongLineFromStdin(command, STARTING_BUFFER_SIZE);
         if (!processUCICommand(command)) { break; }
-        free(command);
     }
+    free(command);
 }
 
 int main(void) {

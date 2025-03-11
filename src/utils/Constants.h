@@ -1,6 +1,10 @@
 #ifndef E8619F73_510A_4F85_B1F4_77DA454B0DE5
 #define E8619F73_510A_4F85_B1F4_77DA454B0DE5
 
+#define VERSION ("dev")
+#define ENGINE_NAME ("Proc nue")
+#define AUTHOR ("Etienne Pinard")
+
 #define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 #define BOARD_SIZE (64)

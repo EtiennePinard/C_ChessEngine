@@ -7,20 +7,34 @@
 #include "../state/Move.h"
 
 /**
- * Returns true if the friendly king (for the current turn) is in check
- * Only valid after Engine_getValidMoves is called
-*/
+ * @brief Returns true if the friendly king (for the current turn) is in check
+ * Will return a correct result only after Engine_getValidMoves is called
+ * 
+ * @return true If the king is in check
+ * @return false If the king is not in check
+ */
 bool Engine_isKingInCheck();
+
 /**
- * Returns true if the friendly king (for the current turn) is in double check
- * Only valid after Engine_getValidMoves is called
-*/
+ * @brief Returns true if the friendly king (for the current turn) is in double check
+ * Will return a correct result only after Engine_getValidMoves is called
+ * 
+ * @return true If the king is in double check
+ * @return false If the king is not in double check
+ */
 bool Engine_isKingInDoubleCheck();
 
 /**
- * Computes the valid moves in a given position and stores the moves in the result array
- * and the amount of moves in the numMoves pointer
-*/
-void Engine_getValidMoves(Move result[256], int* numMoves, ChessPosition game);
+ * @brief Computes the valid moves in a given position and stores the moves in the result array 
+ * and the amount of moves in the numMoves pointer. 
+ * 
+ * Note: The MagicBitBoard_init() and ZobristKey_init() functions needs to be invoked once
+ * before calling this function.
+ * 
+ * @param result The valid moves in the position 
+ * @param numMoves The number of valid moves in this position
+ * @param position The position to get the valid moves 
+ */
+void Engine_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position);
 
 #endif

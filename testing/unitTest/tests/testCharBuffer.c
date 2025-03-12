@@ -143,6 +143,43 @@ bool test_string_toLower() {
     return true;
 }
 
+bool test_string_removeUnecessarySpaces() {
+
+    char test1[] = "      test    case      1     ";
+    char expected1[] = "test case 1";
+    string_removeUnecessarySpaces(test1);
+
+    if (strcmp(test1, expected1) != 0) {
+        printf("ERROR: string_removeUnecessarySpaces(\"      test    case      1     \")\n");
+        printf("\tExpected: \"%s\"\n", expected1);
+        printf("\tActual: \"%s\"\n", test1);
+        return false;
+    }
+
+    char test2[] = "test_case_2";
+    char expected2[] = "test_case_2";
+    string_removeUnecessarySpaces(test2);
+
+    if (strcmp(test2, expected2) != 0) {
+        printf("ERROR: string_removeUnecessarySpaces(\"test_case_2\")\n");
+        printf("\tExpected: \"%s\"\n", expected2);
+        printf("\tActual: \"%s\"\n", test2);
+        return false;
+    }
+
+    char test3[] = "";
+    char expected3[] = "";
+    string_removeUnecessarySpaces(test3);
+
+    if (strcmp(test3, expected3) != 0) {
+        printf("ERROR: string_removeUnecessarySpaces(\"\")\n");
+        printf("\tExpected: \"%s\"\n", expected3);
+        printf("\tActual: \"%s\"\n", test3);
+        return false;
+    }
+
+    return true;
+}
 
 bool test_string_parseNumber() {
     int actual;
@@ -313,6 +350,7 @@ bool Test_CharBuffer() {
     if (!test_string_compareStrings()) return false;
     if (!test_string_nextSpaceCharacterFromIndex()) return false;
     if (!test_string_toLower()) return false;
+    if (!test_string_removeUnecessarySpaces()) return false;
     if (!test_string_parseNumber()) return false;
     if (!test_string_algebraicToIndex()) return false;
     return true;

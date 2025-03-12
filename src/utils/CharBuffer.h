@@ -33,6 +33,14 @@ size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStar
 void string_toLower(char *string);
 
 /**
+ * @brief Trims contiguous spaces, meaning a double space becomes a single space and so on. 
+ * Will also remove leading and ending spaces.
+ * 
+ * @param string The string to remove the unecessary spaces from
+ */
+void string_removeUnecessarySpaces(char *string);
+
+/**
  * @brief Parses a number from a string object.
  * The format of the number is '{digit_1}...{digit_n}', where digit is a digit
  * There is no minus sign, plus sign or white space allowed

@@ -5,6 +5,8 @@
 
 #include "CharBuffer.h"
 
+#define SPACE_CHAR (' ')
+
 bool string_compareStrings(const char *string1, const char* string2) {
     assert(string1 != NULL);
     assert(string2 != NULL);
@@ -23,7 +25,7 @@ size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStar
     if (indexToStartAt >= lengthOfString) { return lengthOfString; }
 
     size_t index;
-    for (index = indexToStartAt; string[index] != ' ' && index < lengthOfString; index++);
+    for (index = indexToStartAt; string[index] != SPACE_CHAR && index < lengthOfString; index++);
     return index;
 }
 
@@ -33,6 +35,59 @@ void string_toLower(char *string) {
     for (size_t index = 0; index < strlen(string); index++) {
         string[index] = tolower(string[index]);
     }
+}
+
+#include <stdio.h>
+
+void string_removeUnecessarySpaces(char *string) {
+  assert(string != NULL);
+  
+  size_t lengthOfString = strlen(string);
+  size_t currentIndex = 0;
+
+  for (; string[currentIndex] == SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
+
+  if (currentIndex == lengthOfString) {
+    // The string contains no spaces
+    return;
+  }
+
+  if (currentIndex != 0) {
+    // The string contains leading spaces
+    memmove(string, string + currentIndex, lengthOfString - currentIndex + 1); // The +1 is because we are about the NULL byte
+    lengthOfString -= (currentIndex - 1);
+  }
+
+  // We are now at a point where we are sure that the string does not start with a space
+  currentIndex = 0;
+  for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
+  
+  size_t nextSpaceIndex = 0;
+  
+  while (currentIndex < lengthOfString) {
+    
+    for (nextSpaceIndex = currentIndex + 1; nextSpaceIndex < lengthOfString && string[nextSpaceIndex] == SPACE_CHAR; nextSpaceIndex++);
+    
+    if (nextSpaceIndex + 1 == lengthOfString) {
+      // The string ends with spaces
+      string[currentIndex] = '\0';
+      break;
+    }
+    
+    if (nextSpaceIndex == currentIndex + 1) {
+      // There is only one space between the non space character, which is allowed
+      currentIndex++;
+      continue;
+    }
+
+    // We need to trim some spaces
+    currentIndex++;
+    memmove(string + currentIndex, string + nextSpaceIndex, lengthOfString - nextSpaceIndex + 1);
+    lengthOfString -= (nextSpaceIndex - currentIndex);
+
+    for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
+  }
+
 }
 
 int string_parseNumber(const char *num) {

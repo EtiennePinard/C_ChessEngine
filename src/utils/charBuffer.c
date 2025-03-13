@@ -128,3 +128,38 @@ int string_algebraicToIndex(const char *algebraic) {
   int rank = 8 - (algebraic[1] - '0');
   return rank * 8 + file;
 }
+
+void string_moveToLongAlgebraic(Move move, char buffer[6]) {
+  assert(buffer != NULL);
+
+  int from = Move_fromSquare(move);
+  int to = Move_toSquare(move);
+  int row1 = from / 8;
+  int col1 = from % 8;
+  buffer[0] = 'a' + col1;
+  buffer[1] = '1' + (7 - row1);
+  int row2 = to / 8;
+  int col2 = to % 8;
+  buffer[2] = 'a' + col2;
+  buffer[3] = '1' + (7 - row2);
+
+  Flag flag = Move_flag(move);
+
+  switch (flag) {
+    case PROMOTE_TO_BISHOP:
+      buffer[4] = 'b';
+      break;
+    case PROMOTE_TO_KNIGHT:
+      buffer[4] = 'n';
+      break;
+    case PROMOTE_TO_ROOK:
+      buffer[4] = 'r';
+      break; 
+    case PROMOTE_TO_QUEEN:
+      buffer[4] = 'q';
+      break; 
+    default:
+      buffer[4] = '\0';
+  }
+  buffer[5] = '\0';
+}

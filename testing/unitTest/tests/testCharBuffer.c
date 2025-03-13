@@ -1,4 +1,5 @@
 #include "../../../src/utils/CharBuffer.h"
+#include "../../../src/utils/Constants.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -345,6 +346,85 @@ bool test_string_algebraicToIndex() {
     return true;
 }
 
+bool test_string_moveToLongAlgebraic() {
+    char expected[6];
+    char actual[6];
+
+    // Test case 1: Move from e2 to e4
+    Move move1 = Move_makeMove(E2, E4, NOFLAG);
+    strcpy(expected, "e2e4");
+    string_moveToLongAlgebraic(move1, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move1) // Move is from e2 to e4\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    // Test case 2: Move from g1 to f3
+    Move move2 = Move_makeMove(G1, F3, NOFLAG);
+    strcpy(expected, "g1f3");
+    string_moveToLongAlgebraic(move2, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move2) // Move is from g1 to f3\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    // Test case 3: Pawn promotion to Queen at h8
+    Move move3 = Move_makeMove(H7, H8, PROMOTE_TO_QUEEN);
+    strcpy(expected, "h7h8q");
+    string_moveToLongAlgebraic(move3, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move3) // Move is from h7 to h8\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    // Test case 4: Pawn promotion to Knight at a8
+    Move move4 = Move_makeMove(A7, A8, PROMOTE_TO_KNIGHT);
+    strcpy(expected, "a7a8n");
+    string_moveToLongAlgebraic(move4, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move4) // Move is from a7 to a8\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    // Test case 5: Castling king-side for White
+    Move move5 = Move_makeMove(E1, G1, NOFLAG);
+    strcpy(expected, "e1g1");
+    string_moveToLongAlgebraic(move5, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move5) // Move is from e1 to eg1\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    // Test case 6: Castling queen-side for Black
+    Move move6 = Move_makeMove(E8, C8, NOFLAG);
+    strcpy(expected, "e8c8");
+    string_moveToLongAlgebraic(move6, actual);
+
+    if (strcmp(expected, actual) != 0) {
+        printf("ERROR: string_moveToLongAlgebraic(move6) // Move is from e8 to c8\n");
+        printf("\tExpected: %s\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    return true;
+}
+
 bool Test_CharBuffer() {
     if (!test_string_compareStrings()) return false;
     if (!test_string_compareStrings()) return false;
@@ -353,5 +433,6 @@ bool Test_CharBuffer() {
     if (!test_string_removeUnecessarySpaces()) return false;
     if (!test_string_parseNumber()) return false;
     if (!test_string_algebraicToIndex()) return false;
+    if (!test_string_moveToLongAlgebraic()) return false;
     return true;
 }

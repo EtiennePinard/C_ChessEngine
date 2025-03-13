@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include "../state/Move.h"
 
 /**
  * @brief Check a two character buffer for equality
@@ -81,5 +82,15 @@ int string_parseNumber(const char *string);
  * @return int The square index of the square in algebraic notation, or -1 if the square char is not well formatted
  */
 int string_algebraicToIndex(const char *algebraic);
+
+/**
+ * @brief Converts a move to its long algebraic notation. Puts the data in the buffer.
+ * Note: The buffer is assumed to have atleast 6 bytes of space.
+ * Note: This function assumes that move represents a valid move
+ * 
+ * @param move The move to convert to its long algebraic notation
+ * @param buffer The buffer to store the notation data into
+ */
+void string_moveToLongAlgebraic(Move move, char buffer[6]);
 
 #endif /* C485539C_6204_42BC_B1A9_D330E7C34EBE */

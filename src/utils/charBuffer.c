@@ -37,8 +37,6 @@ void string_toLower(char *string) {
     }
 }
 
-#include <stdio.h>
-
 void string_removeUnecessarySpaces(char *string) {
   assert(string != NULL);
   
@@ -54,7 +52,7 @@ void string_removeUnecessarySpaces(char *string) {
 
   if (currentIndex != 0) {
     // The string contains leading spaces
-    memmove(string, string + currentIndex, lengthOfString - currentIndex + 1); // The +1 is because we are about the NULL byte
+    memmove(string, string + currentIndex, lengthOfString - currentIndex + 1); // The +1 is because we want the NULL byte
     lengthOfString -= (currentIndex - 1);
   }
 
@@ -65,7 +63,6 @@ void string_removeUnecessarySpaces(char *string) {
   size_t nextSpaceIndex = 0;
   
   while (currentIndex < lengthOfString) {
-    
     for (nextSpaceIndex = currentIndex + 1; nextSpaceIndex < lengthOfString && string[nextSpaceIndex] == SPACE_CHAR; nextSpaceIndex++);
     
     if (nextSpaceIndex + 1 == lengthOfString) {
@@ -74,16 +71,13 @@ void string_removeUnecessarySpaces(char *string) {
       break;
     }
     
-    if (nextSpaceIndex == currentIndex + 1) {
-      // There is only one space between the non space character, which is allowed
-      currentIndex++;
-      continue;
-    }
-
-    // We need to trim some spaces
     currentIndex++;
-    memmove(string + currentIndex, string + nextSpaceIndex, lengthOfString - nextSpaceIndex + 1);
-    lengthOfString -= (nextSpaceIndex - currentIndex);
+
+    if (nextSpaceIndex > currentIndex + 1) {
+      // There is more than one space between the non space character, so we need to trim them
+      memmove(string + currentIndex, string + nextSpaceIndex, lengthOfString - nextSpaceIndex + 1);
+      lengthOfString -= (nextSpaceIndex - currentIndex);
+    }
 
     for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
   }

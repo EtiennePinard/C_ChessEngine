@@ -179,6 +179,17 @@ bool test_string_removeUnecessarySpaces() {
         return false;
     }
 
+    char test4[] = "position startpos\0 additional data which not be counted because they are after the length";
+    char expected4[] = "position startpos";
+    string_removeUnecessarySpaces(test4);
+
+    if (strcmp(test4, expected4) != 0) {
+        printf("ERROR: string_removeUnecessarySpaces(\"position startpos\\0 additional data which not be counted because they are after the length\")\n");
+        printf("\tExpected: \"%s\"\n", expected4);
+        printf("\tActual: \"%s\"\n", test4);
+        return false;
+    }
+
     return true;
 }
 

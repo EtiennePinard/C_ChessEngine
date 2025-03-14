@@ -106,10 +106,12 @@ static PieceCharacteristics getColorToGo(const char *fenColor) {
 }
 
 static inline size_t _getNextWord(const char *fen, size_t spaceIndex, char *splitData) {
-  size_t newSpaceIndex = string_nextSpaceCharacterFromIndex(fen, spaceIndex);
-  memcpy(splitData, fen + spaceIndex, newSpaceIndex - spaceIndex);
-  splitData[newSpaceIndex - spaceIndex] = '\0';
-  return newSpaceIndex;
+  size_t newSpaceIndex = string_nextSpaceCharacterFromIndex(fen + spaceIndex);
+  memcpy(splitData, fen + spaceIndex, newSpaceIndex);
+  splitData[newSpaceIndex] = '\0';
+  
+  // Needs to add spaceIndex because we want the absolute displacement, not the relative displacement
+  return spaceIndex + newSpaceIndex;
 }
 
 bool FenString_setChessPositionFromFenString(const char *fen, ChessPosition *position) {

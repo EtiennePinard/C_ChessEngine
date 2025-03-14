@@ -49,23 +49,25 @@ bool test_string_nextSpaceCharacterFromIndex() {
     size_t actual;
     size_t expected;
 
-    // Test case: "hello world", 0
+    char testcase[] = "hello world";
+
+    // Test case: "hello world"
     expected = 5;
-    actual = string_nextSpaceCharacterFromIndex("hello world", 0);
+    actual = string_nextSpaceCharacterFromIndex(testcase);
 
     if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\", 0)\n");
+        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\")\n");
         printf("\tExpected: %zu\n", expected);
         printf("\tActual: %zu\n", actual);
         return false;
     }
 
-    // Test case: "hello world", 6
-    expected = 11;
-    actual = string_nextSpaceCharacterFromIndex("hello world", 6);
+    // Test case: "hello world" + 6
+    expected = strlen(testcase) - 6;
+    actual = string_nextSpaceCharacterFromIndex(testcase + 6);
 
     if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\", 6)\n");
+        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\" + 6)\n");
         printf("\tExpected: %zu\n", expected);
         printf("\tActual: %zu\n", actual);
         return false;
@@ -73,10 +75,10 @@ bool test_string_nextSpaceCharacterFromIndex() {
 
     // Test case: "helloworld", 0 (no spaces)
     expected = 10;
-    actual = string_nextSpaceCharacterFromIndex("helloworld", 0);
+    actual = string_nextSpaceCharacterFromIndex("helloworld");
 
     if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"helloworld\", 0)\n");
+        printf("ERROR: string_nextSpaceCharacterFromIndex(\"helloworld\")\n");
         printf("\tExpected: %zu\n", expected);
         printf("\tActual: %zu\n", actual);
         return false;
@@ -84,21 +86,10 @@ bool test_string_nextSpaceCharacterFromIndex() {
 
     // Test case: " ", 0 (single space character)
     expected = 0;
-    actual = string_nextSpaceCharacterFromIndex(" ", 0);
+    actual = string_nextSpaceCharacterFromIndex(" ");
 
     if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\" \", 0)\n");
-        printf("\tExpected: %zu\n", expected);
-        printf("\tActual: %zu\n", actual);
-        return false;
-    }
-
-    // Test case: "hello world", 20 (out of bounds)
-    expected = 11;
-    actual = string_nextSpaceCharacterFromIndex("hello world", 20);
-
-    if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\", 20)\n");
+        printf("ERROR: string_nextSpaceCharacterFromIndex(\" \")\n");
         printf("\tExpected: %zu\n", expected);
         printf("\tActual: %zu\n", actual);
         return false;

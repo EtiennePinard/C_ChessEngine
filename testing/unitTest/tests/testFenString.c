@@ -228,6 +228,7 @@ bool Test_FenString() {
             if (testCase.setPositionReturnValue != returnValue) {
                 printf("TEST #%d failed\n", testIndex + 1);
                 printf("\tReturn value is false when it should be true\n");
+                return false;
             }
             continue;
         }
@@ -240,6 +241,7 @@ bool Test_FenString() {
             printf("\tNb moves: %d\n", position.nbMoves);
             printf("Board:\n");
             printBoard(position.board);
+            return false;
         }
     }
     return true;

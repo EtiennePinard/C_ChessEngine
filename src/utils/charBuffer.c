@@ -18,14 +18,13 @@ bool string_compareStrings(const char *string1, const char* string2) {
     return memcmp(string1, string2, length1) == 0;
 }
 
-size_t string_nextSpaceCharacterFromIndex(const char *string, size_t indexToStartAt) {
+size_t string_nextSpaceCharacterFromIndex(const char *string) {
     assert(string != NULL);
 
     size_t lengthOfString = strlen(string);
-    if (indexToStartAt >= lengthOfString) { return lengthOfString; }
 
-    size_t index;
-    for (index = indexToStartAt; string[index] != SPACE_CHAR && index < lengthOfString; index++);
+    size_t index = 0;
+    for (; string[index] != SPACE_CHAR && index < lengthOfString; index++);
     return index;
 }
 

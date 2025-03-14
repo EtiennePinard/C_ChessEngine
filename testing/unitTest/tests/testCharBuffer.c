@@ -348,12 +348,82 @@ bool test_string_algebraicToIndex() {
     return true;
 }
 
+bool test_string_longAlgebraicToMove() {
+    Move actual;
+    Move expected;
+
+    // We do not expect a flag for double pawn push
+    expected = Move_makeMove(E2, E4, NOFLAG);
+    actual = string_longAlgebraicToMove("e2e4");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"e2e4\")\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %s\n", actual);
+        return false;
+    }
+
+    expected = Move_makeMove(G1, F3, NOFLAG);
+    actual = string_longAlgebraicToMove("g1f3");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"g1f3\")\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %hu\n", actual);
+        return false;
+    }
+
+    expected = Move_makeMove(H7, H8, PROMOTE_TO_QUEEN);
+    actual = string_longAlgebraicToMove("h7h8q");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"h7h8q\")\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %hu\n", actual);
+        return false;
+    }
+
+    expected = Move_makeMove(A7, A8, PROMOTE_TO_KNIGHT);
+    actual = string_longAlgebraicToMove("a7a8n");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"a7a8n\")\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %hu\n", actual);
+        return false;
+    }
+
+    // We do not expect a flag for castling
+    expected = Move_makeMove(E1, G1, NOFLAG);
+    actual = string_longAlgebraicToMove("e1g1");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"e1g1\")1\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %hu\n", actual);
+        return false;
+    }
+
+    // We do not expect a flag for castling
+    expected = Move_makeMove(E8, C8, NOFLAG);
+    actual = string_longAlgebraicToMove("e8c8");
+
+    if (expected != actual) {
+        printf("ERROR: string_longAlgebraicToMove(\"e8c8\")\n");
+        printf("\tExpected: %hu\n", expected);
+        printf("\tActual: %hu\n", actual);
+        return false;
+    }
+
+    return true;
+}
+
 bool test_string_moveToLongAlgebraic() {
     char expected[6];
     char actual[6];
 
     // Test case 1: Move from e2 to e4
-    Move move1 = Move_makeMove(E2, E4, NOFLAG);
+    Move move1 = Move_makeMove(E2, E4, DOUBLE_PAWN_PUSH);
     strcpy(expected, "e2e4");
     string_moveToLongAlgebraic(move1, actual);
 
@@ -401,7 +471,7 @@ bool test_string_moveToLongAlgebraic() {
     }
 
     // Test case 5: Castling king-side for White
-    Move move5 = Move_makeMove(E1, G1, NOFLAG);
+    Move move5 = Move_makeMove(E1, G1, KING_SIDE_CASTLING);
     strcpy(expected, "e1g1");
     string_moveToLongAlgebraic(move5, actual);
 
@@ -413,7 +483,7 @@ bool test_string_moveToLongAlgebraic() {
     }
 
     // Test case 6: Castling queen-side for Black
-    Move move6 = Move_makeMove(E8, C8, NOFLAG);
+    Move move6 = Move_makeMove(E8, C8, QUEEN_SIDE_CASTLING);
     strcpy(expected, "e8c8");
     string_moveToLongAlgebraic(move6, actual);
 
@@ -435,6 +505,7 @@ bool Test_CharBuffer() {
     if (!test_string_removeUnecessarySpaces()) return false;
     if (!test_string_parseNumber()) return false;
     if (!test_string_algebraicToIndex()) return false;
+    if (!test_string_longAlgebraicToMove()) return false;
     if (!test_string_moveToLongAlgebraic()) return false;
     return true;
 }

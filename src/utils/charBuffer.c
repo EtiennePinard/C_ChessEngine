@@ -122,6 +122,39 @@ int string_algebraicToIndex(const char *algebraic) {
   return rank * 8 + file;
 }
 
+Move string_longAlgebraicToMove(const char* algebraic) {
+  size_t algebraicLength = strlen(algebraic);
+
+  if (algebraicLength != 4 && algebraicLength != 5) {
+    return NULL_MOVE;
+  }
+
+  int from = string_algebraicToIndex((char[]) { algebraic[0], algebraic[1], '\0' });
+  int to = string_algebraicToIndex((char[]) { algebraic[2], algebraic[3], '\0' });
+  
+  if (from == -1 || to == -1) {
+      return NULL_MOVE;
+  }
+
+  Flag flag = NOFLAG;
+  // Checking for promotion flags
+  if (algebraicLength == 5) {
+      char fenCharToPromote = algebraic[4];
+      if (fenCharToPromote == 'q') {
+          flag = PROMOTE_TO_QUEEN;
+      } else if (fenCharToPromote == 'n') {
+          flag = PROMOTE_TO_KNIGHT;
+      } else if (fenCharToPromote == 'r') {
+          flag = PROMOTE_TO_ROOK;
+      } else if (fenCharToPromote == 'b') {
+          flag = PROMOTE_TO_BISHOP;
+      } else {
+        return NULL_MOVE;
+      }
+  }
+  return Move_makeMove(from, to, flag);
+}
+
 void string_moveToLongAlgebraic(Move move, char buffer[6]) {
   assert(buffer != NULL);
 

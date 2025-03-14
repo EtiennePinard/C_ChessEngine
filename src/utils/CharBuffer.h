@@ -84,6 +84,16 @@ int string_parseNumber(const char *string);
 int string_algebraicToIndex(const char *algebraic);
 
 /**
+ * @brief Converts a string which represents a move in long algebraic notation to a move in this program representation.
+ * The long algebraic notation goes as such: <start square><end square><promotion piece, if necessary>
+ * The square are notated in algebraic notation, so e4 for example. This means that `algebraic` has a length of 4 or 5.
+ * 
+ * @param algebraic The string containing the long algebraic notated move
+ * @return Move The resulting move or NULL_MOVE if `algebraic` is invalid
+ */
+Move string_longAlgebraicToMove(const char* algebraic);
+
+/**
  * @brief Converts a move to its long algebraic notation. Puts the data in the buffer.
  * Note: The buffer is assumed to have atleast 6 bytes of space.
  * Note: This function assumes that move represents a valid move

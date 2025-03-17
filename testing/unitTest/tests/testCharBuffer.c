@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 bool test_string_compareStrings() {
     bool actual;
@@ -173,7 +174,6 @@ bool test_string_removeUnecessarySpaces() {
     actualReturnValue = string_removeUnecessarySpaces(test3);
     expectedReturnValue = 0;
     
-
     if (strcmp(test3, expected3) != 0 || actualReturnValue != expectedReturnValue) {
         printf("ERROR: string_removeUnecessarySpaces(\"\")\n");
         printf("\tExpected: \"%s\"\n", expected3);
@@ -196,6 +196,131 @@ bool test_string_removeUnecessarySpaces() {
         printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
     }
+
+    char test5[] = "                                     ";
+    char expected5[] = "";
+    actualReturnValue = string_removeUnecessarySpaces(test5);
+    expectedReturnValue = 0;
+    
+    if (strcmp(test5, expected5) != 0 || actualReturnValue != expectedReturnValue) {
+        printf("ERROR: string_removeUnecessarySpaces(\"                                     \")\n");
+        printf("\tExpected: \"%s\"\n", expected5);
+        printf("\tActual: \"%s\"\n", test5);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
+        return false;
+    }
+
+    char test6[] = "        Hello       World     1,     2,    3!    ";
+    char expected6[] = "Hello World 1, 2, 3!";
+    actualReturnValue = string_removeUnecessarySpaces(test6);
+    expectedReturnValue = 5;
+    if (strcmp(test6, expected6) != 0 || actualReturnValue != expectedReturnValue) {
+        printf("ERROR: string_removeUnecessarySpaces(\"        Hello       World     1,     2,    3!    \")\n");
+        printf("\tExpected: \"%s\"\n", expected6);
+        printf("\tActual: \"%s\"\n", test6);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
+        return false;
+    }
+
+    return true;
+}
+
+bool test_string_tokenizeStringBySpace() {
+    Tokens expected = {
+        .tokens =  (char *[]) { "Hello", "World", "1,", "2,", "3!" },
+        .length = 5
+    };
+    Tokens actual;
+    char test1[] = "        Hello       World     1,     2,    3!    ";
+    string_tokenizeStringBySpace(test1, &actual);
+
+    if (actual.length != expected.length) {
+        printf("ERROR: string_tokenizeStringBySpace(\"        Hello       World     1,     2,    3!    \", &actual)\n");
+        printf("\tExpected length: %ld\n", expected.length);
+        printf("\tActual length: %ld\n", actual.length);
+        return false;
+    }
+    for (size_t index = 0; index < actual.length; index++) {
+        if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
+            printf("ERROR: string_tokenizeStringBySpace(\"        Hello       World     1,     2,    3!    \", &actual)\n");
+            printf("\tExpected string: %s\n", expected.tokens[index]);
+            printf("\tActual string: %s\n", actual.tokens[index]);
+            return false;
+        }
+    }
+    free(actual.tokens);
+    
+    
+    expected = (Tokens) {
+        .tokens = (char *[]) { "ThisIsJustOneString" },
+        .length = 1
+    };
+    char test2[] = "    ThisIsJustOneString      ";
+    string_tokenizeStringBySpace(test2, &actual);
+    
+    if (actual.length != expected.length) {
+        printf("ERROR: string_tokenizeStringBySpace(\"    ThisIsJustOneString      \", &actual)\n");
+        printf("\tExpected length: %ld\n", expected.length);
+        printf("\tActual length: %ld\n", actual.length);
+        return false;
+    }
+    for (size_t index = 0; index < actual.length; index++) {
+        if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
+            printf("ERROR: string_tokenizeStringBySpace(\"    ThisIsJustOneString      \", &actual)\n");
+            printf("\tExpected string: %s\n", expected.tokens[index]);
+            printf("\tActual string: %s\n", actual.tokens[index]);
+            return false;
+        }
+    }
+    free(actual.tokens);
+
+    expected = (Tokens) {
+        .tokens = NULL,
+        .length = 0
+    };
+    char test3[] = "                   ";
+    string_tokenizeStringBySpace(test3, &actual);
+
+    if (actual.length != expected.length) {
+        printf("ERROR: string_tokenizeStringBySpace(\"                   \", &actual)\n");
+        printf("\tExpected length: %ld\n", expected.length);
+        printf("\tActual length: %ld\n", actual.length);
+        return false;
+    }
+    for (size_t index = 0; index < actual.length; index++) {
+        if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
+            printf("ERROR: string_tokenizeStringBySpace(\"                   \", &actual)\n");
+            printf("\tExpected string: %s\n", expected.tokens[index]);
+            printf("\tActual string: %s\n", actual.tokens[index]);
+            return false;
+        }
+    }
+    free(actual.tokens);
+
+    expected = (Tokens) {
+        .tokens = (char *[]) { "This", "test", "case", "is", "a", "long", "string", "just", "to", "test", "longer", "inputs" },
+        .length = 12
+    };
+    char test4[] = "This test case is a long string just to test longer inputs";
+    string_tokenizeStringBySpace(test4, &actual);
+
+    if (actual.length != expected.length) {
+        printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
+        printf("\tExpected length: %ld\n", expected.length);
+        printf("\tActual length: %ld\n", actual.length);
+        return false;
+    }
+    for (size_t index = 0; index < actual.length; index++) {
+        if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
+            printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
+            printf("\tExpected string: %s\n", expected.tokens[index]);
+            printf("\tActual string: %s\n", actual.tokens[index]);
+            return false;
+        }
+    }
+    free(actual.tokens);
 
     return true;
 }
@@ -519,6 +644,7 @@ bool Test_CharBuffer() {
     if (!test_string_nextSpaceCharacterFromIndex()) return false;
     if (!test_string_toLower()) return false;
     if (!test_string_removeUnecessarySpaces()) return false;
+    if (!test_string_tokenizeStringBySpace()) return false;
     if (!test_string_parseNumber()) return false;
     if (!test_string_algebraicToIndex()) return false;
     if (!test_string_longAlgebraicToMove()) return false;

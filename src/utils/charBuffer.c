@@ -41,15 +41,16 @@ size_t string_removeUnecessarySpaces(char *string) {
   
   size_t lengthOfString = strlen(string);
   size_t currentIndex = 0;
-  // There is always one token, except if the string is empty
-  // The empty string case is handled at the first if statement
+  // There is always one token, except if the string is empty or only has spaces
+  // The empty string and all spaces case is handled at the first if statement
   size_t nbToken = 1;
 
   for (; string[currentIndex] == SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
 
   if (currentIndex == lengthOfString) {
-    // The string contains no spaces
-    return lengthOfString ? nbToken : 0;
+    // The string contains all spaces or is empty 
+    string[0] = '\0';
+    return 0;
   }
 
   if (currentIndex != 0) {
@@ -84,8 +85,34 @@ size_t string_removeUnecessarySpaces(char *string) {
 
     for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
   }
-
   return nbToken;
+}
+
+void string_tokenizeStringBySpace(char *string, Tokens *result) {
+  assert(string != NULL);
+
+  size_t nbTokens = string_removeUnecessarySpaces(string);
+  char **tokens = malloc(nbTokens * sizeof(char*));
+  result->length = nbTokens;
+  result->tokens = tokens;
+
+  // Replacing the space character by '\0' and appending the tokens to tokens
+  size_t currentIndex = 0;
+  size_t lastSpaceIndex = 0;
+  size_t lengthOfString = strlen(string);
+  
+  size_t tokenIndex = 0;
+
+  while (currentIndex < lengthOfString) {
+    for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
+
+    // currentIndex now points to a space character
+    string[currentIndex++] = '\0';
+
+    tokens[tokenIndex++] = string + lastSpaceIndex;
+
+    lastSpaceIndex = currentIndex;
+  }
 }
 
 int string_parseNumber(const char *num) {

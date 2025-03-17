@@ -45,6 +45,24 @@ void string_toLower(char *string);
 size_t string_removeUnecessarySpaces(char *string);
 
 /**
+ * @brief Represents a list of strings containing no space character 
+ * 
+ */
+typedef struct Tokens {
+    char **tokens;
+    size_t length;
+} Tokens;
+
+/**
+ * @brief Splits the string into tokens containing no spaces and puts the tokens into result.
+ * 
+ * @param string The string to split 
+ * @param result The token struct which the tokens will put into. Note that the 
+ * tokens array will be heap allocated and it is the caller's responsibilty to free it
+ */
+void string_tokenizeStringBySpace(char *string, Tokens *result);
+
+/**
  * @brief Parses a number from a string object.
  * The format of the number is '{digit_1}...{digit_n}', where digit is a digit
  * There is no minus sign, plus sign or white space allowed

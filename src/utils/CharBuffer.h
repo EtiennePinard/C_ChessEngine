@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include "../state/Move.h"
 
+#define SPACE_CHAR (' ')
+
 /**
  * @brief Check a two character buffer for equality
  * 
@@ -38,8 +40,9 @@ void string_toLower(char *string);
  * Will also remove leading and ending spaces.
  * 
  * @param string The string to remove the unecessary spaces from
+ * @return size_t The number of tokens containing no spaces in the string
  */
-void string_removeUnecessarySpaces(char *string);
+size_t string_removeUnecessarySpaces(char *string);
 
 /**
  * @brief Parses a number from a string object.

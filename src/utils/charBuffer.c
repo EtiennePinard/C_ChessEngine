@@ -36,17 +36,20 @@ void string_toLower(char *string) {
     }
 }
 
-void string_removeUnecessarySpaces(char *string) {
+size_t string_removeUnecessarySpaces(char *string) {
   assert(string != NULL);
   
   size_t lengthOfString = strlen(string);
   size_t currentIndex = 0;
+  // There is always one token, except if the string is empty
+  // The empty string case is handled at the first if statement
+  size_t nbToken = 1;
 
   for (; string[currentIndex] == SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
 
   if (currentIndex == lengthOfString) {
     // The string contains no spaces
-    return;
+    return lengthOfString ? nbToken : 0;
   }
 
   if (currentIndex != 0) {
@@ -71,6 +74,7 @@ void string_removeUnecessarySpaces(char *string) {
     }
     
     currentIndex++;
+    nbToken++;
 
     if (nextSpaceIndex > currentIndex + 1) {
       // There is more than one space between the non space character, so we need to trim them
@@ -81,6 +85,7 @@ void string_removeUnecessarySpaces(char *string) {
     for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);
   }
 
+  return nbToken;
 }
 
 int string_parseNumber(const char *num) {

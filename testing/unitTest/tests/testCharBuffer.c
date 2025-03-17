@@ -137,47 +137,63 @@ bool test_string_toLower() {
 
 bool test_string_removeUnecessarySpaces() {
 
+    size_t actualReturnValue;
+    size_t expectedReturnValue;
+
     char test1[] = "      test    case      1     ";
     char expected1[] = "test case 1";
-    string_removeUnecessarySpaces(test1);
+    actualReturnValue = string_removeUnecessarySpaces(test1);
+    expectedReturnValue = 3;
 
-    if (strcmp(test1, expected1) != 0) {
+    if (strcmp(test1, expected1) != 0 || actualReturnValue != expectedReturnValue) {
         printf("ERROR: string_removeUnecessarySpaces(\"      test    case      1     \")\n");
         printf("\tExpected: \"%s\"\n", expected1);
         printf("\tActual: \"%s\"\n", test1);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
     }
 
     char test2[] = "test_case_2";
     char expected2[] = "test_case_2";
-    string_removeUnecessarySpaces(test2);
+    actualReturnValue = string_removeUnecessarySpaces(test2);
+    expectedReturnValue = 1;
 
-    if (strcmp(test2, expected2) != 0) {
+    if (strcmp(test2, expected2) != 0 || actualReturnValue != expectedReturnValue) {
         printf("ERROR: string_removeUnecessarySpaces(\"test_case_2\")\n");
         printf("\tExpected: \"%s\"\n", expected2);
         printf("\tActual: \"%s\"\n", test2);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
     }
 
     char test3[] = "";
     char expected3[] = "";
-    string_removeUnecessarySpaces(test3);
+    actualReturnValue = string_removeUnecessarySpaces(test3);
+    expectedReturnValue = 0;
+    
 
-    if (strcmp(test3, expected3) != 0) {
+    if (strcmp(test3, expected3) != 0 || actualReturnValue != expectedReturnValue) {
         printf("ERROR: string_removeUnecessarySpaces(\"\")\n");
         printf("\tExpected: \"%s\"\n", expected3);
         printf("\tActual: \"%s\"\n", test3);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
     }
 
-    char test4[] = "position startpos\0 additional data which not be counted because they are after the length";
+    char test4[] = "position startpos";
     char expected4[] = "position startpos";
-    string_removeUnecessarySpaces(test4);
+    actualReturnValue = string_removeUnecessarySpaces(test4);
+    expectedReturnValue = 2;
 
-    if (strcmp(test4, expected4) != 0) {
-        printf("ERROR: string_removeUnecessarySpaces(\"position startpos\\0 additional data which not be counted because they are after the length\")\n");
+    if (strcmp(test4, expected4) != 0 || actualReturnValue != expectedReturnValue) {
+        printf("ERROR: string_removeUnecessarySpaces(\"position startpos\")\n");
         printf("\tExpected: \"%s\"\n", expected4);
         printf("\tActual: \"%s\"\n", test4);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
     }
 

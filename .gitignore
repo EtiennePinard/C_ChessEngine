@@ -20,3 +20,6 @@ precomputedMasks/precomputedMaskOutput.txt
 tbot
 
 chess_app/assets/svg
+
+# Folders with random temporary files
+ignore/

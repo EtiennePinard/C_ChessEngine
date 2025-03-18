@@ -1,7 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <assert.h>
 #include "FenString.h"
 #include "../utils/Constants.h"
 #include "../state/ZobristKey.h"
@@ -105,45 +103,42 @@ static PieceCharacteristics getColorToGo(const char *fenColor) {
   }
 }
 
-static inline size_t _getNextWord(const char *fen, size_t spaceIndex, char *splitData) {
-  size_t newSpaceIndex = string_nextSpaceCharacterFromIndex(fen + spaceIndex);
-  memcpy(splitData, fen + spaceIndex, newSpaceIndex);
-  splitData[newSpaceIndex] = '\0';
-  
-  // Needs to add spaceIndex because we want the absolute displacement, not the relative displacement
-  return spaceIndex + newSpaceIndex;
-}
-
-bool FenString_setChessPositionFromFenString(const char *fen, ChessPosition *position) {
+bool FenString_setChessPositionFromFenString(char *fen, ChessPosition *position) {
   if (position == NULL || fen == NULL) { return false; }
+  
+  Tokens tokens;
+  tokens.length = string_removeUnecessarySpaces(fen);
+  char *uniqueName[tokens.length];
+  tokens.tokens = uniqueName;
+  string_tokenizeStringBySpace(fen, &tokens);
+  
+  if (tokens.length != 6) { return false; }
 
-  char splitData[MAX_FEN_STRING_SIZE] = { 0 };
-
-  size_t spaceIndex = _getNextWord(fen, 0, splitData) + 1;
+  // Setting up the board
   Piece boardArray[BOARD_SIZE] = { 0 };
-  if (!setBoardArrayFromFenString(splitData, boardArray)) { return false; } 
+  if (!setBoardArrayFromFenString(tokens.tokens[0], boardArray)) { return false; } 
   Board board = { 0 };
   Board_fromArray(&board, boardArray);
   position->board = board;
 
-  spaceIndex = _getNextWord(fen, spaceIndex, splitData) + 1;
-  position->colorToGo = getColorToGo(splitData);
+  // Setting the color to go
+  position->colorToGo = getColorToGo(tokens.tokens[1]);
   if ((int) position->colorToGo == -1) { return false; }
 
-  spaceIndex = _getNextWord(fen, spaceIndex, splitData) + 1;
-  position->castlingPerm = getCastlingPermFromFenString(splitData);
+  // Setting the castling perm
+  position->castlingPerm = getCastlingPermFromFenString(tokens.tokens[2]);
   if (position->castlingPerm == -1){ return false; }
 
-  spaceIndex = _getNextWord(fen, spaceIndex, splitData) + 1;
-  position->enPassantTargetSquare = string_algebraicToIndex(splitData);
+  // Setting the en passant target square
+  position->enPassantTargetSquare = string_algebraicToIndex(tokens.tokens[3]);
   if (position->enPassantTargetSquare == -1) { return false; }
 
-  spaceIndex = _getNextWord(fen, spaceIndex, splitData) + 1;
-  position->turnsForFiftyRule = string_parseNumber(splitData);
+  // Setting the fifty rule turns
+  position->turnsForFiftyRule = string_parseNumber(tokens.tokens[4]);
   if (position->turnsForFiftyRule == -1) { return false; }
 
-  _getNextWord(fen, spaceIndex, splitData);
-  position->nbMoves = string_parseNumber(splitData);
+  // Setting the number of moves
+  position->nbMoves = string_parseNumber(tokens.tokens[5]);
   if (position->turnsForFiftyRule == -1) { return false; }
 
   ZobristKey_calculateInitialKey(position);

@@ -56,7 +56,7 @@ size_t string_removeUnecessarySpaces(char *string) {
   if (currentIndex != 0) {
     // The string contains leading spaces
     memmove(string, string + currentIndex, lengthOfString - currentIndex + 1); // The +1 is because we want the NULL byte
-    lengthOfString -= (currentIndex - 1);
+    lengthOfString -= currentIndex;
   }
 
   // We are now at a point where we are sure that the string does not start with a space
@@ -68,7 +68,7 @@ size_t string_removeUnecessarySpaces(char *string) {
   while (currentIndex < lengthOfString) {
     for (nextSpaceIndex = currentIndex + 1; nextSpaceIndex < lengthOfString && string[nextSpaceIndex] == SPACE_CHAR; nextSpaceIndex++);
     
-    if (nextSpaceIndex + 1 == lengthOfString) {
+    if (nextSpaceIndex == lengthOfString) {
       // The string ends with spaces
       string[currentIndex] = '\0';
       break;
@@ -91,11 +91,6 @@ size_t string_removeUnecessarySpaces(char *string) {
 void string_tokenizeStringBySpace(char *string, Tokens *result) {
   assert(string != NULL);
 
-  size_t nbTokens = string_removeUnecessarySpaces(string);
-  char **tokens = malloc(nbTokens * sizeof(char*));
-  result->length = nbTokens;
-  result->tokens = tokens;
-
   // Replacing the space character by '\0' and appending the tokens to tokens
   size_t currentIndex = 0;
   size_t lastSpaceIndex = 0;
@@ -109,7 +104,7 @@ void string_tokenizeStringBySpace(char *string, Tokens *result) {
     // currentIndex now points to a space character
     string[currentIndex++] = '\0';
 
-    tokens[tokenIndex++] = string + lastSpaceIndex;
+    result->tokens[tokenIndex++] = string + lastSpaceIndex;
 
     lastSpaceIndex = currentIndex;
   }

@@ -5,6 +5,8 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 // Starting position
 #define TEST_1 ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -222,8 +224,15 @@ bool Test_FenString() {
     ChessPosition position = { 0 };
     for (int testIndex = 0; testIndex < NB_TEST; testIndex++) {
         FenStringTestCase testCase = fenStringTests[testIndex];
-        bool returnValue = FenString_setChessPositionFromFenString(testCase.fen, &position);
-    
+
+        // We need to copy the string because string literals are read-only
+        // and we want to be able to modify the fen strings if they contain more spaces than necessary
+        size_t fenLength = strlen(testCase.fen);
+        char fenCopy[fenLength];
+        strcpy(fenCopy, testCase.fen);
+
+        bool returnValue = FenString_setChessPositionFromFenString(fenCopy, &position);
+        
         if (returnValue == false) {
             if (testCase.setPositionReturnValue != returnValue) {
                 printf("TEST #%d failed\n", testIndex + 1);

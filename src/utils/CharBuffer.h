@@ -55,10 +55,22 @@ typedef struct Tokens {
 
 /**
  * @brief Splits the string into tokens containing no spaces and puts the tokens into result.
+ * Expects that the string is a standard sentence, meaning that it is non spaced character separated by 
+ * one space. There are no space at the begining nor at the end of the string.
  * 
  * @param string The string to split 
- * @param result The token struct which the tokens will put into. Note that the 
- * tokens array will be heap allocated and it is the caller's responsibilty to free it
+ * @param result The token struct which the tokens will put into. The tokens fields expects to be allocated with
+ * enough space to store all tokens. The exact total amount of tokens expects to be stored in the length field of the struct.
+ * To do this, you can run this code:  
+ * 
+ * @code{.c}
+ *  Tokens tokens;  
+ *  size_t nbTokens = string_removeUnecessarySpaces(string);  
+ *  char *tokens_arr[nbTokens]; 
+ *  tokens->length = nbTokens;  
+ *  tokens->tokens = tokens_arr;  
+ *  string_tokenizeStringBySpace(string, &tokens);  
+ * @endcode
  */
 void string_tokenizeStringBySpace(char *string, Tokens *result);
 
@@ -79,8 +91,8 @@ int string_parseNumber(const char *string);
  * 
  * In this program the indices are flipped from the conventional of assigning indices to a chessboard, meaning that 
  * the chess board is:
- * 
- *   +----+----+----+----+----+----+----+----+ 
+ *   
+ *   +----+----+----+----+----+----+----+----+   
  *   |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 
  *   +----+----+----+----+----+----+----+----+
  *   |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 |  7

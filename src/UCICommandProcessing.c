@@ -5,19 +5,21 @@
 #include <stdlib.h>
 
 #include "UCICommandProcessing.h"
+
+#include "state/EngineState.h"
+#include "state/Move.h"
+
 #include "engine/ChessGameEmulator.h"
 #include "engine/MoveGenerator.h"
-#include "state/Move.h"
-#include "utils/Utils.h"
 
-#include "../testing/LogChessStructs.h"
+#include "bot/Bot.h"
 
-// TODO: Make this the global current chessGame we are analyzing
-// TODO: Also check if it is more performant to have a pointer or a value 
-ChessGame chessgame = (ChessGame) { 0 };
+#include "utils/Constants.h"
+#include "utils/Math.h"
+#include "utils/FenString.h"
 
 // Thank you to https://stackoverflow.com/a/1516384
-static void sendResponse(const char *format, ...) {
+void sendResponse(const char *format, ...) {
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -55,35 +57,47 @@ static char pieceToFenChar(Piece piece) {
     return result;
 }
 
-static void processDCommand() {
-  for (int index = 0; index < BOARD_SIZE; index++) {
+#define LINE_SEPARATOR "+---+---+---+---+---+---+---+---+"
+#define COLUMN_SEPARATOR "|"
+#define BOARD_PREFIX " "
 
-    if ((index % 8) == 0) {
-      printf("%d ", 8 - index / 8);
+static void processDCommand() {
+    sendResponse("\n");
+    sendResponse(BOARD_PREFIX LINE_SEPARATOR "\n" BOARD_PREFIX);
+
+    for (int index = 0; index < BOARD_SIZE; index++) {
+
+        
+        sendResponse(COLUMN_SEPARATOR " ");
+        
+        Piece pieceAtPosition = Board_pieceAtIndex(ourCurrentPosition.board, index);
+        sendResponse("%c ", pieceToFenChar(pieceAtPosition));
+
+        if (((index + 1) & 0b111) == 0) {
+            sendResponse(COLUMN_SEPARATOR " %d\n", 8 - (index >> 3));
+            sendResponse(BOARD_PREFIX LINE_SEPARATOR "\n" BOARD_PREFIX);
+        }
     }
 
-    Piece pieceAtPosition = Board_pieceAtIndex(chessgame.currentPosition.board, index);
-    printf("[%c]", pieceToFenChar(pieceAtPosition));
-    printf((index + 1) % 8 == 0 ? "\n" : " ");
-  }
-
-  printf("  ");
-  for (int i = 0; i < BOARD_LENGTH; i++) {
-    printf(" %c  ", 'a' + i);
-  }
-  printf("\n");
+    for (int i = 0; i < BOARD_LENGTH; i++) {
+        sendResponse(BOARD_PREFIX BOARD_PREFIX "%c" BOARD_PREFIX, 'a' + i);
+    }
+    sendResponse("\n");
 }
 
-static Move findMatchingMove(int startSquare, int endSquare, Flag moveFlag) {
-    Move moveToMake = (Move) 0;
+static Move findMatchingMove(
+    Move moveToMatch
+//    int startSquare, int endSquare, Flag moveFlag
+) {
+    Move moveToMake = NULL_MOVE;
     Move moves[256];
     int moveCount;
-    Engine_getValidMoves(moves, &moveCount, chessgame.currentPosition);
+    Engine_getValidMoves(moves, &moveCount, ourCurrentPosition);
     for (int index = 0; index < moveCount; index++) {
         Move move = moves[index];
-        if (Move_fromSquare(move) == startSquare && 
-            Move_toSquare(move) == endSquare && 
-            (moveFlag == NOFLAG || Move_flag(move) == moveFlag)) {
+        if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) && 
+            Move_toSquare(move) == Move_toSquare(moveToMatch) && 
+            (Move_flag(moveToMatch) == NOFLAG || Move_flag(move) == Move_flag(moveToMatch))) {
             moveToMake = move;
             break;
         }
@@ -95,120 +109,131 @@ static Move findMatchingMove(int startSquare, int endSquare, Flag moveFlag) {
 // Format: 'position startpos moves e2e4 e7e5'
 // Or: 'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5'
 // Note: 'moves' section is optional
-static void processPositionCommand(char *command, size_t firstSpaceIndex) {
-    size_t commandLength = strlen(command);
-    // Smallest valid position command is: position startpos, with 17 non-zero characters
-    // If we have a fen it is: position fen 8/8/8/8/8/8/8/8 w - - 0 1 with 38 non-zero characters 
-    if (commandLength < 17) {
-        sendResponse("ERROR: Invalid position command `%s`\n", command);
+static void processPositionCommand(Tokens *tokens) {
+
+    if (tokens->length == 1) {
+        // The command is just: position
+        // In this case we just do nothing
         return;
     }
+    
+    size_t tokenIndex = 1;
 
-    // Note: splitData is big enough to hold all notated moves
-    char splitData[STARTPOS_LENGTH] = { 0 };
-    size_t spaceIndex = string_nextSpaceCharacterFromIndex(command, firstSpaceIndex + 1); // After startpos or fen
-    memcpy(splitData, command + firstSpaceIndex + 1, min(spaceIndex - (firstSpaceIndex + 1), (size_t) STARTPOS_LENGTH));
-    string_toLower(splitData);
+    string_toLower(tokens->tokens[tokenIndex]);
 
-    if (string_compareStrings(splitData, "startpos")) {
-        if (!Game_setupChesGame(&chessgame, &chessgame.currentPosition, INITIAL_FEN, 0, 0)) {
-            sendResponse("ERROR: While initializing the starting position");
+    if (string_compareStrings(tokens->tokens[tokenIndex], "startpos")) {
+        char initFenCopy[] = INITIAL_FEN;
+        if (!FenString_setChessPositionFromFenString(initFenCopy, &ourCurrentPosition)) {
+            sendResponse("ERROR: While initializing the starting position\n");
             return;
         }
-    } else if (string_compareStrings(splitData, "fen")) {
-        if (!Game_setupChesGame(&chessgame, &chessgame.currentPosition, command + spaceIndex + 1, 0, 0)) {
-            sendResponse("ERROR: While initializing the position fen string");
+    } else if (string_compareStrings(tokens->tokens[tokenIndex], "fen")) {
+
+        if (tokens->length < 8) {
+            sendResponse("ERROR: Fen string is not long enough in the position command\n");
             return;
         }
-        // Advancing the space index after the fen string
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after fen board
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after color to go
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after castling perm
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after en passant target square
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after fifty move rule
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, spaceIndex + 1); // after moves made
+
+        tokenIndex++;
+        char *fenStringTokenize[6];
+        fenStringTokenize[0] = tokens->tokens[tokenIndex]; tokenIndex++; // fen board
+        fenStringTokenize[1] = tokens->tokens[tokenIndex]; tokenIndex++; // color to go
+        fenStringTokenize[2] = tokens->tokens[tokenIndex]; tokenIndex++; // castling perm
+        fenStringTokenize[3] = tokens->tokens[tokenIndex]; tokenIndex++; // en passant target square
+        fenStringTokenize[4] = tokens->tokens[tokenIndex]; tokenIndex++; // fifty move rule
+        fenStringTokenize[5] = tokens->tokens[tokenIndex]; // moves made
+
+        Tokens fenTokens = {
+            .length = 6,
+            .tokens = fenStringTokenize
+        };
+
+        if (!FenString_setChessPositionFromTokens(&fenTokens, &ourCurrentPosition)) {
+            sendResponse("ERROR: While initializing the position fen string\n");
+            return;
+        }
     } else {
-        sendResponse("ERROR: Invalid option `%s` in position command\n", splitData);
+        sendResponse("ERROR: Invalid option `%s` in position command\n", tokens->tokens[tokenIndex]);
         return;
     }
-    if (spaceIndex == commandLength) {
+    tokenIndex++;
+    if (tokenIndex == tokens->length) {
         // There is no `moves` part to this position command
         return;
     }
-
-    // Handle moves command
-    size_t oldSpaceIndex = spaceIndex;
-    spaceIndex = string_nextSpaceCharacterFromIndex(command, oldSpaceIndex + 1); // after moves string
-    memcpy(splitData, command + oldSpaceIndex + 1, min(spaceIndex - (oldSpaceIndex + 1), (size_t) 5));
-    splitData[5] = '\0';
-    string_toLower(splitData);
-    if (!string_compareStrings(splitData, "moves")) { 
-        sendResponse("ERROR: Invalid `moves` option of position command `%s`\n", splitData);
+    
+    string_toLower(tokens->tokens[tokenIndex]);
+    if (!string_compareStrings(tokens->tokens[tokenIndex], "moves")) { 
+        sendResponse("ERROR: Invalid `moves` option of position command `%s`\n", tokens->tokens[tokenIndex]);
         return;
     }
 
-    while (spaceIndex < commandLength) {
-        oldSpaceIndex = spaceIndex;
-        spaceIndex = string_nextSpaceCharacterFromIndex(command, oldSpaceIndex + 1); // after move 
-        size_t algebraicMoveLength = spaceIndex - (oldSpaceIndex + 1);
-        if (algebraicMoveLength != 4 && algebraicMoveLength != 5) {
-            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
-            sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
-            break;
-        }
+    tokenIndex++;
+    while (tokenIndex < tokens->length) {        
+        Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
 
-        int startSquare = string_algebraicToIndex((char[]) { command[oldSpaceIndex + 1], command[oldSpaceIndex + 2], '\0' });
-        int endSquare = string_algebraicToIndex((char[]) { command[oldSpaceIndex + 3], command[oldSpaceIndex + 4], '\0' });
-        if (startSquare == -1 || endSquare == -1) {
-            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
-            sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
+        if (moveToMake == NULL_MOVE) {
+            sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", tokens->tokens[tokenIndex]);
             break;
         }
-        Flag moveFlag = NOFLAG;
-        if (algebraicMoveLength == 5) {
-            char fenCharToPromote = command[oldSpaceIndex + 5];
-            if (fenCharToPromote == 'q') {
-                moveFlag = PROMOTE_TO_QUEEN;
-            } else if (fenCharToPromote == 'n') {
-                moveFlag = PROMOTE_TO_KNIGHT;
-            } else if (fenCharToPromote == 'r') {
-                moveFlag = PROMOTE_TO_ROOK;
-            } else if (fenCharToPromote == 'b') {
-                moveFlag = PROMOTE_TO_BISHOP;
-            } else {
-                command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
-                sendResponse("ERROR: Invalid move `%s`, aborting position command\n", command + oldSpaceIndex + 1);
-                break;
-            }
-        }
-        Move moveToMake = findMatchingMove(startSquare, endSquare, moveFlag);
+        Engine_playMove(moveToMake, &ourCurrentPosition, true);
 
-        if (moveToMake == (Move) 0) {
-            command[oldSpaceIndex + 1 + algebraicMoveLength] = '\0';
-            sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", command + oldSpaceIndex + 1);
-            break;
-        }
-        Engine_playMove(moveToMake, &chessgame);
+        tokenIndex++;
+    }
+}
+
+// Command format: go <wtime> <btime> <winc> <binc> <movestogo> <movetime>
+static void processGoCommand(Tokens *tokens) {
+    
+    // TODO: Find a way to search for the optimal moves a specific amount of time
+    // TODO: Find a way to calculate the time to take to search for the optimal moves
+
+    size_t tokenIndex = 0;
+    while (tokenIndex < tokens->length) {
+        // TODO: handle the options: <wtime> <btime> <winc> <binc> <movestogo> <movetime>
+        tokenIndex++;
     }
 
+    Bot_provideGameStateForBot(&ourCurrentPosition);
+
+    // TODO: Time controls
+    Move bestMove = Bot_think(0, 0);
+
+    char bestMoveLongAlgebraicNotation[6];
+    string_moveToLongAlgebraic(bestMove, bestMoveLongAlgebraicNotation);
+
+    // No need for a stop command since we are that cool
+    sendResponse("bestmove %s\n", bestMoveLongAlgebraicNotation);
 }
 
 /*
 These are all the uci commands this engine supports:
     uci (done)
     isready (done)
-    ucinewgame 
+    ucinewgame (don't really know what to do so imma say done)
     position (done)
     go
     stop
-    quit
-    d
+    quit (done)
+    d (done)
 */
 #define MAX_UCI_COMMAND_WITH_OPTION_SIZE (9)
 bool processUCICommand(char *command) {
-    size_t firstSpaceIndex = string_nextSpaceCharacterFromIndex(command, 0);
-    char messageType[MAX_UCI_COMMAND_WITH_OPTION_SIZE] = { 0 };
-    memcpy(messageType, command, min((size_t) MAX_UCI_COMMAND_WITH_OPTION_SIZE, firstSpaceIndex));
+
+    Tokens tokens;
+    size_t nbTokens = string_removeUnecessarySpaces(command);
+    char *tokens_arr[nbTokens];
+    tokens.length = nbTokens;
+    tokens.tokens = tokens_arr;
+    string_tokenizeStringBySpace(command, &tokens);
+    
+    if (tokens.length == 0) {
+        // user sent an empty message, returning but not exiting
+        return true;
+    }
+
+    char* messageType = tokens.tokens[0];
+
     string_toLower(messageType);
 
     if (string_compareStrings(messageType, "quit")) {
@@ -216,19 +241,22 @@ bool processUCICommand(char *command) {
     }
 
     if (string_compareStrings(messageType, "uci")) {
-        sendResponse("uciok");
+
+        sendResponse("id name %s %s\n", ENGINE_NAME, VERSION);
+        sendResponse("id author %s\n", AUTHOR);
+        sendResponse("\nuciok\n");
     
     } else if (string_compareStrings(messageType, "isready")) {
-        sendResponse("readyok");
+        sendResponse("readyok\n");
 
     } else if (string_compareStrings(messageType, "ucinewgame")) {
         // I guess we gonna handle uci new game when it is necessary   
-    
+
     } else if (string_compareStrings(messageType, "position")) {
-        processPositionCommand(command, firstSpaceIndex);
+        processPositionCommand(&tokens);
     
     } else if (string_compareStrings(messageType, "go")) {
-        sendResponse("Command is: %s\n", command);
+        processGoCommand(&tokens);
     
     } else if (string_compareStrings(messageType, "stop")) {
         // Stop the bot from thinking

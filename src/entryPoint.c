@@ -13,11 +13,12 @@
 #include "UCICommandProcessing.h"
 
 static void initEngine() {
+    char initFenStringCopied[] = INITIAL_FEN;
     if (!MagicBitBoard_init() ||
         !ZobristKey_init() ||
         !PieceSquareTable_init() ||
         !TranspositionTable_init() ||
-        !FenString_setChessPositionFromFenString(INITIAL_FEN, &ourCurrentPosition)) {
+        !FenString_setChessPositionFromFenString(initFenStringCopied, &ourCurrentPosition)) {
         
         sendResponse("Failed to initialize the engine properly, terminating the program...\n");
         exit(EXIT_FAILURE);

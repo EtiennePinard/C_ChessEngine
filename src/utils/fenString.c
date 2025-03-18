@@ -104,7 +104,7 @@ static PieceCharacteristics getColorToGo(const char *fenColor) {
 }
 
 bool FenString_setChessPositionFromFenString(char *fen, ChessPosition *position) {
-  if (position == NULL || fen == NULL) { return false; }
+  if (fen == NULL) { return false; }
   
   Tokens tokens;
   tokens.length = string_removeUnecessarySpaces(fen);
@@ -112,33 +112,39 @@ bool FenString_setChessPositionFromFenString(char *fen, ChessPosition *position)
   tokens.tokens = uniqueName;
   string_tokenizeStringBySpace(fen, &tokens);
   
-  if (tokens.length != 6) { return false; }
+  return FenString_setChessPositionFromTokens(&tokens, position);
+}
+
+bool FenString_setChessPositionFromTokens(Tokens *fenTokenized, ChessPosition *position) {
+  if (position == NULL || fenTokenized == NULL) { return false; }
+
+  if (fenTokenized->length != 6) { return false; }
 
   // Setting up the board
   Piece boardArray[BOARD_SIZE] = { 0 };
-  if (!setBoardArrayFromFenString(tokens.tokens[0], boardArray)) { return false; } 
+  if (!setBoardArrayFromFenString(fenTokenized->tokens[0], boardArray)) { return false; } 
   Board board = { 0 };
   Board_fromArray(&board, boardArray);
   position->board = board;
 
   // Setting the color to go
-  position->colorToGo = getColorToGo(tokens.tokens[1]);
+  position->colorToGo = getColorToGo(fenTokenized->tokens[1]);
   if ((int) position->colorToGo == -1) { return false; }
 
   // Setting the castling perm
-  position->castlingPerm = getCastlingPermFromFenString(tokens.tokens[2]);
+  position->castlingPerm = getCastlingPermFromFenString(fenTokenized->tokens[2]);
   if (position->castlingPerm == -1){ return false; }
 
   // Setting the en passant target square
-  position->enPassantTargetSquare = string_algebraicToIndex(tokens.tokens[3]);
+  position->enPassantTargetSquare = string_algebraicToIndex(fenTokenized->tokens[3]);
   if (position->enPassantTargetSquare == -1) { return false; }
 
   // Setting the fifty rule turns
-  position->turnsForFiftyRule = string_parseNumber(tokens.tokens[4]);
+  position->turnsForFiftyRule = string_parseNumber(fenTokenized->tokens[4]);
   if (position->turnsForFiftyRule == -1) { return false; }
 
   // Setting the number of moves
-  position->nbMoves = string_parseNumber(tokens.tokens[5]);
+  position->nbMoves = string_parseNumber(fenTokenized->tokens[5]);
   if (position->turnsForFiftyRule == -1) { return false; }
 
   ZobristKey_calculateInitialKey(position);

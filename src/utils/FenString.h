@@ -15,4 +15,14 @@
  */
 bool FenString_setChessPositionFromFenString(char *fen, ChessPosition* position);
 
+/**
+ * @brief Set ups the chess position from a tokenized version of a fen string
+ * 
+ * @param fenTokenized The tokenized version of a fen string
+ * @param position The ChessPosition to put the fen string into
+ * @return true If the fen string is valid and position is not NULL
+ * @return false If the fen string is invalid or position is NULL
+ */
+bool FenString_setChessPositionFromTokens(Tokens *fenTokenized, ChessPosition *position);
+
 #endif

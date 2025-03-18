@@ -46,59 +46,6 @@ bool test_string_compareStrings() {
     return true;
 }
 
-bool test_string_nextSpaceCharacterFromIndex() {
-    size_t actual;
-    size_t expected;
-
-    char testcase[] = "hello world";
-
-    // Test case: "hello world"
-    expected = 5;
-    actual = string_nextSpaceCharacterFromIndex(testcase);
-
-    if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\")\n");
-        printf("\tExpected: %zu\n", expected);
-        printf("\tActual: %zu\n", actual);
-        return false;
-    }
-
-    // Test case: "hello world" + 6
-    expected = strlen(testcase) - 6;
-    actual = string_nextSpaceCharacterFromIndex(testcase + 6);
-
-    if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"hello world\" + 6)\n");
-        printf("\tExpected: %zu\n", expected);
-        printf("\tActual: %zu\n", actual);
-        return false;
-    }
-
-    // Test case: "helloworld", 0 (no spaces)
-    expected = 10;
-    actual = string_nextSpaceCharacterFromIndex("helloworld");
-
-    if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\"helloworld\")\n");
-        printf("\tExpected: %zu\n", expected);
-        printf("\tActual: %zu\n", actual);
-        return false;
-    }
-
-    // Test case: " ", 0 (single space character)
-    expected = 0;
-    actual = string_nextSpaceCharacterFromIndex(" ");
-
-    if (expected != actual) {
-        printf("ERROR: string_nextSpaceCharacterFromIndex(\" \")\n");
-        printf("\tExpected: %zu\n", expected);
-        printf("\tActual: %zu\n", actual);
-        return false;
-    }
-
-    return true;
-}
-
 bool test_string_toLower() {
     char test1[] = "HELLO";
     char expected1[] = "hello";
@@ -688,7 +635,6 @@ bool test_string_moveToLongAlgebraic() {
 bool Test_CharBuffer() {
     if (!test_string_compareStrings()) return false;
     if (!test_string_compareStrings()) return false;
-    if (!test_string_nextSpaceCharacterFromIndex()) return false;
     if (!test_string_toLower()) return false;
     if (!test_string_removeUnecessarySpaces()) return false;
     if (!test_string_tokenizeStringBySpace()) return false;

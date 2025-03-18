@@ -18,17 +18,6 @@
 bool string_compareStrings(const char *string1, const char* string2);
 
 /**
- * @brief Returns the index of the first space ' ' character in the string.
- * If there is no space then it returns the length of the string.
- * Note: If you need to start an someplace else than the beginning of the string, just
- * do string_nextSpaceCharacterFromIndex(string + offset)
- * 
- * @param str The string to extract the first word from
- * @return size_t The index of the first space from indexToStartAt
- */
-size_t string_nextSpaceCharacterFromIndex(const char *string);
-
-/**
  * @brief Converts all the characters in the string to lowercase
  * 
  * @param string The string to convert to lowercase

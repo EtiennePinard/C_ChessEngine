@@ -225,13 +225,8 @@ bool Test_FenString() {
     for (int testIndex = 0; testIndex < NB_TEST; testIndex++) {
         FenStringTestCase testCase = fenStringTests[testIndex];
 
-        // We need to copy the string because string literals are read-only
-        // and we want to be able to modify the fen strings if they contain more spaces than necessary
-        size_t fenLength = strlen(testCase.fen);
-        char fenCopy[fenLength];
-        strcpy(fenCopy, testCase.fen);
-
-        bool returnValue = FenString_setChessPositionFromFenString(fenCopy, &position);
+        // We need to copy the strings because we are dealing with string literals which are read only
+        bool returnValue = FenString_setChessPositionFromCopiedFenString(testCase.fen, &position);
         
         if (returnValue == false) {
             if (testCase.setPositionReturnValue != returnValue) {

@@ -271,6 +271,9 @@ void generateCastle() {
     }
 }
 
+#include "../../testing/LogChessStructs.h"
+#include <stdlib.h>
+
 void generateKingMoves() {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; checkBitBoard = (u64) 0; }
 
@@ -301,6 +304,13 @@ void generateKingMoves() {
     for (int i = 0; i < 2; i++) {
         // A kind of hacky way to get 7 if i == 0 and 9 if i == 1
         potentialPawn = friendlyKingIndex + (2 * i + 7) * delta;
+
+        // potentialPawn < 0 can happen if friendlyKingIndex < 8, i = 1, delta = -1
+        // potentialPawn >= 64 can happen if friendlyKingIndex >= 55, i = 1, delta = 1
+        if (potentialPawn < 0 || potentialPawn >= 64) {
+            continue;
+        }
+
         if (Board_pieceAtIndex(currentState.board, potentialPawn) == Piece_makePiece(opponentColor, PAWN)) {
             checkBitBoard |= toggle << potentialPawn;
 

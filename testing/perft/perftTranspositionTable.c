@@ -27,7 +27,8 @@ void PerftTranspositionTable_terminate() {
 }
 
 void PerftTranspositionTable_clear() {
-    memset(transpositionTable, 0, TRANSPOSITION_TABLE_SIZE_IN_BYTES);
+    // We have to use the number of elements instead of the size in bytes to avoid writing beyond the table allocated memory
+    memset(transpositionTable, 0, NB_ELEMENTS_IN_TRANSPOSITION_TABLE * sizeof(PerftTranspositionTable));
 }
 
 u64 PerftTranspositionTable_getPerftFromKey(

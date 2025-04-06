@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "FenString.h"
 #include "../utils/Constants.h"
 #include "../state/ZobristKey.h"
@@ -101,6 +102,21 @@ static PieceCharacteristics getColorToGo(const char *fenColor) {
   } else {
     return -1;
   }
+}
+
+bool FenString_setChessPositionFromCopiedFenString(const char *fen, ChessPosition *position) {
+  if (fen == NULL) { return false; }
+
+  size_t sizeOfString = strlen(fen);
+  char* copied = malloc(sizeOfString + 1); // We need to add 1 for the null byte
+  assert(copied != NULL && "copied is NULL, buy more RAM LOL");
+  memcpy(copied, fen, sizeOfString + 1);
+
+  bool returnValue = FenString_setChessPositionFromFenString(copied, position);
+
+  free(copied);
+
+  return returnValue;
 }
 
 bool FenString_setChessPositionFromFenString(char *fen, ChessPosition *position) {

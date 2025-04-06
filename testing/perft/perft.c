@@ -155,22 +155,19 @@ typedef struct testPosition {
 
 #define NUM_TEST_POSITIONS 6
 
+const char testPassed[] = GRN "✓" RESET;
+const char testFailedPrefix[] = RED "❌" RESET " Test failed (expected ";
+
 void test() {
-  MagicBitBoard_init();
-  ZobristKey_init();
-  PerftTranspositionTable_init();
+  if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
+    printf("ERROR: Failure to properly initialize, exiting program\n");
+    exit(EXIT_FAILURE);
+  }
 
   #ifdef DEBUG
   loggingFile = fopen("../log.txt", "w");
   #endif
   
-  int biggestDepth = 5;
-  if (biggestDepth > MAXIMUM_DEPTH) {
-    printf("The biggest depth of test %d exceeds the position history limit, %d\n", biggestDepth, MAXIMUM_DEPTH);
-    MagicBitBoard_terminate();
-    exit(EXIT_FAILURE);
-  }
-
   int startingPosResults[6] = {1, 20, 400, 8902, 197281, 4865609};
   TestPosition startingPositionTests = {
     .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
@@ -221,25 +218,33 @@ void test() {
     pos5,
     pos6, 
   };
+
+  // This is a little fail-safe so that we don't hit memory issues if we increase the depth of the tests
+  for (size_t index = 0; index < NUM_TEST_POSITIONS; index++) {
+    if (testPositions[index].nbTest > MAXIMUM_DEPTH) {
+      printf("The biggest depth of test %d exceeds the position history limit, %d\n", testPositions[index].nbTest, MAXIMUM_DEPTH);
+      MagicBitBoard_terminate();
+      exit(EXIT_FAILURE);
+    }
+  }
   
   ChessPosition startingState;
   u64 perftResult;
   double timeSpent;
-  clock_t begin, end;
-  char* testPassed = GRN "✓" RESET;
-  char* testFailedPrefix = RED "❌" RESET " Test failed (expected ";
-
-  clock_t fullTestBegin = clock();
+  clock_t begin, end, fullTestBegin = clock();
   
   for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
     TestPosition testPosition = testPositions[i];
-    PerftTranspositionTable_clear();
     
-    FenString_setChessPositionFromFenString(testPosition.fenString, &currentPosition);
+    if (!FenString_setChessPositionFromCopiedFenString(testPosition.fenString, &currentPosition)) {
+      printf("ERROR: Unable to set the chess position from the fen string, exiting program\n");
+      exit(EXIT_FAILURE);
+    }
+
     startingState = currentPosition;
-
+    
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
-
+    
     for (int depth = 0; depth < testPosition.nbTest; depth++) {
       maximumDepth = depth;
       hashHits = 0;
@@ -254,7 +259,9 @@ void test() {
       } else {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
       }
+
       memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
+      PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
     }
  
     printf("\n");
@@ -273,7 +280,7 @@ void test() {
 }
 
 void usage(char* programName) {
-  printf("Usage: ./%s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
+  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
   printf("\tIf `mode` is not provided it will default to divide mode\n");
   printf("\tIf `position` is not provided it will default to the starting position\n");
   printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
@@ -334,15 +341,16 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    MagicBitBoard_init();
-    ZobristKey_init();
-    PerftTranspositionTable_init();
+    if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
+      printf("ERROR: Failure to properly initialize, exiting program\n");
+      exit(EXIT_FAILURE);
+    }
 
     #ifdef DEBUG
     loggingFile = fopen("../log.txt", "w");
     #endif
 
-    if (!FenString_setChessPositionFromFenString(fenString, &currentPosition)) { 
+    if (!FenString_setChessPositionFromCopiedFenString(fenString, &currentPosition)) { 
       printf("ERROR while setup of chess game state\n Exiting\n");
       exit(EXIT_FAILURE);
     }

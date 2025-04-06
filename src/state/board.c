@@ -35,13 +35,16 @@ BitBoard Board_bitBoardForPiece(Board board, Piece piece) {
 }
 
 BitBoard Board_specificColorBitBoard(Board board, PieceCharacteristics color) {
+    assert(board.bitboards != NULL);
+    assert(color == BLACK || color == WHITE);
+
     return 
-    board.bitboards[Piece_makePiece(color, PAWN  ) - 9] |
-    board.bitboards[Piece_makePiece(color, KNIGHT) - 9] |
-    board.bitboards[Piece_makePiece(color, BISHOP) - 9] | 
-    board.bitboards[Piece_makePiece(color, ROOK  ) - 9] |
-    board.bitboards[Piece_makePiece(color, QUEEN ) - 9] | 
-    board.bitboards[Piece_makePiece(color, KING  ) - 9]; 
+        board.bitboards[Piece_makePiece(color, PAWN  ) - 9] |
+        board.bitboards[Piece_makePiece(color, KNIGHT) - 9] |
+        board.bitboards[Piece_makePiece(color, BISHOP) - 9] | 
+        board.bitboards[Piece_makePiece(color, ROOK  ) - 9] |
+        board.bitboards[Piece_makePiece(color, QUEEN ) - 9] | 
+        board.bitboards[Piece_makePiece(color, KING  ) - 9]; 
 }
 
 BitBoard Board_allPiecesBitBoard(Board board) {

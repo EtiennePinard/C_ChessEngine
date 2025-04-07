@@ -31,39 +31,12 @@ void PerftTranspositionTable_clear() {
     memset(transpositionTable, 0, NB_ELEMENTS_IN_TRANSPOSITION_TABLE * sizeof(PerftTranspositionTable));
 }
 
-u64 PerftTranspositionTable_getPerftFromKey(
-    ZobristKey key, u8 depth 
-    #ifdef DEBUG
-    , ChessPosition pos
-    #endif
-    ) {
+u64 PerftTranspositionTable_getPerftFromKey(ZobristKey key, u8 depth) {
     u32 index = (u32) (key % NB_ELEMENTS_IN_TRANSPOSITION_TABLE);
     PerftTranspositionTable entry = transpositionTable[index];
     
     // We are looking at a different position or at the same position with a different depth
     if (entry.key != key || entry.depth != depth) { return LOOKUP_FAILED; }
-
-    #ifdef DEBUG
-    if (entry.chessPosition.castlingPerm != pos.castlingPerm) {
-        printf("The castling perm %d and %d are not equal!\n", entry.chessPosition.castlingPerm, pos.castlingPerm);
-    } else if (entry.chessPosition.colorToGo != pos.colorToGo) {
-        printf("The color to go %d and %d are not equal!\n", entry.chessPosition.colorToGo, pos.colorToGo);
-    } else if (memcmp(entry.chessPosition.board.bitboards, pos.board.bitboards, sizeof(u64) * 14) != 0) {
-        printf("The board of the two boards are not equal!\n");
-        printBoard(entry.chessPosition.board);
-        printBoard(pos.board);
-    } else if (entry.chessPosition.enPassantTargetSquare != pos.enPassantTargetSquare) {
-        printf("The en passant square %d and %d are not equal!\n", entry.chessPosition.enPassantTargetSquare, pos.enPassantTargetSquare);
-    } else {
-        return transpositionTable[index].perft;
-    }
-
-    printf("THERE IS A COLLISION :(\n");
-    printBoard(entry.chessPosition.board);
-    printBoard(pos.board);
-    exit(EXIT_FAILURE);
-    
-    #endif
 
     return transpositionTable[index].perft;
 }

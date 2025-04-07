@@ -22,10 +22,6 @@ int maximumDepth;
 ChessPosition currentPosition = { 0 };
 ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
-#ifdef DEBUG
-FILE* loggingFile = NULL;
-#endif
-
 bool divide = false;
 u32 hashHits = 0; 
 
@@ -51,7 +47,6 @@ u64 perft(u8 depth) {
   
   posHistory[maximumDepth - depth] = currentPosition;
   
-
   for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
     Move move = validMoves[moveIndex];
@@ -59,20 +54,7 @@ u64 perft(u8 depth) {
     
     Engine_playMove(move, &currentPosition, false); // Move is made
 
-    #ifdef DEBUG
-    for (int tab = 0; tab < maximumDepth - depth; tab++) {
-      fprintf(loggingFile, "\t");
-    }
-    fprintf(loggingFile, "Made move ");
-    writeMoveToAlgebraicToFile(move, loggingFile);
-    fprintf(loggingFile, ", flag: %d, enPassantTargetSquare: %d\n", Move_flag(move), currentPosition.enPassantTargetSquare);
-    #endif
-
-    u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth
-    #ifdef DEBUG
-    , currentPosition
-    #endif
-    );
+    u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth);
 
     if (moveOutput == LOOKUP_FAILED) {
       moveOutput = perft(depth - 1); // We generate the moves for the next perft
@@ -80,10 +62,7 @@ u64 perft(u8 depth) {
       PerftTranspositionTable_recordPerft((PerftTranspositionTable) { 
         .key = currentPosition.key, 
         .depth = depth, 
-        .perft = moveOutput,
-      #ifdef DEBUG 
-        .chessPosition = currentPosition
-      #endif 
+        .perft = moveOutput
       });
     } else {
       hashHits++;
@@ -96,16 +75,6 @@ u64 perft(u8 depth) {
     nodes += moveOutput;
 
     memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
-    
-    #ifdef DEBUG
-    for (int tab = 0; tab < maximumDepth - depth; tab++) {
-      fprintf(loggingFile, "\t");
-    }
-    fprintf(loggingFile, "Unmade move ");
-    writeMoveToAlgebraicToFile(move, loggingFile);
-    fprintf(loggingFile, "\n");
-    #endif
-
   }
   
   return nodes;
@@ -164,10 +133,6 @@ void test() {
     exit(EXIT_FAILURE);
   }
 
-  #ifdef DEBUG
-  loggingFile = fopen("../log.txt", "w");
-  #endif
-  
   int startingPosResults[6] = {1, 20, 400, 8902, 197281, 4865609};
   TestPosition startingPositionTests = {
     .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
@@ -273,18 +238,15 @@ void test() {
 
   MagicBitBoard_terminate();
   PerftTranspositionTable_terminate();
-
-  #ifdef DEBUG
-  fclose(loggingFile);
-  #endif
 }
 
 void usage(char* programName) {
-  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
+  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)] [-q (quiet output on test mode)]\n", programName);
   printf("\tIf `mode` is not provided it will default to divide mode\n");
   printf("\tIf `position` is not provided it will default to the starting position\n");
   printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
   printf("\t`depth` needs to be provided for the modes it applies to\n");
+  printf("\tYou can provide the option -q for no output using test mode\n");
 }
 
 // To compile and run the program: ./perft
@@ -346,10 +308,6 @@ int main(int argc, char* argv[]) {
       exit(EXIT_FAILURE);
     }
 
-    #ifdef DEBUG
-    loggingFile = fopen("../log.txt", "w");
-    #endif
-
     if (!FenString_setChessPositionFromCopiedFenString(fenString, &currentPosition)) { 
       printf("ERROR while setup of chess game state\n Exiting\n");
       exit(EXIT_FAILURE);
@@ -371,10 +329,6 @@ int main(int argc, char* argv[]) {
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();
-
-    #ifdef DEBUG
-    fclose(loggingFile);
-    #endif
     
     return 0;
 }

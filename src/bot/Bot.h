@@ -8,14 +8,6 @@
 #define BOT_ERROR NULL_MOVE
 
 /**
-* @brief Time control for a chess game in milliseconds. 
-* With this time control, the longest game possible will be 2^32 milliseconds, which is
-* 49 days 17 hours 2 minutes and 47.3 seconds.
-* This should be plenty of time to play a pretty long game.
-*/
-typedef u32 TimeControl_MS;
-
-/**
  * @brief Sets the position that the bot will analyze.
  * Call this function before any call to Bot_think or Bot_staticEvaluation.  
  * 
@@ -26,11 +18,9 @@ void Bot_provideGameStateForBot(ChessPosition* position);
 /**
  * @brief Computes the best move in the position given in the Bot_provideGameStateForBot function
  * 
- * @param whiteRemainingTime The time that white has remaining in milliseconds 
- * @param blackRemainingTime The time that black has remaining in milliseconds
  * @return Move The best move in this position according to the bot or BOT_ERROR if there was an error
  */
-Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingTime);
+Move Bot_think();
 
 /**
  * @brief Returns a score that was calculated by statically analyzing the position.
@@ -38,6 +28,8 @@ Move Bot_think(TimeControl_MS whiteRemainingTime, TimeControl_MS blackRemainingT
  * potential good moves in the score.
 */
 int Bot_staticEvaluation();
+
+extern volatile bool endSearch;
 
 #ifdef DEBUG
     extern bool useTranspositionTable;

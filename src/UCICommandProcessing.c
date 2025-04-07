@@ -3,6 +3,8 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "UCICommandProcessing.h"
 
@@ -85,10 +87,7 @@ static void processDCommand() {
     sendResponse("\n");
 }
 
-static Move findMatchingMove(
-    Move moveToMatch
-//    int startSquare, int endSquare, Flag moveFlag
-) {
+static Move findMatchingMove(Move moveToMatch) {
     Move moveToMake = NULL_MOVE;
     Move moves[256];
     int moveCount;
@@ -182,10 +181,17 @@ static void processPositionCommand(Tokens *tokens) {
     }
 }
 
+// The function that the timer thread will execute
+static void* timerThread(void* arg) {
+    u64 time_limit_MS = *((u64*) arg);
+    usleep(time_limit_MS * 1000);
+    endSearch = true;
+    return NULL;
+}
+
 // Command format: go <wtime> <btime> <winc> <binc> <movestogo> <movetime>
 static void processGoCommand(Tokens *tokens) {
     
-    // TODO: Find a way to search for the optimal moves a specific amount of time
     // TODO: Find a way to calculate the time to take to search for the optimal moves
 
     size_t tokenIndex = 0;
@@ -193,11 +199,23 @@ static void processGoCommand(Tokens *tokens) {
         // TODO: handle the options: <wtime> <btime> <winc> <binc> <movestogo> <movetime>
         tokenIndex++;
     }
+    u64 durationInMilliseconds = 100;
 
     Bot_provideGameStateForBot(&ourCurrentPosition);
+    
+    pthread_t timer;
+    if (pthread_create(&timer, NULL, timerThread, &durationInMilliseconds) != 0) {
+        sendResponse("ERROR: Failed to create a timer thread, exiting the program\n");
+        exit(EXIT_FAILURE);
+    }
 
-    // TODO: Time controls
-    Move bestMove = Bot_think(0, 0);
+    Move bestMove = Bot_think();
+
+    // Wait for the timer thread to finish
+    pthread_join(timer, NULL);
+
+    // Setting endsearch back for the next go command
+    endSearch = false;
 
     char bestMoveLongAlgebraicNotation[6];
     string_moveToLongAlgebraic(bestMove, bestMoveLongAlgebraicNotation);

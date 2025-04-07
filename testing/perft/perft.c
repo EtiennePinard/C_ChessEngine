@@ -25,6 +25,8 @@ ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 bool divide = false;
 u32 hashHits = 0; 
 
+int exitCode = 0;
+
 u64 perft(u8 depth) {
   if (depth == 0) { return 1; }
 
@@ -209,7 +211,7 @@ void test() {
     startingState = currentPosition;
     
     printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
-    
+
     for (int depth = 0; depth < testPosition.nbTest; depth++) {
       maximumDepth = depth;
       hashHits = 0;
@@ -223,12 +225,13 @@ void test() {
         printf("%s" RESET "\n", testPassed);
       } else {
         printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
+        exitCode++;
       }
 
       memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
       PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
     }
- 
+
     printf("\n");
   }
 
@@ -241,12 +244,11 @@ void test() {
 }
 
 void usage(char* programName) {
-  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)] [-q (quiet output on test mode)]\n", programName);
+  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
   printf("\tIf `mode` is not provided it will default to divide mode\n");
   printf("\tIf `position` is not provided it will default to the starting position\n");
   printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
   printf("\t`depth` needs to be provided for the modes it applies to\n");
-  printf("\tYou can provide the option -q for no output using test mode\n");
 }
 
 // To compile and run the program: ./perft
@@ -264,7 +266,7 @@ int main(int argc, char* argv[]) {
       char* firstArg = argv[1];
       if (string_compareStrings(firstArg, "test")) {
         test();
-        return 0;
+        return exitCode;
       }
       if (string_compareStrings(firstArg, "divide")) {
         divide = true;
@@ -330,5 +332,5 @@ int main(int argc, char* argv[]) {
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();
     
-    return 0;
+    return exitCode;
 }

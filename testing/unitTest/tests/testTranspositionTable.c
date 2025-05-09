@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "../../../src/bot/TranspositionTable.h"
 
 bool test_TranspositionTable_init() {
@@ -19,7 +21,7 @@ bool test_TranspositionTable_getMoveFromKey() {
     Move expected = NULL_MOVE; // Assuming no move is stored initially
 
     if (expected != move) {
-        printf("test_TranspositionTable_getMoveFromKey failed with test case: TranspositionTable_getMoveFromKey(%llu)\n", key);
+        printf("test_TranspositionTable_getMoveFromKey failed with test case: TranspositionTable_getMoveFromKey(%lu)\n", key);
         printf("\tExpected: %d\n", expected);
         printf("\tActual: %d\n", move);
         return false;
@@ -36,7 +38,7 @@ bool test_TranspositionTable_getEvaluationFromKey() {
     int expected = LOOKUP_FAILED; // Assuming no evaluation is stored initially
 
     if (expected != actual) {
-        printf("test_TranspositionTable_getEvaluationFromKey failed with test case: TranspositionTable_getEvaluationFromKey(%llu, %d, %d, %d)\n", key, depth, alpha, beta);
+        printf("test_TranspositionTable_getEvaluationFromKey failed with test case: TranspositionTable_getEvaluationFromKey(%lu, %d, %d, %d)\n", key, depth, alpha, beta);
         printf("\tExpected: %d\n", expected);
         printf("\tActual: %d\n", actual);
         return false;
@@ -55,7 +57,7 @@ bool test_TranspositionTable_recordEntry() {
     int retrievedEvaluation = TranspositionTable_getEvaluationFromKey(key, depth, -100, 100);
     
     if (retrievedEvaluation != evaluation) {
-        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%llu, %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
+        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%lu, %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
         printf("\tExpected: %d\n", evaluation);
         printf("\tActual: %d\n", retrievedEvaluation);
         return false;
@@ -63,7 +65,7 @@ bool test_TranspositionTable_recordEntry() {
 
     Move retrievedMove = TranspositionTable_getMoveFromKey(key);
     if (retrievedMove != move) {
-        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%llu, %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
+        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%lu, %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
         printf("\tExpected Move: %d\n", move);
         printf("\tActual Move: %d\n", retrievedMove);
         return false;

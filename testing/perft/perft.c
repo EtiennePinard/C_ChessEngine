@@ -220,7 +220,7 @@ void test() {
       end = clock();
       timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
       
-      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%lu" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
+      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%u" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
       if (perftResult == (u64) testPosition.perftResults[depth]) {
         printf("%s" RESET "\n", testPassed);
       } else {
@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
         
     double timeSpent_ms = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
     
-    printf("Perft depth %d returned a total number of moves of %lu, had %lu hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
+    printf("Perft depth %d returned a total number of moves of %lu, had %u hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();

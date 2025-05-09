@@ -302,14 +302,14 @@ bool test_string_tokenizeStringBySpace() {
     string_tokenizeStringBySpace(test5, &actual);
 
     if (actual.length != expected.length) {
-        printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
+        printf("ERROR: string_tokenizeStringBySpace(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\", &actual)\n");
         printf("\tExpected length: %ld\n", expected.length);
         printf("\tActual length: %ld\n", actual.length);
         return false;
     }
     for (size_t index = 0; index < actual.length; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
-            printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
+            printf("ERROR: string_tokenizeStringBySpace(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);
             printf("\tActual string: %s\n", actual.tokens[index]);
             return false;
@@ -494,7 +494,7 @@ bool test_string_longAlgebraicToMove() {
     if (expected != actual) {
         printf("ERROR: string_longAlgebraicToMove(\"e2e4\")\n");
         printf("\tExpected: %hu\n", expected);
-        printf("\tActual: %s\n", actual);
+        printf("\tActual: %hu\n", actual);
         return false;
     }
 

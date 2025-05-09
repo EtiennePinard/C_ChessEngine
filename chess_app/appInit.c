@@ -7,7 +7,8 @@
 #include "Events.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
-#include "../src/chessBot/PieceSquareTable.h"
+#include "../src/bot/PieceSquareTable.h"
+#include "../src/bot/TranspositionTable.h"
 #include "../src/utils/FenString.h"
 
 static const char* PIECE_NAMES[NB_PIECE_COLOR][NB_PIECE_TYPE] = {
@@ -63,11 +64,13 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
 
     if (IMG_Init(IMG_INIT_PNG) == 0) {
         fprintf(stderr, "Failed to initialize SDL_image: %s\n", IMG_GetError());
+        TTF_Quit();
+        SDL_Quit();
         return 1;
     }
     
     appState->sdlState.window = SDL_CreateWindow(TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN);
-    if (!appState->sdlState.window) {
+    if (appState->sdlState.window == NULL) {
         fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         TTF_Quit();
         SDL_Quit();
@@ -75,7 +78,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     }
 
     appState->sdlState.renderer = SDL_CreateRenderer(appState->sdlState.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!appState->sdlState.renderer) {
+    if (appState->sdlState.renderer == NULL) {
         fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(appState->sdlState.window);
         TTF_Quit();
@@ -84,7 +87,7 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     }
 
     appState->sdlState.font = TTF_OpenFont(FONT_PATH, FONT_SIZE);
-    if (!appState->sdlState.font) {
+    if (appState->sdlState.font == NULL) {
         fprintf(stderr, "TTF_OpenFont Error: %s\n", TTF_GetError());
         SDL_DestroyRenderer(appState->sdlState.renderer);
         SDL_DestroyWindow(appState->sdlState.window);
@@ -105,7 +108,9 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
         return false;
     }
 
-    if (!FenString_setChessPositionFromFenString(INITIAL_FEN, &appState->gameState)) {
+    char initialFen[57];
+    memcpy(initialFen, INITIAL_FEN, 57);
+    if (!FenString_setChessPositionFromFenString(initialFen, &appState->gameState.currentState)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
         SDL_DestroyRenderer(appState->sdlState.renderer);
         SDL_DestroyWindow(appState->sdlState.window);
@@ -136,12 +141,13 @@ bool initializeApp(AppEvents *appEvents, AppState *appState) {
     MagicBitBoard_init();
     ZobristKey_init();
     PieceSquareTable_init();
+    TranspositionTable_init();
 
     // We are officially running the app!
     appState->isRunning = true;
 
-    // We want to minimize the time that the player lose because of initializatino
-    // I know it is pretty negligeable, but that doesn't mean we can't try
+    // We want to minimize the time that the player lose because of initialization
+    // I know it is pretty negligible, but that doesn't mean we can't try
     appState->gameState.turnStartTick = SDL_GetTicks64();
     return true;
 }
@@ -157,6 +163,8 @@ static void freeTextures(Textures textures) {
 
 void cleanupApp(AppEvents *appEvents, AppState *appState) {
     MagicBitBoard_terminate();
+    TranspositionTable_terminate();
+
     freeTextures(appState->textures);
 
     free(appState->gameState.previousStates);

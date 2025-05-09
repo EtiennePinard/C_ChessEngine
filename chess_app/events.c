@@ -1,3 +1,6 @@
+#include <pthread.h>
+#include <unistd.h>
+
 #include "Events.h"
 #include "EventHandler.h"
 #include "Overlay.h"
@@ -6,8 +9,8 @@
 #include "../src/state/Move.h"
 #include "../src/engine/MoveGenerator.h"
 #include "../src/engine/ChessGameEmulator.h"
-#include "../src/chessBot/ChessBot.h"
-#include "../src/chessBot/RepetitionTable.h"
+#include "../src/bot/Bot.h"
+#include "../src/bot/RepetitionTable.h"
 #include "../src/utils/Math.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
@@ -110,10 +113,34 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
     Engine_playMove(move, &gameState->currentState, true);
 }
 
+// The function that the timer thread will execute
+static void* timerThread(void* arg) {
+    u64 time_limit_MS = *((u64*) arg);
+    usleep(time_limit_MS * 1000);
+    endSearch = true;
+    return NULL;
+}
+
 static inline void playBotMove(GameState *gameState) {
     Bot_provideGameStateForBot(&gameState->currentState);
-    Move botMove = Bot_think(gameState->whiteRemainingTime, gameState->whiteRemainingTime);
-    
+
+    // Well be searching for 100 ms
+    u64 durationInMilliseconds = 100;
+
+    pthread_t timer;
+    if (pthread_create(&timer, NULL, timerThread, &durationInMilliseconds) != 0) {
+        printf("ERROR: Failed to create a timer thread, exiting the program\n");
+        exit(EXIT_FAILURE); // the app cleanup will take care of itself
+    }
+
+    Move botMove = Bot_think();
+
+    // Wait for the timer thread to finish
+    pthread_join(timer, NULL);
+
+    // Setting endsearch back for the next go command
+    endSearch = false;
+
     u64 currentTick = SDL_GetTicks64();
     if (gameState->playerColor != WHITE) {
         gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
@@ -198,7 +225,7 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppStat
 
         // Map the row and column to a piece
         int pieceIndex = rowIndex * 2 + colIndex;
-        PieceCharacteristics currentColor = appState->gameState.currentState.colorToGo;
+        // PieceCharacteristics currentColor = appState->gameState.currentState.colorToGo;
         switch (pieceIndex) {
             case 0: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_QUEEN); break;
             case 1: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_KNIGHT); break;

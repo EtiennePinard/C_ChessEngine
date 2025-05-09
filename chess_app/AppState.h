@@ -7,7 +7,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include "../src/state/GameState.h"
-#include "../src/chessBot/ChessBot.h"
+#include "../src/bot/Bot.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
@@ -66,6 +66,8 @@ typedef enum GameResult {
     WHITE_WON_ON_TIME,
     BLACK_WON_ON_TIME
 } GameResult;
+
+typedef u32 TimeControl_MS;
 
 typedef struct GameState {
     ChessPosition currentState;

@@ -98,5 +98,6 @@
         "uciok",
         "valgrind",
         "Zobrist"
-    ]
+    ],
+    "makefile.configureOnOpen": true
 }

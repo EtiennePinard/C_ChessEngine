@@ -229,7 +229,7 @@ int main() {
         return 1;
     }
 
-    TTF_Font *font = TTF_OpenFont("/usr/share/fonts/truetype/computer-modern/cmunbl.ttf", 24); // Set path to your .ttf font file
+    TTF_Font *font = TTF_OpenFont("./assets/font/cmunbl.ttf", 24);
     if (!font) {
         printf("TTF_OpenFont Error: %s\n", TTF_GetError());
         SDL_DestroyRenderer(renderer);

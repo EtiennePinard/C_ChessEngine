@@ -15,6 +15,7 @@ TARGETS = build/test build/perft build/engine build/app
 
 # LDFLAGS
 app_LDFLAGS = -lm -lSDL2 -lSDL2_ttf -lSDL2_image
+visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf
 
 # Program arguments
 PARG ?= test
@@ -93,11 +94,14 @@ app_SRC = \
     chess_app/render.c \
     chess_app/overlay.c
 
+visualizePST_SRC = graphics_visualization/visualizePieceSquareTable.c src/bot/pieceSquareTable.c
+
 # Convert .c files to .o in build/ directory
 test_OBJ = $(patsubst %.c,build/%.o,$(test_SRC))
 perft_OBJ= $(patsubst %.c,build/%.o,$(perft_SRC))
 engine_OBJ = $(patsubst %.c,build/%.o,$(engine_SRC))
 app_OBJ = $(patsubst %.c,build/%.o,$(app_SRC))
+visualizePST_OBJ = $(patsubst %.c,build/%.o,$(visualizePST_SRC))
 
 .PHONY: all
 all: $(TARGETS)
@@ -116,6 +120,7 @@ $(eval $(call build_template,test))
 $(eval $(call build_template,perft))
 $(eval $(call build_template,engine))
 $(eval $(call build_template,app))
+$(eval $(call build_template,visualizePST))
 
 # Symlink for the chess pieces images and font assets
 build/assets:
@@ -135,19 +140,22 @@ engine: build_engine
 app: build_app build/assets
 	cd build && ./app
 
+visualizePST: build_visualizePST build/assets
+	cd build && ./visualizePST
 
 # Help rule
 help:
-	@echo "make test       - Build and run unit tests"
-	@echo "make perft      - Build and run perft (PARG=...)"
-	@echo "make engine     - Build and run chess engine (UCI)"
-	@echo "make app        - Build and run SDL2 GUI app"
-	@echo "make clean      - Remove build directory"
-	@echo "make help       - Prints this help message"
-	@echo "--------------------------------------------------------------------------------------"
+	@echo "make test             - Build and run unit tests"
+	@echo "make perft            - Build and run perft (PARG=...)"
+	@echo "make engine           - Build and run chess engine (UCI)"
+	@echo "make app              - Build and run SDL2 GUI app" 
+	@echo "make visualizePST     - Build and run SDL2 GUI app"
+	@echo "make clean            - Remove build directory"
+	@echo "make help             - Prints this help message"
+	@echo "--------------------------------------------------------------"
 	@echo "Use make perft PARG='<arguments>' to provide arguments to the perft program from make"
 	@echo "Default argument is PARG=test"
-	@echo "--------------------------------------------------------------------------------------"
+	@echo "--------------------------------------------------------------"
 
 
 # Clean everything

@@ -56,12 +56,8 @@ Mkfile.old
 dkms.conf
 
 ### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+.vscode/
+# I ain't keeping nothing from the .vscode folder!
 
 # Local History for Visual Studio Code
 .history/

@@ -8,21 +8,21 @@
 
 /**
  * @brief Returns true if the friendly king (for the current turn) is in check
- * Will return a correct result only after Engine_getValidMoves is called
+ * Will return a correct result only after MoveHandler_getValidMoves is called
  * 
  * @return true If the king is in check
  * @return false If the king is not in check
  */
-bool Engine_isKingInCheck();
+bool MoveHandler_isKingInCheck();
 
 /**
  * @brief Returns true if the friendly king (for the current turn) is in double check
- * Will return a correct result only after Engine_getValidMoves is called
+ * Will return a correct result only after MoveHandler_getValidMoves is called
  * 
  * @return true If the king is in double check
  * @return false If the king is not in double check
  */
-bool Engine_isKingInDoubleCheck();
+bool MoveHandler_isKingInDoubleCheck();
 
 /**
  * @brief Computes the valid moves in a given position and stores the moves in the result array 
@@ -35,6 +35,6 @@ bool Engine_isKingInDoubleCheck();
  * @param numMoves The number of valid moves in this position
  * @param position The position to get the valid moves 
  */
-void Engine_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position);
+void MoveHandler_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position);
 
 #endif

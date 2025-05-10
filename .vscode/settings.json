@@ -72,7 +72,9 @@
         "charbuffer.h": "c",
         "testutils.h": "c",
         "ctype.h": "c",
-        "bot.h": "c"
+        "bot.h": "c",
+        "moveplayer.h": "c",
+        "appstate.h": "c"
     },
     "cSpell.language": "en,en-CA",
     "cSpell.words": [

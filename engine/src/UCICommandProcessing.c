@@ -11,8 +11,8 @@
 #include "state/EngineState.h"
 #include "state/Move.h"
 
-#include "engine/ChessGameEmulator.h"
-#include "engine/MoveGenerator.h"
+#include "moveHandler/MovePlayer.h"
+#include "moveHandler/MoveGenerator.h"
 
 #include "bot/Bot.h"
 
@@ -91,7 +91,7 @@ static Move findMatchingMove(Move moveToMatch) {
     Move moveToMake = NULL_MOVE;
     Move moves[256];
     int moveCount;
-    Engine_getValidMoves(moves, &moveCount, ourCurrentPosition);
+    MoveHandler_getValidMoves(moves, &moveCount, ourCurrentPosition);
     for (int index = 0; index < moveCount; index++) {
         Move move = moves[index];
         if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) && 
@@ -175,7 +175,7 @@ static void processPositionCommand(Tokens *tokens) {
             sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", tokens->tokens[tokenIndex]);
             break;
         }
-        Engine_playMove(moveToMake, &ourCurrentPosition, true);
+        MoveHandler_playMove(moveToMake, &ourCurrentPosition, true);
 
         tokenIndex++;
     }

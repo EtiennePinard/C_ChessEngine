@@ -6,8 +6,8 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 
-#include "../src/state/GameState.h"
-#include "../src/bot/Bot.h"
+#include "../../engine/src/state/GameState.h"
+#include "../../engine/src/bot/Bot.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600

@@ -87,6 +87,3 @@ precomputedMasks/precomputedMaskOutput.txt
 
 # Build folder 
 build/
-
-# Folders with random temporary files
-ignore/

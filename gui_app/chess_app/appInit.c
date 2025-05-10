@@ -5,11 +5,11 @@
 
 #include "AppInit.h"
 #include "Events.h"
-#include "../src/magicBitBoard/MagicBitBoard.h"
-#include "../src/state/ZobristKey.h"
-#include "../src/bot/PieceSquareTable.h"
-#include "../src/bot/TranspositionTable.h"
-#include "../src/utils/FenString.h"
+#include "../../engine/src/magicBitBoard/MagicBitBoard.h"
+#include "../../engine/src/state/ZobristKey.h"
+#include "../../engine/src/bot/PieceSquareTable.h"
+#include "../../engine/src/bot/TranspositionTable.h"
+#include "../../engine/src/utils/FenString.h"
 
 static const char* PIECE_NAMES[NB_PIECE_COLOR][NB_PIECE_TYPE] = {
     {"white_pawn", "white_knight", "white_bishop", "white_rook", "white_queen", "white_king"},

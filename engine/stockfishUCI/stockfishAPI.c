@@ -116,8 +116,7 @@ bool stockfishInit(const char *stockfishPath) {
     pid = fork();
     returnOnFail(pid == -1, "Fork failed\n");
 
-    if (pid == 0)
-    {
+    if (pid == 0) {
         // Child process: set up to run Stockfish
         dup2(outpipefd[PIPE_READ_INDEX], STDIN_FILENO);  // Read from parent's outpipefd
         dup2(inpipefd[PIPE_WRITE_INDEX], STDOUT_FILENO); // Write to parent's inpipefd

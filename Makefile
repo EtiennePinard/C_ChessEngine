@@ -11,100 +11,126 @@ CFLAGS_RELEASE = $(CFLAGS_COMMON) -O3
 # Default to debug
 CFLAGS ?= $(CFLAGS_DEBUG)
 
-TARGETS = build/test build/perft build/engine build/app
+BUILD_RULES = \
+	build_test \
+	build_perft \
+	build_engine \
+	build_app \
+	build_visualizePST \
+	build_visualizeEval
+
+RUN_RULES = test perft engine app visualizePST visualizeEval
+
+RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 
 # LDFLAGS
 app_LDFLAGS = -lm -lSDL2 -lSDL2_ttf -lSDL2_image
 visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf
+visualizeEval_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
 
 # Program arguments
 PARG ?= test
 
-# Asset linking for chess app
-ASSET_SRC = chess_app/assets
+# Asset linking for gui app
+ASSET_SRC = gui_app/assets
 ASSET_DST = build/assets
 
 # Source files for each target
 test_SRC = \
-    testing/unitTest/unitTest.c \
-    testing/unitTest/tests/testCharBuffer.c \
-    testing/unitTest/tests/testFenString.c \
-    testing/unitTest/tests/testMath.c \
-    testing/unitTest/tests/testBoard.c \
-    testing/unitTest/tests/testTranspositionTable.c \
-    testing/logChessStructs.c \
-    src/utils/fenString.c \
-    src/utils/charBuffer.c \
-    src/state/zobristKey.c \
-    src/state/board.c \
-    src/bot/transpositionTable.c
+    engine/testing/unitTest/unitTest.c \
+    engine/testing/unitTest/tests/testCharBuffer.c \
+    engine/testing/unitTest/tests/testFenString.c \
+    engine/testing/unitTest/tests/testMath.c \
+    engine/testing/unitTest/tests/testBoard.c \
+    engine/testing/unitTest/tests/testTranspositionTable.c \
+    engine/testing/logChessStructs.c \
+    engine/src/utils/fenString.c \
+    engine/src/utils/charBuffer.c \
+    engine/src/state/zobristKey.c \
+    engine/src/state/board.c \
+    engine/src/bot/transpositionTable.c
 
 perft_SRC = \
-    testing/perft/perft.c \
-    testing/perft/perftTranspositionTable.c \
-    testing/logChessStructs.c \
-    src/engine/chessGameEmulator.c \
-    src/engine/moveGenerator.c \
-    src/utils/fenString.c \
-    src/utils/charBuffer.c \
-    src/state/board.c \
-    src/state/zobristKey.c \
-    src/magicBitBoard/magicBitBoard.c \
-    src/magicBitBoard/rook.c \
-    src/magicBitBoard/bishop.c
+    engine/testing/perft/perft.c \
+    engine/testing/perft/perftTranspositionTable.c \
+    engine/testing/logChessStructs.c \
+    engine/src/moveHandler/movePlayer.c \
+    engine/src/moveHandler/moveGenerator.c \
+    engine/src/utils/fenString.c \
+    engine/src/utils/charBuffer.c \
+    engine/src/state/board.c \
+    engine/src/state/zobristKey.c \
+    engine/src/magicBitBoard/magicBitBoard.c \
+    engine/src/magicBitBoard/rook.c \
+    engine/src/magicBitBoard/bishop.c
 
-engine_SRC = \
-    src/entryPoint.c \
-    src/UCICommandProcessing.c \
-    src/bot/bot.c \
-    src/bot/pieceSquareTable.c \
-    src/bot/transpositionTable.c \
-    src/bot/repetitionTable.c \
-    src/engine/chessGameEmulator.c \
-    src/engine/moveGenerator.c \
-    src/utils/fenString.c \
-    src/utils/charBuffer.c \
-    src/state/board.c \
-    src/state/zobristKey.c \
-    src/state/engineState.c \
-    src/magicBitBoard/magicBitBoard.c \
-    src/magicBitBoard/rook.c \
-    src/magicBitBoard/bishop.c \
-    testing/logChessStructs.c
+chessEngine_SRC = \
+    engine/src/entryPoint.c \
+    engine/src/UCICommandProcessing.c \
+    engine/src/bot/bot.c \
+    engine/src/bot/pieceSquareTable.c \
+    engine/src/bot/transpositionTable.c \
+    engine/src/bot/repetitionTable.c \
+    engine/src/moveHandler/movePlayer.c \
+    engine/src/moveHandler/moveGenerator.c \
+    engine/src/utils/fenString.c \
+    engine/src/utils/charBuffer.c \
+    engine/src/state/board.c \
+    engine/src/state/zobristKey.c \
+    engine/src/state/engineState.c \
+    engine/src/magicBitBoard/magicBitBoard.c \
+    engine/src/magicBitBoard/rook.c \
+    engine/src/magicBitBoard/bishop.c \
+    engine/testing/logChessStructs.c
 
 app_SRC = \
-    src/engine/chessGameEmulator.c \
-    src/engine/moveGenerator.c \
-    src/utils/fenString.c \
-    src/utils/charBuffer.c \
-    src/state/board.c \
-    src/state/zobristKey.c \
-    src/magicBitBoard/magicBitBoard.c \
-    src/magicBitBoard/rook.c \
-    src/magicBitBoard/bishop.c \
-    src/bot/bot.c \
-    src/bot/pieceSquareTable.c \
-    src/bot/repetitionTable.c \
-    src/bot/transpositionTable.c \
-    testing/logChessStructs.c \
-    chess_app/app.c \
-    chess_app/appInit.c \
-    chess_app/eventHandler.c \
-    chess_app/events.c \
-    chess_app/render.c \
-    chess_app/overlay.c
+    engine/src/moveHandler/movePlayer.c \
+    engine/src/moveHandler/moveGenerator.c \
+    engine/src/utils/fenString.c \
+    engine/src/utils/charBuffer.c \
+    engine/src/state/board.c \
+    engine/src/state/zobristKey.c \
+    engine/src/magicBitBoard/magicBitBoard.c \
+    engine/src/magicBitBoard/rook.c \
+    engine/src/magicBitBoard/bishop.c \
+    engine/src/bot/bot.c \
+    engine/src/bot/pieceSquareTable.c \
+    engine/src/bot/repetitionTable.c \
+    engine/src/bot/transpositionTable.c \
+    engine/testing/logChessStructs.c \
+    gui_app/chess_app/app.c \
+    gui_app/chess_app/appInit.c \
+    gui_app/chess_app/eventHandler.c \
+    gui_app/chess_app/events.c \
+    gui_app/chess_app/render.c \
+    gui_app/chess_app/overlay.c
 
-visualizePST_SRC = graphics_visualization/visualizePieceSquareTable.c src/bot/pieceSquareTable.c
+visualizePST_SRC = gui_app/graphics_visualization/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
+
+visualizeEval_SRC = \
+	gui_app/graphics_visualization/visualizePieceSquareTable.c \
+	gui_app/chess_app/appInit.c \
+	engine/src/bot/pieceSquareTable.c \
+    engine/src/utils/fenString.c \
+    engine/src/utils/charBuffer.c \
+    engine/src/state/board.c \
+    engine/src/state/zobristKey.c \
+    engine/src/magicBitBoard/magicBitBoard.c \
+    engine/src/magicBitBoard/rook.c \
+    engine/src/magicBitBoard/bishop.c
 
 # Convert .c files to .o in build/ directory
 test_OBJ = $(patsubst %.c,build/%.o,$(test_SRC))
 perft_OBJ= $(patsubst %.c,build/%.o,$(perft_SRC))
-engine_OBJ = $(patsubst %.c,build/%.o,$(engine_SRC))
+chessEngine_OBJ = $(patsubst %.c,build/%.o,$(chessEngine_SRC))
 app_OBJ = $(patsubst %.c,build/%.o,$(app_SRC))
 visualizePST_OBJ = $(patsubst %.c,build/%.o,$(visualizePST_SRC))
+visualizeEval_OBJ = $(patsubst %.c,build/%.o,$(visualizeEval_SRC))
 
+
+# We only want the build rules when calling all else its too chaotic when executing all the programs
 .PHONY: all
-all: $(TARGETS)
+all: $(BUILD_RULES)
 
 # Compile .c to .o into build/
 build/%.o: %.c
@@ -118,9 +144,10 @@ endef
 
 $(eval $(call build_template,test))
 $(eval $(call build_template,perft))
-$(eval $(call build_template,engine))
+$(eval $(call build_template,chessEngine))
 $(eval $(call build_template,app))
 $(eval $(call build_template,visualizePST))
+$(eval $(call build_template,visualizeEval))
 
 # Symlink for the chess pieces images and font assets
 build/assets:
@@ -129,19 +156,23 @@ build/assets:
 
 # Execution rules
 test: build_test
-	cd build && ./test
+	@cd build && ./test
 
 perft: build_perft
-	cd build && ./perft $(PARG)
+	@cd build && ./perft $(PARG)
 
-engine: build_engine
-	cd build && ./engine
+engine: build_chessEngine
+	@cd build && ./chessEngine
 
 app: build_app build/assets
-	cd build && ./app
+	@cd build && ./app
 
 visualizePST: build_visualizePST build/assets
-	cd build && ./visualizePST
+	@cd build && ./visualizePST
+
+visualizeEval: build_visualizeEval build/assets
+	@cd build && ./visualizeEval
+
 
 # Help rule
 help:
@@ -149,7 +180,9 @@ help:
 	@echo "make perft            - Build and run perft (PARG=...)"
 	@echo "make engine           - Build and run chess engine (UCI)"
 	@echo "make app              - Build and run SDL2 GUI app" 
-	@echo "make visualizePST     - Build and run SDL2 GUI app"
+	@echo "make visualizePST     - Build and run an app to visualize the piece square table"
+	@echo "make visualizeEval    - Build and run an app to visualize the static evaluation"
+	@echo "make all              - Executes all build rules. This is the default rule"
 	@echo "make clean            - Remove build directory"
 	@echo "make help             - Prints this help message"
 	@echo "--------------------------------------------------------------"
@@ -163,5 +196,5 @@ help:
 clean:
 	@rm -r build
 
-# All build targets
-.PHONY: test perft engine app build_test build_perft build_engine build_app help
+# All build rules
+.PHONY: $(RULES)

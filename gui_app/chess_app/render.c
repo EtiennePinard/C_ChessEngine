@@ -8,10 +8,12 @@
 #include "Events.h"
 #include "AppStyle.h"
 
-#include "../src/engine/MoveGenerator.h"
-#include "../src/state/Piece.h"
-#include "../src/utils/Types.h"
-#include "../src/utils/Math.h"
+#include "../../engine/src/moveHandler/MoveGenerator.h"
+#include "../../engine/src/state/Piece.h"
+#include "../../engine/src/utils/Types.h"
+#include "../../engine/src/utils/Math.h"
+#include "../../engine/src/state/Piece.h"
+#include "../../engine/src/state/GameState.h"
 
 static void formatTime(u32 milliseconds, char *output, size_t outputSize) {
     if (!output || outputSize < 6) {

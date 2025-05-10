@@ -9,8 +9,8 @@ and did not want to read documentation.
 #include <limits.h>
 #include <math.h>
 
-#include "../src/utils/Math.h"
-#include "../src/bot/PieceSquareTable.h"
+#include "../../src/utils/Math.h"
+#include "../../src/bot/PieceSquareTable.h"
 
 #define WINDOW_WIDTH 640
 #define WINDOW_HEIGHT (640 + BUTTON_HEIGHT)

@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
-#include "../../src/engine/MoveGenerator.h"
-#include "../../src/engine/ChessGameEmulator.h"
+#include "../../src/moveHandler/MoveGenerator.h"
+#include "../../src/moveHandler/MovePlayer.h"
 #include "../../src/utils/FenString.h"
 #include "../../src/magicBitBoard/MagicBitBoard.h"
 #include "../../src/state/ZobristKey.h"
@@ -32,7 +32,7 @@ u64 perft(u8 depth) {
 
   int nbOfMoves;
   Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
-  Engine_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
+  MoveHandler_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
   u64 nodes = 0;
 
   // Note that here we do not take into account the fifty move rule
@@ -54,7 +54,7 @@ u64 perft(u8 depth) {
     Move move = validMoves[moveIndex];
 
     
-    Engine_playMove(move, &currentPosition, false); // Move is made
+    MoveHandler_playMove(move, &currentPosition, false); // Move is made
 
     u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth);
 

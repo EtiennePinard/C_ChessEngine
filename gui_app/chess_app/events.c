@@ -5,13 +5,13 @@
 #include "EventHandler.h"
 #include "Overlay.h"
 
-#include "../src/state/Board.h"
-#include "../src/state/Move.h"
-#include "../src/engine/MoveGenerator.h"
-#include "../src/engine/ChessGameEmulator.h"
-#include "../src/bot/Bot.h"
-#include "../src/bot/RepetitionTable.h"
-#include "../src/utils/Math.h"
+#include "../../engine/src/state/Board.h"
+#include "../../engine/src/state/Move.h"
+#include "../../engine/src/moveHandler/MoveGenerator.h"
+#include "../../engine/src/moveHandler/MovePlayer.h"
+#include "../../engine/src/bot/Bot.h"
+#include "../../engine/src/bot/RepetitionTable.h"
+#include "../../engine/src/utils/Math.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
 inline static int squareFromxy(int x, int y, bool flip) {
@@ -87,9 +87,9 @@ static void computeGameEnd(GameState *gameState) {
 
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMove;
-    Engine_getValidMoves(moves, &numMove, gameState->currentState);
+    MoveHandler_getValidMoves(moves, &numMove, gameState->currentState);
     if (numMove == 0) {
-        if (Engine_isKingInCheck() || Engine_isKingInDoubleCheck()) {
+        if (MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck()) {
             gameState->result = gameState->currentState.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
         } else {
             gameState->result = STALEMATE;
@@ -110,7 +110,7 @@ static inline void playMoveOnBoard(GameState *gameState, Move move) {
         gameState->previousStateCapacity *= 2;
     }
     gameState->previousStates[gameState->previousStateIndex++] = gameState->currentState;
-    Engine_playMove(move, &gameState->currentState, true);
+    MoveHandler_playMove(move, &gameState->currentState, true);
 }
 
 // The function that the timer thread will execute
@@ -257,7 +257,7 @@ static void chessBoardMouseButtonUp(AppState *appState) {
     // We could cache this value if it really is that slow, but I don't think so
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
-    Engine_getValidMoves(moves, &numMoves, appState->gameState.currentState);
+    MoveHandler_getValidMoves(moves, &numMoves, appState->gameState.currentState);
 
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];

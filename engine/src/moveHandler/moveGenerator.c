@@ -30,10 +30,10 @@ u64 pinMasks[BOARD_SIZE];
 u64 friendlyPieceBitBoard;
 u64 opponentBitBoard;
 
-bool Engine_isKingInCheck() {
+bool MoveHandler_isKingInCheck() {
     return inCheck;
 }
-bool Engine_isKingInDoubleCheck() {
+bool MoveHandler_isKingInDoubleCheck() {
     return inDoubleCheck;
 }
 
@@ -602,7 +602,7 @@ We are not computing end of games in this function!!!!
 They are not needed for perft and so I did not write a function to compute just yet
 These function will probably in the board.c file
 */
-void Engine_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position) {
+void MoveHandler_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position) {
     assert(result != NULL);
     assert(numMoves != NULL);
 

@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 #include "../src/utils/Types.h"
-#include "../src/chessBot/ChessBot.h"
-#include "../src/chessBot/PieceSquareTable.h"
+#include "../src/bot/Bot.h"
+#include "../src/bot/PieceSquareTable.h"
 #include "../src/magicBitBoard/MagicBitBoard.h"
 #include "../src/state/ZobristKey.h"
 

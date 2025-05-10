@@ -14,8 +14,8 @@
 #include "TranspositionTable.h"
 
 #include "../magicBitBoard/MagicBitBoard.h"
-#include "../engine/MoveGenerator.h"
-#include "../engine/ChessGameEmulator.h"
+#include "../moveHandler/MoveGenerator.h"
+#include "../moveHandler/MovePlayer.h"
 #include "../../testing/LogChessStructs.h"
 #include "../utils/Math.h"
 
@@ -101,9 +101,9 @@ int Bot_staticEvaluation() {
     // Checking for mate:
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
-    Engine_getValidMoves(validMoves, &numMoves, *currentPosition);
+    MoveHandler_getValidMoves(validMoves, &numMoves, *currentPosition);
 
-    bool inCheck = Engine_isKingInCheck(); 
+    bool inCheck = MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck(); 
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
@@ -220,7 +220,7 @@ int search(int alpha, int beta, int depth) {
 
     // Check to not add that value to the transposition table
     if (endSearch) {
-        return -1;
+        return 0;
     }
 
     int score;
@@ -254,16 +254,16 @@ int search(int alpha, int beta, int depth) {
             bestMoveFromSearch, score);
 
         return score; // eventually do return quiesce(alpha, beta);
-    } 
+    }
 
     int nbOfMoves;
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
-    Engine_getValidMoves(validMoves, &nbOfMoves, *currentPosition);
+    MoveHandler_getValidMoves(validMoves, &nbOfMoves, *currentPosition);
     memcpy(&posHistory[maximumDepth - depth], currentPosition, sizeof(ChessPosition));
 
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
-        Engine_playMove(move, currentPosition, true);
+        MoveHandler_playMove(move, currentPosition, true);
 
         // We switch alpha and beta, because alpha is the lower bound for the color to go 
         // but it is the upper bound for the other color. Opposite is true for beta
@@ -300,7 +300,7 @@ int search(int alpha, int beta, int depth) {
                 }
             }
         } else {
-            return -1;
+            return 0;
         }
         
     }
@@ -314,7 +314,7 @@ int search(int alpha, int beta, int depth) {
 Move Bot_think() {
     RepetitionTable_setCurrentIndexAsRootPosition();
 
-    for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
+    for (int depth = 1; depth <= MAXIMUM_DEPTH; depth++) {
         maximumDepth = depth;
         search(MINUS_INFINITY, INFINITY, maximumDepth);
 

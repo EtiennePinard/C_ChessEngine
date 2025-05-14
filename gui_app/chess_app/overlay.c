@@ -8,7 +8,7 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
                             bool flip,
                             Popup *popup) {
     // Chessboard dimensions
-    int squareSize = (WINDOW_WIDTH * 2 / 3) / BOARD_LENGTH;
+    int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
 
     // Calculate position of the promotion square
     int promotionFile = file(promotionSquare);
@@ -19,7 +19,7 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
     }
 
     int squareX = CHESSBOARD_X + promotionFile * squareSize;
-    int squareY = promotionRank * squareSize;
+    int squareY = CHESSBOARD_Y + promotionRank * squareSize;
 
     // Overlay dimensions
     int overlayWidth = 2 * squareSize; // Two options per row

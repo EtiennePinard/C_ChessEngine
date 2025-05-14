@@ -12,7 +12,7 @@ CFLAGS_RELEASE = $(CFLAGS_COMMON) -O3
 CFLAGS ?= $(CFLAGS_DEBUG)
 
 BUILD_RULES = \
-	build_test \
+	build_engineTest \
 	build_perft \
 	build_engine \
 	build_app \
@@ -36,7 +36,7 @@ ASSET_SRC = gui_app/assets
 ASSET_DST = build/assets
 
 # Source files for each target
-test_SRC = \
+engineTest_SRC = \
     engine/testing/unitTest/unitTest.c \
     engine/testing/unitTest/tests/testCharBuffer.c \
     engine/testing/unitTest/tests/testFenString.c \
@@ -99,11 +99,13 @@ app_SRC = \
     engine/src/bot/transpositionTable.c \
     engine/testing/logChessStructs.c \
     gui_app/chess_app/app.c \
-    gui_app/chess_app/appInit.c \
-    gui_app/chess_app/eventHandler.c \
     gui_app/chess_app/events.c \
     gui_app/chess_app/render.c \
-    gui_app/chess_app/overlay.c
+    gui_app/chess_app/overlay.c \
+    gui_app/sdl_framework/appInit.c \
+    gui_app/sdl_framework/appRunner.c \
+    gui_app/sdl_framework/eventHandler.c \
+    gui_app/sdl_framework/appCleanup.c
 
 visualizePST_SRC = gui_app/graphics_visualization/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
 
@@ -120,7 +122,7 @@ visualizeEval_SRC = \
     engine/src/magicBitBoard/bishop.c
 
 # Convert .c files to .o in build/ directory
-test_OBJ = $(patsubst %.c,build/%.o,$(test_SRC))
+engineTest_OBJ = $(patsubst %.c,build/%.o,$(engineTest_SRC))
 perft_OBJ= $(patsubst %.c,build/%.o,$(perft_SRC))
 chessEngine_OBJ = $(patsubst %.c,build/%.o,$(chessEngine_SRC))
 app_OBJ = $(patsubst %.c,build/%.o,$(app_SRC))
@@ -142,7 +144,7 @@ build_$(1): $$($(1)_OBJ)
 	$$(CC) $$(CFLAGS) $$^ -o build/$(1) $$($(1)_LDFLAGS)
 endef
 
-$(eval $(call build_template,test))
+$(eval $(call build_template,engineTest))
 $(eval $(call build_template,perft))
 $(eval $(call build_template,chessEngine))
 $(eval $(call build_template,app))
@@ -155,8 +157,8 @@ build/assets:
 
 
 # Execution rules
-test: build_test
-	@cd build && ./test
+test: build_engineTest build_guiTest
+	@cd build && ./engineTest
 
 perft: build_perft
 	@cd build && ./perft $(PARG)
@@ -176,7 +178,7 @@ visualizeEval: build_visualizeEval build/assets
 
 # Help rule
 help:
-	@echo "make test             - Build and run unit tests"
+	@echo "make test             - Build and run the engine's unit tests"
 	@echo "make perft            - Build and run perft (PARG=...)"
 	@echo "make engine           - Build and run chess engine (UCI)"
 	@echo "make app              - Build and run SDL2 GUI app" 

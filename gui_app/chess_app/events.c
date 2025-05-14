@@ -1,9 +1,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "Events.h"
-#include "EventHandler.h"
-#include "Overlay.h"
+#include "../sdl_framework/EventHandler.h"
 
 #include "../../engine/src/state/Board.h"
 #include "../../engine/src/state/Move.h"
@@ -12,6 +10,9 @@
 #include "../../engine/src/bot/Bot.h"
 #include "../../engine/src/bot/RepetitionTable.h"
 #include "../../engine/src/utils/Math.h"
+
+#include "Events.h"
+#include "Overlay.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
 inline static int squareFromxy(int x, int y, bool flip) {
@@ -182,13 +183,13 @@ static void resetGame(GameState *gameState) {
     // Note that we are not changing the player color
 }
 
-void clickedSwitchColorButton(SDL_Event event, AppState *appState) {
+void clickedSwitchColorButton(SDL_Event event, App app) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
-        appState->gameState.playerColor = appState->gameState.playerColor == WHITE ? BLACK : WHITE;
-        resetGame(&appState->gameState);
-        if (appState->gameState.currentState.colorToGo != appState->gameState.playerColor) {
-            playBotMove(&appState->gameState);
+        app.state->gameState.playerColor = app.state->gameState.playerColor == WHITE ? BLACK : WHITE;
+        resetGame(&app.state->gameState);
+        if (app.state->gameState.currentState.colorToGo != app.state->gameState.playerColor) {
+            playBotMove(&app.state->gameState);
         }
         break;
     default: // Only do something for mouse button down
@@ -197,12 +198,12 @@ void clickedSwitchColorButton(SDL_Event event, AppState *appState) {
 }
 
 
-void clickedRestartButton(SDL_Event event, AppState *appState) {
+void clickedRestartButton(SDL_Event event, App app) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
-        resetGame(&appState->gameState);
-        if (appState->gameState.currentState.colorToGo != appState->gameState.playerColor) {
-            playBotMove(&appState->gameState);
+        resetGame(&app.state->gameState);
+        if (app.state->gameState.currentState.colorToGo != app.state->gameState.playerColor) {
+            playBotMove(&app.state->gameState);
         }
         break;
     default: // Only do something for mouse button down
@@ -210,7 +211,7 @@ void clickedRestartButton(SDL_Event event, AppState *appState) {
     }
 }
 
-static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppState *appState) {
+static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, App app) {
     int mouseX, mouseY;
     Move move = 0;
     switch (event.type) {
@@ -225,12 +226,12 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppStat
 
         // Map the row and column to a piece
         int pieceIndex = rowIndex * 2 + colIndex;
-        // PieceCharacteristics currentColor = appState->gameState.currentState.colorToGo;
+        // PieceCharacteristics currentColor = app.state->gameState.currentState.colorToGo;
         switch (pieceIndex) {
-            case 0: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_QUEEN); break;
-            case 1: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_KNIGHT); break;
-            case 2: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_ROOK); break;
-            case 3: move = Move_makeMove(appState->draggingState.from, appState->draggingState.to, PROMOTE_TO_BISHOP); break;
+            case 0: move = Move_makeMove(app.state->draggingState.from, app.state->draggingState.to, PROMOTE_TO_QUEEN); break;
+            case 1: move = Move_makeMove(app.state->draggingState.from, app.state->draggingState.to, PROMOTE_TO_KNIGHT); break;
+            case 2: move = Move_makeMove(app.state->draggingState.from, app.state->draggingState.to, PROMOTE_TO_ROOK); break;
+            case 3: move = Move_makeMove(app.state->draggingState.from, app.state->draggingState.to, PROMOTE_TO_BISHOP); break;
             default: break;
         }
         break;
@@ -239,30 +240,30 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, AppStat
     }
     if (move == 0) { return false; }
 
-    playTurn(&appState->gameState, move);
+    playTurn(&app.state->gameState, move);
 
     return true;
 }
 
-static void chessBoardMouseButtonUp(AppState *appState) {
-    if (appState->gameState.result != GAME_IS_NOT_DONE || !appState->draggingState.isDragging) { return; } // We are not dragging anything or the game is done
-    appState->draggingState.isDragging = false; // Always stop dragging when we stop holding click
+static void chessBoardMouseButtonUp(App app) {
+    if (app.state->gameState.result != GAME_IS_NOT_DONE || !app.state->draggingState.isDragging) { return; } // We are not dragging anything or the game is done
+    app.state->draggingState.isDragging = false; // Always stop dragging when we stop holding click
 
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    int draggingTo = squareFromxy(mouseX, mouseY, appState->gameState.playerColor == BLACK);
+    int draggingTo = squareFromxy(mouseX, mouseY, app.state->gameState.playerColor == BLACK);
 
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
-    MoveHandler_getValidMoves(moves, &numMoves, appState->gameState.currentState);
+    MoveHandler_getValidMoves(moves, &numMoves, app.state->gameState.currentState);
 
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];
 
-        if (Move_fromSquare(move) == appState->draggingState.from && Move_toSquare(move) == draggingTo) {
+        if (Move_fromSquare(move) == app.state->draggingState.from && Move_toSquare(move) == draggingTo) {
             // This is the move the player wants to play
             // This is true because their is only one move with a particular from and to square (except for promotion)
             if (Move_flag(move) == PROMOTE_TO_QUEEN || 
@@ -270,21 +271,21 @@ static void chessBoardMouseButtonUp(AppState *appState) {
                 Move_flag(move) == PROMOTE_TO_ROOK ||
                 Move_flag(move) == PROMOTE_TO_BISHOP) {
                 
-                appState->draggingState.to = draggingTo; // I set this to communicate it to the popup callback
+                app.state->draggingState.to = draggingTo; // I set this to communicate it to the popup callback
 
                 Popup popup = { 0 };
                 popup.callback = &clickedPromotionOverlay;
-                renderPromotionOverlay(appState->sdlState.renderer, 
-                                       appState->textures, 
-                                       appState->gameState.currentState.colorToGo, 
+                renderPromotionOverlay(app.state->sdlState.renderer, 
+                                       app.state->textures, 
+                                       app.state->gameState.currentState.colorToGo, 
                                        draggingTo, 
-                                       appState->gameState.playerColor,
+                                       app.state->gameState.playerColor,
                                        &popup);
-                handlePopup(&popup, appState);
+                handlePopup(&popup, app);
                 return; // The callback will handle playing the turn
             }
 
-            playTurn(&appState->gameState, move);
+            playTurn(&app.state->gameState, move);
             break;
         }
     }
@@ -305,13 +306,13 @@ static void chessBoardMouseButtonDown(GameState *gameState, DraggingState *dragg
     draggingState->isDragging = true;
 }
 
-void clickedChessBoard(SDL_Event event, AppState *appState) {
+void clickedChessBoard(SDL_Event event, App app) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
-        chessBoardMouseButtonDown(&appState->gameState, &appState->draggingState);
+        chessBoardMouseButtonDown(&app.state->gameState, &app.state->draggingState);
         break;
     case SDL_MOUSEBUTTONUP:
-        chessBoardMouseButtonUp(appState);
+        chessBoardMouseButtonUp(app);
         break;
     default:
         break;

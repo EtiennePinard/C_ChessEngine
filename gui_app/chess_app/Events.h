@@ -3,8 +3,8 @@
 
 #include "AppState.h"
 
-void clickedChessBoard(SDL_Event event, AppState *appState);
-void clickedRestartButton(SDL_Event event, AppState *appState);
-void clickedSwitchColorButton(SDL_Event event, AppState *appState);
+void clickedChessBoard(SDL_Event event, App app);
+void clickedRestartButton(SDL_Event event, App app);
+void clickedSwitchColorButton(SDL_Event event, App app);
 
 #endif /* AE539C76_7948_4E5B_AFD7_B75D43C5B451 */

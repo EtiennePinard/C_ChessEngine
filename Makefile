@@ -167,7 +167,7 @@ build/assets:
 
 
 # Execution rules
-test: build_engineTest build_guiTest
+test: build_engineTest
 	@cd build && ./engineTest
 
 perft: build_perft

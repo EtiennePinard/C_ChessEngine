@@ -25,7 +25,7 @@ RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 
 # LDFLAGS
 app_LDFLAGS = -lm -lSDL2 -lSDL2_ttf -lSDL2_image
-visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf
+visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
 visualizeEval_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
 
 # Program arguments
@@ -83,6 +83,12 @@ chessEngine_SRC = \
     engine/src/magicBitBoard/bishop.c \
     engine/testing/logChessStructs.c
 
+sdlFramework_SRC = \
+	gui_app/sdl_framework/appInit.c \
+    gui_app/sdl_framework/appRunner.c \
+    gui_app/sdl_framework/eventHandler.c \
+    gui_app/sdl_framework/appCleanup.c
+
 app_SRC = \
     engine/src/moveHandler/movePlayer.c \
     engine/src/moveHandler/moveGenerator.c \
@@ -102,24 +108,27 @@ app_SRC = \
     gui_app/chess_app/events.c \
     gui_app/chess_app/render.c \
     gui_app/chess_app/overlay.c \
-    gui_app/sdl_framework/appInit.c \
-    gui_app/sdl_framework/appRunner.c \
-    gui_app/sdl_framework/eventHandler.c \
-    gui_app/sdl_framework/appCleanup.c
+	$(sdlFramework_SRC)
 
-visualizePST_SRC = gui_app/graphics_visualization/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
+visualizePST_SRC = $(sdlFramework_SRC) gui_app/visualize_pst/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
 
 visualizeEval_SRC = \
-	gui_app/graphics_visualization/visualizePieceSquareTable.c \
-	gui_app/chess_app/appInit.c \
+	gui_app/visualize_static_evaluation/visualizeStaticEvaluation.c \
 	engine/src/bot/pieceSquareTable.c \
+	engine/src/bot/transpositionTable.c \
+	engine/src/bot/repetitionTable.c \
+	engine/src/bot/bot.c \
+	engine/src/moveHandler/movePlayer.c \
+	engine/src/moveHandler/moveGenerator.c \
     engine/src/utils/fenString.c \
     engine/src/utils/charBuffer.c \
     engine/src/state/board.c \
     engine/src/state/zobristKey.c \
     engine/src/magicBitBoard/magicBitBoard.c \
     engine/src/magicBitBoard/rook.c \
-    engine/src/magicBitBoard/bishop.c
+    engine/src/magicBitBoard/bishop.c \
+	engine/src/moveHandler/moveGenerator.c \
+	$(sdlFramework_SRC)
 
 # Convert .c files to .o in build/ directory
 engineTest_OBJ = $(patsubst %.c,build/%.o,$(engineTest_SRC))
@@ -153,7 +162,8 @@ $(eval $(call build_template,visualizeEval))
 
 # Symlink for the chess pieces images and font assets
 build/assets:
-	@ln -sf $(ROOT_DIR)/$(ASSET_SRC) $(ROOT_DIR)/$(ASSET_DST)
+    # The -T is to avoid creating recursive symlinks
+	@ln -sfT $(ROOT_DIR)/$(ASSET_SRC) $(ROOT_DIR)/$(ASSET_DST)
 
 
 # Execution rules

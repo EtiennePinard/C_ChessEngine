@@ -26,7 +26,7 @@ bool initializeApp(App app) {
             TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
             FONT_PATH, FONT_SIZE) ||
-        !initTextures(&app.state->textures) ||
+        !initializeTextures(&app.state->textures) ||
         !initializeClickableArea(app.events, 3) ||
         !loadImageFromFilePath(&app.state->sdlState, &app.state->textures, PIECE_NAMES, NB_PIECES)) {
         return false;
@@ -35,9 +35,7 @@ bool initializeApp(App app) {
     // Chessboard position will not change while the app is running, so we can add it once at app startup
     app.events->clickableAreas.data[CHESSBOARD_INDEX] = (ClickableArea){ .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard };
 
-    char initialFen[57];
-    memcpy(initialFen, INITIAL_FEN, 57);
-    if (!FenString_setChessPositionFromFenString(initialFen, &app.state->gameState.currentState)) {
+    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentState)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
         SDL_DestroyRenderer(app.state->sdlState.renderer);
         SDL_DestroyWindow(app.state->sdlState.window);

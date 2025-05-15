@@ -12,10 +12,7 @@ bool string_compareStrings(const char *string1, const char* string2) {
     assert(string2 != NULL);
 
     if (string1[0] != string2[0]) { return false; }
-    size_t length1 = strlen(string1);
-    size_t length2 = strlen(string2);
-    if (length1 != length2) { return false; }
-    return memcmp(string1, string2, length1) == 0;
+    return strcmp(string1, string2) == 0;
 }
 
 void string_toLower(char *string) {

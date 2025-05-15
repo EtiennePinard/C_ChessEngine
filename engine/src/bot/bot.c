@@ -21,12 +21,12 @@
 
 
 #ifdef DEBUG
-    FILE* loggingFile = NULL;
+FILE* loggingFile = NULL;
 #endif
-    
+
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
-    
+
 bool useTranspositionTable = true;
 volatile bool endSearch = false;
 
@@ -43,7 +43,7 @@ void Bot_provideGameStateForBot(ChessPosition* state) {
 This array maps the piece index to a number, which represents how much
 a piece is worth for a phase of the game
 */
-const char phaseWeight[6] = { 
+const char phaseWeight[6] = {
     0, // Pawn
     1, // Knight
     1, // Bishop
@@ -53,7 +53,7 @@ const char phaseWeight[6] = {
 };
 
 // Piece order influenced
-const int openFilesAndDoublePawns[6] = { 
+const int openFilesAndDoublePawns[6] = {
     S(16, 26), // Pawn
     S(5, -4), // Knight
     S(1, 4), // Bishop
@@ -66,21 +66,21 @@ const int openFilesAndDoublePawns[6] = {
 // MobilityBonus[PieceType - 2][num square attacked] contains bonuses for middle and end game,
 // indexed by piece type and number of attacked squares in the mobility area.
 const int mobilityBonus[][32] = {
-    { S(-62,-81), S(-53,-56), S(-12,-30), S( -4,-14), S(  3,  8), S( 13, 15), // Knights
-      S( 22, 23), S( 28, 27), S( 33, 33) },
-    { S(-48,-59), S(-20,-23), S( 16, -3), S( 26, 13), S( 38, 24), S( 51, 42), // Bishops
-      S( 55, 54), S( 63, 57), S( 63, 65), S( 68, 73), S( 81, 78), S( 81, 86),
-      S( 91, 88), S( 98, 97) },
-    { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S( -5, 69), S( -2, 82), // Rooks
-      S(  9,112), S( 16,118), S( 30,132), S( 29,142), S( 32,155), S( 38,165),
-      S( 46,166), S( 48,169), S( 58,171) },
-    { S(-39,-36), S(-21,-15), S(  3,  8), S(  3, 18), S( 14, 34), S( 22, 54), // Queens
-      S( 28, 61), S( 41, 73), S( 43, 79), S( 48, 92), S( 56, 94), S( 60,104),
-      S( 60,113), S( 66,120), S( 67,123), S( 70,126), S( 71,133), S( 73,136),
-      S( 79,140), S( 88,143), S( 88,148), S( 99,166), S(102,170), S(102,175),
+    { S(-62,-81), S(-53,-56), S(-12,-30), S(-4,-14), S(3,  8), S(13, 15), // Knights
+      S(22, 23), S(28, 27), S(33, 33) },
+    { S(-48,-59), S(-20,-23), S(16, -3), S(26, 13), S(38, 24), S(51, 42), // Bishops
+      S(55, 54), S(63, 57), S(63, 65), S(68, 73), S(81, 78), S(81, 86),
+      S(91, 88), S(98, 97) },
+    { S(-58,-76), S(-27,-18), S(-15, 28), S(-10, 55), S(-5, 69), S(-2, 82), // Rooks
+      S(9,112), S(16,118), S(30,132), S(29,142), S(32,155), S(38,165),
+      S(46,166), S(48,169), S(58,171) },
+    { S(-39,-36), S(-21,-15), S(3,  8), S(3, 18), S(14, 34), S(22, 54), // Queens
+      S(28, 61), S(41, 73), S(43, 79), S(48, 92), S(56, 94), S(60,104),
+      S(60,113), S(66,120), S(67,123), S(70,126), S(71,133), S(73,136),
+      S(79,140), S(88,143), S(88,148), S(99,166), S(102,170), S(102,175),
       S(106,184), S(109,191), S(113,206), S(116,212) },
     { S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4), S(-30, 4),  } // King
-  };
+};
 
 const int reducingKingMovementBonus[] = {
     S(9, -2),   // Bishop
@@ -94,20 +94,24 @@ const int reducingKingMovementBonus[] = {
 int Bot_staticEvaluation() {
 
     GamePhase phase = TOTAL_PHASE;
+
+    // We start the score with a small advantage for white    
     int score = 15;
+
+    // bitmask for a file
     u64 file = 0x101010101010101UL;
-    u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;  
+    u64 bitboard, attack, currentFileWithoutPiece, kingAttacks, friendlyBitBoard;
 
     // Checking for mate:
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
     MoveHandler_getValidMoves(validMoves, &numMoves, *currentPosition);
 
-    bool inCheck = MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck(); 
+    bool inCheck = MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck();
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
-            return currentPosition->colorToGo == BLACK ? MINUS_INFINITY : INFINITY;
+            return currentPosition->colorToGo == BLACK ? INFINITY : MINUS_INFINITY;
         }
         // It is a stalemate
         return 0;
@@ -115,12 +119,12 @@ int Bot_staticEvaluation() {
 
     for (int i = 0; i < 2; i++) {
         PieceCharacteristics color = WHITE * (i + 1);
-        
+
         int view = color == WHITE ? 1 : -1;
         int opposingKingIndex = trailingZeros_64(Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(BLACK / (i + 1), KING)));
         kingAttacks = kingMovementMask[opposingKingIndex];
         friendlyBitBoard = Board_specificColorBitBoard(currentPosition->board, color);
-        
+
         for (PieceCharacteristics type = PAWN; type <= KING; type++) {
 
             bitboard = Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(color, type));
@@ -137,11 +141,11 @@ int Bot_staticEvaluation() {
                 // An open file is just a file where there are no of the own color pawns blocking the file
                 // We do not include the piece that we are currently looking in the file bitboard
                 currentFileWithoutPiece = (file << file(square)) & ~(1UL << square);
-                
+
                 if ((currentFileWithoutPiece & Board_bitBoardForPiece(currentPosition->board, Piece_makePiece(color, PAWN))) == 0) {
                     score += openFilesAndDoublePawns[type - 1] * view;
                 }
-                
+
                 switch (type) {
                 case KNIGHT:
                     attack = knightMovementMask[square] & (~friendlyBitBoard);
@@ -149,8 +153,8 @@ int Bot_staticEvaluation() {
                     break;
                 case BISHOP:
                     attack = MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
-                                 square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]
-                            ) & (~friendlyBitBoard);
+                        square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]
+                    ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
                     score += reducingKingMovementBonus[type - 3] * numBitSet_64(attack & kingAttacks) * view;
@@ -158,8 +162,8 @@ int Bot_staticEvaluation() {
 
                 case ROOK:
                     attack = MagicBitBoard_getRookPseudoLegalMovesBitBoard(
-                                 square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square]
-                            ) & (~friendlyBitBoard);
+                        square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square]
+                    ) & (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
                     score += reducingKingMovementBonus[type - 3] * numBitSet_64(attack & kingAttacks) * view;
@@ -167,10 +171,10 @@ int Bot_staticEvaluation() {
 
                 case QUEEN:
                     attack = (MagicBitBoard_getBishopPseudoLegalMovesBitBoard(
-                                  square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]) |
-                              MagicBitBoard_getRookPseudoLegalMovesBitBoard(
-                                  square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square])) &
-                             (~friendlyBitBoard);
+                        square, Board_allPiecesBitBoard(currentPosition->board) & bishopMovementMask[square]) |
+                        MagicBitBoard_getRookPseudoLegalMovesBitBoard(
+                            square, Board_allPiecesBitBoard(currentPosition->board) & rookMovementMask[square])) &
+                        (~friendlyBitBoard);
                     score += mobilityBonus[type - 2][numBitSet_64(attack)] * view;
                     // Adding more if the piece blocks the king
                     score += reducingKingMovementBonus[type - 3] * numBitSet_64(attack & kingAttacks) * view;
@@ -192,7 +196,7 @@ int Bot_staticEvaluation() {
                 // Note that all of the scores were taken from Stockfish 14
                 score += pieceSquareTable[Piece_makePiece(color, type) - 9][square];
 
-                bitboard &= bitboard - 1;   
+                bitboard &= bitboard - 1;
             }
         }
     }
@@ -230,27 +234,27 @@ int search(int alpha, int beta, int depth) {
     if (useTranspositionTable) {
         if ((score = TranspositionTable_getEvaluationFromKey(
             currentPosition->key, depth, alpha, beta)) != LOOKUP_FAILED) {
-                printf("TT current best move was: [From: %d, To: %d, Flag: %d]\n", 
-                    Move_fromSquare(bestMoveFromSearch),
-                    Move_toSquare(bestMoveFromSearch),
-                    Move_flag(bestMoveFromSearch)
-                );
-                bestMoveFromSearch = TranspositionTable_getMoveFromKey(currentPosition->key);
-                bestEvalFromSearch = score;
-                printf("TT current best move is: [From: %d, To: %d, Flag: %d]\n", 
-                    Move_fromSquare(bestMoveFromSearch),
-                    Move_toSquare(bestMoveFromSearch),
-                    Move_flag(bestMoveFromSearch)
-                );
-                return score;
+            printf("TT current best move was: [From: %d, To: %d, Flag: %d]\n",
+                Move_fromSquare(bestMoveFromSearch),
+                Move_toSquare(bestMoveFromSearch),
+                Move_flag(bestMoveFromSearch)
+            );
+            bestMoveFromSearch = TranspositionTable_getMoveFromKey(currentPosition->key);
+            bestEvalFromSearch = score;
+            printf("TT current best move is: [From: %d, To: %d, Flag: %d]\n",
+                Move_fromSquare(bestMoveFromSearch),
+                Move_toSquare(bestMoveFromSearch),
+                Move_flag(bestMoveFromSearch)
+            );
+            return score;
         }
     }
 
     if (depth == 0) {
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
-        int whoToMove = currentPosition->colorToGo == WHITE ? 1 : -1; 
-        score = Bot_staticEvaluation() * whoToMove; 
-        TranspositionTable_recordEntry(currentPosition->key, maximumDepth, EXACT, 
+        int whoToMove = currentPosition->colorToGo == WHITE ? 1 : -1;
+        score = Bot_staticEvaluation() * whoToMove;
+        TranspositionTable_recordEntry(currentPosition->key, maximumDepth, EXACT,
             bestMoveFromSearch, score);
 
         return score; // eventually do return quiesce(alpha, beta);
@@ -270,13 +274,13 @@ int search(int alpha, int beta, int depth) {
         // thus we switch them so that it works for the opponent
         score = -search(-beta, -alpha, depth - 1);
         memcpy(currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
-                
+
         // fail hard beta-cutoff
-        if (score >= beta) { 
-            TranspositionTable_recordEntry(currentPosition->key, maximumDepth, LOWER_BOUND, 
+        if (score >= beta) {
+            TranspositionTable_recordEntry(currentPosition->key, maximumDepth, LOWER_BOUND,
                 bestMoveFromSearch, score);
-            return score; 
-        }  
+            return score;
+        }
 
         if (!endSearch) {
             if (score > alpha) {
@@ -284,7 +288,7 @@ int search(int alpha, int beta, int depth) {
                 alpha = score; // alpha acts like max in MiniMax
 
                 if (depth == maximumDepth) {
-                    printf("current best move was: [From: %d, To: %d, Flag: %d]\n", 
+                    printf("current best move was: [From: %d, To: %d, Flag: %d]\n",
                         Move_fromSquare(bestMoveFromSearch),
                         Move_toSquare(bestMoveFromSearch),
                         Move_flag(bestMoveFromSearch)
@@ -292,20 +296,21 @@ int search(int alpha, int beta, int depth) {
                     bestMoveFromSearch = move;
                     bestEvalFromSearch = score;
 
-                    printf("Now it is: [From: %d, To: %d, Flag: %d]\n", 
+                    printf("Now it is: [From: %d, To: %d, Flag: %d]\n",
                         Move_fromSquare(bestMoveFromSearch),
                         Move_toSquare(bestMoveFromSearch),
                         Move_flag(bestMoveFromSearch)
                     );
                 }
             }
-        } else {
+        }
+        else {
             return 0;
         }
-        
+
     }
 
-    TranspositionTable_recordEntry(currentPosition->key, maximumDepth, ttEntryType, 
+    TranspositionTable_recordEntry(currentPosition->key, maximumDepth, ttEntryType,
         bestMoveFromSearch, score);
 
     return score;
@@ -318,7 +323,7 @@ Move Bot_think() {
         maximumDepth = depth;
         search(MINUS_INFINITY, INFINITY, maximumDepth);
 
-        printf("After depth %d current best move is: [From: %d, To: %d, Flag: %d]\n", 
+        printf("After depth %d current best move is: [From: %d, To: %d, Flag: %d]\n",
             depth,
             Move_fromSquare(bestMoveFromSearch),
             Move_toSquare(bestMoveFromSearch),
@@ -331,5 +336,5 @@ Move Bot_think() {
     }
 
     RepetitionTable_returnToRootPosition();
-    return bestMoveFromSearch; 
+    return bestMoveFromSearch;
 }

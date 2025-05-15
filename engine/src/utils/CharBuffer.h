@@ -56,8 +56,8 @@ typedef struct Tokens {
  *  Tokens tokens;  
  *  size_t nbTokens = string_removeUnecessarySpaces(string);  
  *  char *tokens_arr[nbTokens]; 
- *  tokens->length = nbTokens;  
- *  tokens->tokens = tokens_arr;  
+ *  tokens.length = nbTokens;  
+ *  tokens.tokens = tokens_arr;  
  *  string_tokenizeStringBySpace(string, &tokens);  
  * @endcode
  */

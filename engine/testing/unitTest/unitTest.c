@@ -67,8 +67,8 @@ Test tests[] = {
     { Test_TranspositionTable, "Transposition Table"}
 };
 
-// To run: ./unit
 int main(void) {
+    printf("Starting engine unit tests\n");
 
     size_t nbTests = sizeof(tests) / sizeof(Test);
 

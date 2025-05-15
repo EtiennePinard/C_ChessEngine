@@ -47,7 +47,7 @@ bool initializeSDLState(SDL_State* sdlState,
  * @return true If the textures are initialized correctly
  * @return false If the textures were not correctly initialized
  */
-bool initTextures(Textures* textures);
+bool initializeTextures(Textures* textures);
 
 /**
  * @brief Loads images into textures from file paths

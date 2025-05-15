@@ -60,7 +60,7 @@ bool initializeSDLState(SDL_State* sdlState,
     return true;
 }
 
-bool initTextures(Textures* textures) {
+bool initializeTextures(Textures* textures) {
     if (textures->data != NULL) return true; // textures is already initialized
 
     textures->capacity = DEFAULT_TEXTURE_CAPACITY;
@@ -101,6 +101,6 @@ bool initializeClickableArea(AppEvents* appEvents, size_t numClickableAreas) {
     if (appEvents->clickableAreas.data != NULL) return true; // clickableAreas is already initialized
 
     appEvents->clickableAreas.capacity = numClickableAreas;
-    appEvents->clickableAreas.data = malloc(appEvents->clickableAreas.capacity * sizeof(ClickableAreas));
+    appEvents->clickableAreas.data = malloc(appEvents->clickableAreas.capacity * sizeof(ClickableArea));
     return appEvents->clickableAreas.data != NULL;
 }

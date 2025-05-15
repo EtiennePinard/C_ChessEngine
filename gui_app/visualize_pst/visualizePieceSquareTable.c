@@ -28,7 +28,7 @@ and did not want to read documentation.
 #define BUTTON_RECT ((SDL_Rect) {0, WINDOW_HEIGHT - BUTTON_HEIGHT, WINDOW_WIDTH, BUTTON_HEIGHT})
 
 
-#define SQUARE_COLOR ((SDL_Color) {255, 0, 0, 255}) // blue
+#define SQUARE_COLOR ((SDL_Color) {255, 0, 0, 255}) // red
 #define TEXT_COLOR ((SDL_Color) {0, 0, 0, 255}) // black
 #define BUTTON_COLOR ((SDL_Color) {200, 200, 200, 255})
 
@@ -67,7 +67,7 @@ void visualizePieceSquareTable(SDL_Renderer* renderer, TTF_Font* font, int piece
             int midEgMixed = pieceSquareTable[squareIndex];
             int squareScore = phase == MIDGAME ? mg_value(midEgMixed) : eg_value(midEgMixed);
             Uint8 opacity = (Uint8)(normalizingFunction(abs(squareScore), maxValue, minValue) * 255.0);
-            opacity = max(100 , opacity);
+            opacity = max(100, opacity);
 
             SDL_SetRenderDrawColor(renderer,
                 SQUARE_COLOR.r, SQUARE_COLOR.g, SQUARE_COLOR.b,

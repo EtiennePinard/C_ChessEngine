@@ -150,6 +150,10 @@ static inline void playBotMove(GameState *gameState) {
     }
     gameState->turnStartTick = currentTick;
 
+    Move move[256];
+    int size;
+    MoveHandler_getValidMoves(move, &size, gameState->currentState);
+    botMove = move[0];
     if (botMove == BOT_ERROR) {
         // The bot thinks the game is done
         if (gameState->result == GAME_IS_NOT_DONE) {
@@ -279,7 +283,7 @@ static void chessBoardMouseButtonUp(App app) {
                                        app.state->textures, 
                                        app.state->gameState.currentState.colorToGo, 
                                        draggingTo, 
-                                       app.state->gameState.playerColor,
+                                       app.state->gameState.playerColor == BLACK,
                                        &popup);
                 handlePopup(&popup, app);
                 return; // The callback will handle playing the turn

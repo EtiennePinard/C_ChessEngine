@@ -21,8 +21,8 @@ Piece Board_pieceAtIndex(Board board, u8 index) {
     Piece q = ((board.bitboards[12] >> index) & 1UL) * Piece_makePiece(BLACK, QUEEN);
     Piece k = ((board.bitboards[13] >> index) & 1UL) * Piece_makePiece(BLACK, KING);
 
-    return (Piece) (K + Q + N + B + R + P +
-                    k + q + n + b + r + p);
+    return (Piece) (K | Q | N | B | R | P |
+                    k | q | n | b | r | p);
 }
 
 BitBoard Board_bitBoardForPiece(Board board, Piece piece) {

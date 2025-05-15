@@ -104,6 +104,27 @@ static Move findMatchingMove(Move moveToMatch) {
     return moveToMake;
 }
 
+static void processPlayCommand(Tokens *tokens) {
+    if (tokens->length == 1) {
+        // The command is just: play
+        // In this case we just do nothing
+        return;
+    }
+    size_t tokenIndex = 1;
+    while (tokenIndex < tokens->length) {        
+        Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
+
+        if (moveToMake == NULL_MOVE) {
+            sendResponse("The move `%s` cannot be made from the current position, aborting play command\n", tokens->tokens[tokenIndex]);
+            break;
+        }
+        MoveHandler_playMove(moveToMake, &ourCurrentPosition, true);
+
+        tokenIndex++;
+    }
+
+}
+
 #define STARTPOS_LENGTH (9)
 // Format: 'position startpos moves e2e4 e7e5'
 // Or: 'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5'
@@ -167,18 +188,12 @@ static void processPositionCommand(Tokens *tokens) {
         return;
     }
 
-    tokenIndex++;
-    while (tokenIndex < tokens->length) {        
-        Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
-
-        if (moveToMake == NULL_MOVE) {
-            sendResponse("The move `%s` cannot be made from the current position, aborting position command\n", tokens->tokens[tokenIndex]);
-            break;
-        }
-        MoveHandler_playMove(moveToMake, &ourCurrentPosition, true);
-
-        tokenIndex++;
-    }
+    Tokens moveTokens = {
+        // We don't increment the tokenIndex because the processPlayCommand function discards the first token
+        .tokens = tokens->tokens + tokenIndex,
+        .length =  tokens->length - tokenIndex
+    };
+    processPlayCommand(&moveTokens);
 }
 
 // The function that the timer thread will execute
@@ -273,6 +288,9 @@ bool processUCICommand(char *command) {
     } else if (string_compareStrings(messageType, "position")) {
         processPositionCommand(&tokens);
     
+    } else if (string_compareStrings(messageType, "play")) {
+        processPlayCommand(&tokens);
+
     } else if (string_compareStrings(messageType, "go")) {
         processGoCommand(&tokens);
     

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
+
 #include "../../src/moveHandler/MoveGenerator.h"
 #include "../../src/moveHandler/MovePlayer.h"
 #include "../../src/utils/FenString.h"
@@ -23,63 +24,64 @@ ChessPosition currentPosition = { 0 };
 ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
 bool divide = false;
-u32 hashHits = 0; 
+u32 hashHits = 0;
 
 int exitCode = 0;
 
 u64 perft(u8 depth) {
-  if (depth == 0) { return 1; }
+    if (depth == 0) { return 1; }
 
-  int nbOfMoves;
-  Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
-  MoveHandler_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
-  u64 nodes = 0;
+    int nbOfMoves;
+    Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
+    MoveHandler_getValidMoves(validMoves, &nbOfMoves, currentPosition); // We do not care about draw by repetition
+    u64 nodes = 0;
 
-  // Note that here we do not take into account the fifty move rule
-  // This could make it so that our perft result differ from other engine
-  // Thus let us be aware of this potential bug
-  if (nbOfMoves == 0) {
-      // There is a checkmate or a draw, continuing to next move
-      return 0;
-  }
-
-  if (depth == 1) {
-    return nbOfMoves;
-  }
-  
-  posHistory[maximumDepth - depth] = currentPosition;
-  
-  for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
-
-    Move move = validMoves[moveIndex];
-
-    
-    MoveHandler_playMove(move, &currentPosition, false); // Move is made
-
-    u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth);
-
-    if (moveOutput == LOOKUP_FAILED) {
-      moveOutput = perft(depth - 1); // We generate the moves for the next perft
-
-      PerftTranspositionTable_recordPerft((PerftTranspositionTable) { 
-        .key = currentPosition.key, 
-        .depth = depth, 
-        .perft = moveOutput
-      });
-    } else {
-      hashHits++;
+    // Note that here we do not take into account the fifty move rule
+    // This could make it so that our perft result differ from other engine
+    // Thus let us be aware of this potential bug
+    if (nbOfMoves == 0) {
+        // There is a checkmate or a draw, continuing to next move
+        return 0;
     }
 
-    if (divide && depth == maximumDepth) {
-      printMoveToAlgebraic(move);
-      printf(": %lu\n", moveOutput);
+    if (depth == 1) {
+        return nbOfMoves;
     }
-    nodes += moveOutput;
 
-    memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
-  }
-  
-  return nodes;
+    posHistory[maximumDepth - depth] = currentPosition;
+
+    for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
+
+        Move move = validMoves[moveIndex];
+
+
+        MoveHandler_playMove(move, &currentPosition, false); // Move is made
+
+        u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth);
+
+        if (moveOutput == LOOKUP_FAILED) {
+            moveOutput = perft(depth - 1); // We generate the moves for the next perft
+
+            PerftTranspositionTable_recordPerft((PerftTranspositionTable) {
+                .key = currentPosition.key,
+                    .depth = depth,
+                    .perft = moveOutput
+            });
+        }
+        else {
+            hashHits++;
+        }
+
+        if (divide && depth == maximumDepth) {
+            printMoveToAlgebraic(move);
+            printf(": %lu\n", moveOutput);
+        }
+        nodes += moveOutput;
+
+        memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+    }
+
+    return nodes;
 }
 
 /* Testing all the double pawn push case
@@ -109,9 +111,9 @@ k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
  * perftResults returns the expected number of moves for a depth (the indices of said int)
 */
 typedef struct testPosition {
-  char* fenString;
-  int nbTest;
-  int* perftResults;
+    char* fenString;
+    int nbTest;
+    int* perftResults;
 } TestPosition;
 
 // These are the 8 ANSI color types
@@ -130,189 +132,197 @@ const char testPassed[] = GRN "✓" RESET;
 const char testFailedPrefix[] = RED "❌" RESET " Test failed (expected ";
 
 void test() {
-  if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
-    printf("ERROR: Failure to properly initialize, exiting program\n");
-    exit(EXIT_FAILURE);
-  }
-
-  int startingPosResults[6] = {1, 20, 400, 8902, 197281, 4865609};
-  TestPosition startingPositionTests = {
-    .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 
-    .nbTest = 6, 
-    .perftResults = startingPosResults
-  };
-  
-  int pos2Result[5] = {1, 48, 2039, 97862, 4085603};
-  TestPosition pos2 = {
-    .fenString = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-    .nbTest = 5,
-    .perftResults = pos2Result
-  };
-  
-  int pos3Result[7] = {1, 14, 191, 2812, 43238, 674624, 11030083};
-  TestPosition pos3 = {
-    .fenString = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
-    .nbTest = 7,
-    .perftResults = pos3Result
-  };
-
-  int pos4Result[6] = {1, 6, 264, 9467, 422333, 15833292};
-  TestPosition pos4 = {
-    .fenString = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-    .nbTest = 6,
-    .perftResults = pos4Result
-  };
-
-  int pos5Result[5] = {1, 44, 1486, 62379, 2103487};
-  TestPosition pos5 = {
-    .fenString = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-    .nbTest = 5,
-    .perftResults = pos5Result
-  };
-
-  int pos6Result[5] = {1, 46, 2079, 89890, 3894594};
-  TestPosition pos6 = {
-    .fenString = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-    .nbTest = 5,
-    .perftResults = pos6Result
-  };
-
-  TestPosition testPositions[NUM_TEST_POSITIONS] = { 
-    startingPositionTests, 
-    pos2,
-    pos3,
-    pos4,
-    pos5,
-    pos6, 
-  };
-
-  // This is a little fail-safe so that we don't hit memory issues if we increase the depth of the tests
-  for (size_t index = 0; index < NUM_TEST_POSITIONS; index++) {
-    if (testPositions[index].nbTest > MAXIMUM_DEPTH) {
-      printf("The biggest depth of test %d exceeds the position history limit, %d\n", testPositions[index].nbTest, MAXIMUM_DEPTH);
-      MagicBitBoard_terminate();
-      exit(EXIT_FAILURE);
-    }
-  }
-  
-  ChessPosition startingState;
-  u64 perftResult;
-  double timeSpent;
-  clock_t begin, end, fullTestBegin = clock();
-  
-  for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
-    TestPosition testPosition = testPositions[i];
-    
-    if (!FenString_setChessPositionFromCopiedFenString(testPosition.fenString, &currentPosition)) {
-      printf("ERROR: Unable to set the chess position from the fen string, exiting program\n");
-      exit(EXIT_FAILURE);
+    if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
+        printf("ERROR: Failure to properly initialize, exiting program\n");
+        exit(EXIT_FAILURE);
     }
 
-    startingState = currentPosition;
-    
-    printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
+    int startingPosResults[6] = { 1, 20, 400, 8902, 197281, 4865609 };
+    TestPosition startingPositionTests = {
+      .fenString = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      .nbTest = 6,
+      .perftResults = startingPosResults
+    };
 
-    for (int depth = 0; depth < testPosition.nbTest; depth++) {
-      maximumDepth = depth;
-      hashHits = 0;
-      begin = clock();
-      perftResult = perft(depth);
-      end = clock();
-      timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
-      
-      printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%u" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
-      if (perftResult == (u64) testPosition.perftResults[depth]) {
-        printf("%s" RESET "\n", testPassed);
-      } else {
-        printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
-        exitCode++;
-      }
+    int pos2Result[5] = { 1, 48, 2039, 97862, 4085603 };
+    TestPosition pos2 = {
+      .fenString = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+      .nbTest = 5,
+      .perftResults = pos2Result
+    };
 
-      memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
-      PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
+    int pos3Result[7] = { 1, 14, 191, 2812, 43238, 674624, 11030083 };
+    TestPosition pos3 = {
+      .fenString = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+      .nbTest = 7,
+      .perftResults = pos3Result
+    };
+
+    int pos4Result[6] = { 1, 6, 264, 9467, 422333, 15833292 };
+    TestPosition pos4 = {
+      .fenString = "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
+      .nbTest = 6,
+      .perftResults = pos4Result
+    };
+
+    int pos5Result[5] = { 1, 44, 1486, 62379, 2103487 };
+    TestPosition pos5 = {
+      .fenString = "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+      .nbTest = 5,
+      .perftResults = pos5Result
+    };
+
+    int pos6Result[5] = { 1, 46, 2079, 89890, 3894594 };
+    TestPosition pos6 = {
+      .fenString = "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
+      .nbTest = 5,
+      .perftResults = pos6Result
+    };
+
+    TestPosition testPositions[NUM_TEST_POSITIONS] = {
+      startingPositionTests,
+      pos2,
+      pos3,
+      pos4,
+      pos5,
+      pos6,
+    };
+
+    // This is a little fail-safe so that we don't hit memory issues if we increase the depth of the tests
+    for (size_t index = 0; index < NUM_TEST_POSITIONS; index++) {
+        if (testPositions[index].nbTest > MAXIMUM_DEPTH) {
+            printf("The biggest depth of test %d exceeds the position history limit, %d\n", testPositions[index].nbTest, MAXIMUM_DEPTH);
+            MagicBitBoard_terminate();
+            PerftTranspositionTable_terminate();
+            exit(EXIT_FAILURE);
+        }
     }
 
-    printf("\n");
-  }
+    ChessPosition startingState;
+    u64 perftResult;
+    double timeSpent;
+    clock_t begin, end, fullTestBegin = clock();
 
-  clock_t fullTestEnd = clock();
-  double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
-  printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+    for (int i = 0; i < NUM_TEST_POSITIONS; i++) {
+        TestPosition testPosition = testPositions[i];
 
-  MagicBitBoard_terminate();
-  PerftTranspositionTable_terminate();
+        if (!FenString_setChessPositionFromCopiedFenString(testPosition.fenString, &currentPosition)) {
+            printf("ERROR: Unable to set the chess position from the fen string, exiting program\n");
+            exit(EXIT_FAILURE);
+        }
+
+        startingState = currentPosition;
+
+        printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
+
+        for (int depth = 0; depth < testPosition.nbTest; depth++) {
+            maximumDepth = depth;
+            hashHits = 0;
+            begin = clock();
+            perftResult = perft(depth);
+            end = clock();
+            timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
+
+            printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%u" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
+            if (perftResult == (u64)testPosition.perftResults[depth]) {
+                printf("%s" RESET "\n", testPassed);
+            }
+            else {
+                printf("%s " RED "%d" RESET ")\n", testFailedPrefix, testPosition.perftResults[depth]);
+                exitCode++;
+            }
+
+            memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
+            PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
+        }
+
+        printf("\n");
+    }
+
+    clock_t fullTestEnd = clock();
+    double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
+    printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+
+    MagicBitBoard_terminate();
+    PerftTranspositionTable_terminate();
 }
 
 void usage(char* programName) {
-  printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
-  printf("\tIf `mode` is not provided it will default to divide mode\n");
-  printf("\tIf `position` is not provided it will default to the starting position\n");
-  printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
-  printf("\t`depth` needs to be provided for the modes it applies to\n");
+    printf("Usage: %s <mode (divide, time, test)> [position (fen string)] [depth (positive integer)]\n", programName);
+    printf("\tIf `mode` is not provided it will default to divide mode\n");
+    printf("\tIf `position` is not provided it will default to the starting position\n");
+    printf("\tThe `position` and `depth` argument only apply for the divide and time mode\n");
+    printf("\t`depth` needs to be provided for the modes it applies to\n");
 }
 
 // To compile and run the program: ./perft
 // To check for memory leaks: valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./perftTesting <args>
 int main(int argc, char* argv[]) {
     if (argc == 1) {
-      usage(argv[0]);
-      exit(EXIT_FAILURE);
+        usage(argv[0]);
+        exit(EXIT_FAILURE);
     }
 
     char* fenString = INITIAL_FEN;
     maximumDepth = -1;
 
     { // I am wrapping this code in a scope to not "leak out" the firstArg variable  
-      char* firstArg = argv[1];
-      if (string_compareStrings(firstArg, "test")) {
-        test();
-        return exitCode;
-      }
-      if (string_compareStrings(firstArg, "divide")) {
-        divide = true;
-      } else if (!string_compareStrings(firstArg, "time")) {
-        // No mode parameter is provided, so the mode is divide and the first argument is either a fen string of a depth
-        divide = true;
-        maximumDepth = string_parseNumber(firstArg);
-        if (maximumDepth == -1) {
-          // The first argument is probably a fen string
-          fenString = firstArg;
+        char* firstArg = argv[1];
+        if (string_compareStrings(firstArg, "test")) {
+            test();
+            return exitCode;
         }
-      }
+        if (string_compareStrings(firstArg, "divide")) {
+            divide = true;
+        }
+        else if (!string_compareStrings(firstArg, "time")) {
+            // No mode parameter is provided, so the mode is divide and the first argument is either a fen string of a depth
+            divide = true;
+            maximumDepth = string_parseNumber(firstArg);
+            if (maximumDepth == -1) {
+                // The first argument is probably a fen string
+                fenString = firstArg;
+            }
+        }
     }
 
     if (argc >= 3) {
-      char* secondArg = argv[2];
-      maximumDepth = string_parseNumber(secondArg);
-      if (maximumDepth == -1) {
-        // The second argument is probably a fen string
-        fenString = secondArg;
-      }
+        char* secondArg = argv[2];
+        maximumDepth = string_parseNumber(secondArg);
+        if (maximumDepth == -1) {
+            // The second argument is probably a fen string
+            fenString = secondArg;
+        }
     }
 
     if (argc >= 4) {
-      char* thirdArgument = argv[3];
-      maximumDepth = string_parseNumber(thirdArgument);
-      // This argument needs to be the depth
-      if (maximumDepth == -1) {
-        printf("The argument %s is not a valid perft number\n", thirdArgument);
-        exit(EXIT_FAILURE);
-      }
+        char* thirdArgument = argv[3];
+        maximumDepth = string_parseNumber(thirdArgument);
+        // This argument needs to be the depth
+        if (maximumDepth == -1) {
+            printf("The argument %s is not a valid perft number\n", thirdArgument);
+            exit(EXIT_FAILURE);
+        }
     }
 
     if (maximumDepth < 0) {
-      printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
-      exit(EXIT_FAILURE);
+        printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
+        exit(EXIT_FAILURE);
+    }
+
+    if (maximumDepth > MAXIMUM_DEPTH) {
+        printf("The depth %d exceeds the position history limit, %d\n", maximumDepth, MAXIMUM_DEPTH);
+        exit(EXIT_FAILURE);
     }
 
     if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
-      printf("ERROR: Failure to properly initialize, exiting program\n");
-      exit(EXIT_FAILURE);
+        printf("ERROR: Failure to properly initialize, exiting program\n");
+        exit(EXIT_FAILURE);
     }
 
-    if (!FenString_setChessPositionFromCopiedFenString(fenString, &currentPosition)) { 
-      printf("ERROR while setup of chess game state\n Exiting\n");
-      exit(EXIT_FAILURE);
+    if (!FenString_setChessPositionFromCopiedFenString(fenString, &currentPosition)) {
+        printf("ERROR while setup of chess game state\n Exiting\n");
+        exit(EXIT_FAILURE);
     }
 
     printBoard_stockfish(currentPosition.board);
@@ -324,13 +334,13 @@ int main(int argc, char* argv[]) {
     begin = clock();
     perftResult = perft(maximumDepth);
     end = clock();
-        
+
     double timeSpent_ms = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
-    
+
     printf("Perft depth %d returned a total number of moves of %lu, had %u hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();
-    
+
     return exitCode;
 }

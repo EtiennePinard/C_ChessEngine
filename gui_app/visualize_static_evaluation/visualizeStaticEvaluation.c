@@ -165,17 +165,24 @@ FenStringFileData initializeFenStringFileData(FILE* file) {
             }
         }
         
-        // Removing the new line character from the string
-        size_t fenLength = strlen(fen);
-        if (fenLength == 0) {
-            fprintf(stderr, "There is an empty line in the file, exiting...\n");
-            exit(EXIT_FAILURE);
+        // We ignore empty lines
+        if (fen[0] == '\n') { continue; }
+
+        size_t fenLength = 0;
+        while (fen[fenLength] != '\n' && fen[fenLength] != '#') {
+            fenLength++;
         }
-        fen[fenLength - 1] = '\0';
+        // If we have reached the end of fen string or we have encountered a comment
+        for (; fen[fenLength] != '\n' && fen[fenLength] != '#'; fenLength++);
+
+        fen[fenLength] = '\0';
+
+        // We ignore lines which are only comments
+        if (fenLength == 0) { continue; }
 
         fens[counter].length = string_removeUnecessarySpaces(fen);
         if (fens[counter].length != 6) {
-            fprintf(stderr, "A fen string is composed of exactly 6 strings separated by spaces. This supposed fen string does not do that: %s\nExiting...", fen);
+            fprintf(stderr, "A fen string is composed of exactly 6 strings separated by spaces. This supposed fen string does not do that: `%s`\nExiting...", fen);
             exit(EXIT_FAILURE);
         }
 

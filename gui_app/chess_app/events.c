@@ -15,7 +15,7 @@
 #include "Overlay.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
-inline static int squareFromxy(int x, int y, bool flip) {
+inline static Square squareFromxy(int x, int y, bool flip) {
     int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
     int col = (x - CHESSBOARD_X) / squareSize;
     int row = y / squareSize;
@@ -23,7 +23,7 @@ inline static int squareFromxy(int x, int y, bool flip) {
         col = BOARD_LENGTH - 1 - col;
         row = BOARD_LENGTH - 1 - row;
     }
-    return row * BOARD_LENGTH + col;
+    return (Square) row * BOARD_LENGTH + col;
 }
 
 /*
@@ -252,7 +252,7 @@ static void chessBoardMouseButtonUp(App app) {
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     
-    int draggingTo = squareFromxy(mouseX, mouseY, app.state->gameState.playerColor == BLACK);
+    Square draggingTo = squareFromxy(mouseX, mouseY, app.state->gameState.playerColor == BLACK);
 
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so

@@ -1,9 +1,10 @@
-#include "Board.h"
 #include <assert.h>
 #include <stdlib.h>
 
+#include "Board.h"
+
 // TODO: This should be a great place for SIMD, right?
-Piece Board_pieceAtIndex(Board board, u8 index) {
+Piece Board_pieceAtIndex(Board board, Square index) {
     assert(index <= 63);
     assert(board.bitboards != NULL);
 
@@ -51,7 +52,7 @@ BitBoard Board_allPiecesBitBoard(Board board) {
     return Board_specificColorBitBoard(board, BLACK) | Board_specificColorBitBoard(board, WHITE);
 }
 
-void Board_togglePieceAtIndex(Board* board, u8 index, Piece piece) {
+void Board_togglePieceAtIndex(Board* board, Square index, Piece piece) {
     assert(board != NULL);
     assert(board->bitboards != NULL);
     assert(Piece_color(piece) == WHITE || Piece_color(piece) == BLACK);

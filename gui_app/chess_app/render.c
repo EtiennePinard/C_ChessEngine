@@ -301,7 +301,7 @@ static void renderChessboard(SDL_Renderer* renderer,
 
     bool flip = gameState->playerColor == BLACK;
 
-    for (int squareIndex = 0; squareIndex < BOARD_SIZE; squareIndex++) {
+    for (Square squareIndex = 0; squareIndex < BOARD_SIZE; squareIndex++) {
         int row = rank(squareIndex);
         int col = file(squareIndex);
         if (flip) {

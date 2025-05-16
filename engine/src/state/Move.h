@@ -28,8 +28,8 @@ typedef enum {
     PROMOTE_TO_BISHOP
 } Flag;
 
-#define Move_fromSquare(move) (move & 0b111111)
-#define Move_toSquare(move) ((move >> 6) & 0b111111)
+#define Move_fromSquare(move) ((Square) (move & 0b111111))
+#define Move_toSquare(move) ((Square) ((move >> 6) & 0b111111))
 #define Move_flag(move) ((Flag) (move >> 12))
 #define Move_makeMove(from, to, flag) (Move) (from + (to << 6) + (flag << 12))
 

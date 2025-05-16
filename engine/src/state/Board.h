@@ -77,7 +77,7 @@ BitBoard Board_allPiecesBitBoard(Board board);
  * @param index The index of the chess board to get the piece
  * @return Piece The piece at that index
  */
-Piece Board_pieceAtIndex(Board board, u8 index);
+Piece Board_pieceAtIndex(Board board, Square index);
 
 /**
  * @brief Puts the bits at a specific index of a piece bit board to the opposite state.
@@ -88,7 +88,7 @@ Piece Board_pieceAtIndex(Board board, u8 index);
  * @param index The index to toggle the bit on or off
  * @param piece The bitboard to toggle the bits in
  */
-void Board_togglePieceAtIndex(Board* board, u8 index, Piece piece);
+void Board_togglePieceAtIndex(Board* board, Square index, Piece piece);
 
 /**
  * @brief Converts and puts the information in the piece's `array` to the `result` board.

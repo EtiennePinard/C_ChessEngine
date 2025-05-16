@@ -33,8 +33,8 @@
 
 typedef struct DraggingState {
     bool isDragging;
-    char from;
-    char to; // The square that it ended on
+    Square from;
+    Square to; // The square that it ended on
     Piece draggedPiece;
 } DraggingState;
 

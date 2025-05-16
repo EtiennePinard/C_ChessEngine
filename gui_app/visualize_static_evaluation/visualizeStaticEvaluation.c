@@ -131,7 +131,7 @@ void changePosition(AppState* state) {
         fprintf(stderr, "Failed to initialize the position, exiting...\n");
         exit(EXIT_FAILURE);
     }
-    Bot_provideGameStateForBot(&state->evaluation.position);
+    Bot_provideGameStateForBot(state->evaluation.position);
     state->evaluation.staticEvaluation = Bot_staticEvaluation();
 }
 

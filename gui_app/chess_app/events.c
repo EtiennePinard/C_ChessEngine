@@ -107,8 +107,8 @@ static void computeGameEnd(GameState *gameState) {
 
 static inline void playMoveOnBoard(GameState *gameState, Move move) {
     if (gameState->previousStateIndex >= gameState->previousStateCapacity) {
-        gameState->previousStates = realloc(gameState->previousStates, sizeof(GameState) * gameState->previousStateCapacity * 2);
         gameState->previousStateCapacity *= 2;
+        gameState->previousStates = realloc(gameState->previousStates, sizeof(GameState) * gameState->previousStateCapacity);
     }
     gameState->previousStates[gameState->previousStateIndex++] = gameState->currentState;
     MoveHandler_playMove(move, &gameState->currentState, true);
@@ -123,7 +123,7 @@ static void* timerThread(void* arg) {
 }
 
 static inline void playBotMove(GameState *gameState) {
-    Bot_provideGameStateForBot(&gameState->currentState);
+    Bot_provideGameStateForBot(gameState->currentState);
 
     // Well be searching for 100 ms
     u64 durationInMilliseconds = 100;
@@ -150,10 +150,6 @@ static inline void playBotMove(GameState *gameState) {
     }
     gameState->turnStartTick = currentTick;
 
-    Move move[256];
-    int size;
-    MoveHandler_getValidMoves(move, &size, gameState->currentState);
-    botMove = move[0];
     if (botMove == BOT_ERROR) {
         // The bot thinks the game is done
         if (gameState->result == GAME_IS_NOT_DONE) {

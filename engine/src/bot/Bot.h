@@ -13,7 +13,7 @@
  * 
  * @param position The position that the bot will analyze
  */
-void Bot_provideGameStateForBot(ChessPosition* position);
+void Bot_provideGameStateForBot(ChessPosition position);
 
 /**
  * @brief Computes the best move in the position given in the Bot_provideGameStateForBot function

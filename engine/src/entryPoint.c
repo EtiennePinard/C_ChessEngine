@@ -13,12 +13,11 @@
 #include "UCICommandProcessing.h"
 
 static void initEngine() {
-    char initFenStringCopied[] = INITIAL_FEN;
     if (!MagicBitBoard_init() ||
         !ZobristKey_init() ||
         !PieceSquareTable_init() ||
         !TranspositionTable_init() ||
-        !FenString_setChessPositionFromFenString(initFenStringCopied, &ourCurrentPosition)) {
+        !FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &ourCurrentPosition)) {
         
         sendResponse("Failed to initialize the engine properly, terminating the program...\n");
         exit(EXIT_FAILURE);
@@ -39,6 +38,7 @@ static void terminateEngine() {
  * 
  * @return char* A heap allocated char containing the line. It is the caller responsibility to free this memory.
  */
+// TODO: Potential speedup, tokenize the command here instead of within the processUCICommand function
 static char *readArbitraryLongLineFromStdin(char *buffer, int capacity) {
     assert(buffer != NULL && "Buffer is null, Buy more RAM LOL");
     int numByteRead = 0;

@@ -216,7 +216,7 @@ static void processGoCommand(Tokens *tokens) {
     }
     u64 durationInMilliseconds = 100;
 
-    Bot_provideGameStateForBot(&ourCurrentPosition);
+    Bot_provideGameStateForBot(ourCurrentPosition);
     
     pthread_t timer;
     if (pthread_create(&timer, NULL, timerThread, &durationInMilliseconds) != 0) {

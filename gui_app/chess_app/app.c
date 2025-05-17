@@ -27,7 +27,7 @@ bool initializeApp(App app) {
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
             FONT_PATH, FONT_SIZE) ||
         !initializeTextures(&app.state->textures) ||
-        !initializeClickableArea(app.events, 3) ||
+        !initializeClickableArea(app.events, TOTAL_CLICKABLE_AREA) ||
         !loadImageFromFilePath(&app.state->sdlState, &app.state->textures, PIECE_NAMES, NB_PIECES)) {
         return false;
     }

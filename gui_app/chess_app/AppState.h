@@ -27,9 +27,13 @@
 #define CHESSBOARD_RECT ((SDL_Rect) { .x = CHESSBOARD_X, .y = CHESSBOARD_Y, .w = CHESSBOARD_WIDTH, .h = CHESSBOARD_HEIGHT })
 
 // Constants for clickable areas
-#define CHESSBOARD_INDEX (0)
-#define RESTART_BUTTON_INDEX (1)
-#define SWITCH_BUTTON_INDEX (2)
+typedef enum ClickableAreaIndex {
+    CHESSBOARD_INDEX,
+    RESTART_BUTTON_INDEX,
+    SWITCH_BUTTON_INDEX,
+    BACK_BUTTON_INDEX,
+    TOTAL_CLICKABLE_AREA
+} ClickableAreaIndex;
 
 typedef struct DraggingState {
     bool isDragging;

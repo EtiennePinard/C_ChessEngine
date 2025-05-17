@@ -33,7 +33,7 @@ extern volatile bool endSearch;
 
 #ifdef DEBUG
     extern bool useTranspositionTable;
-    extern int maximumDepth;
+    extern int currentDepth;
 #endif
 
 #endif /* A674C591_4B1F_47E1_8F49_FF09345BAD1D */

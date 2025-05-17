@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-// #define DEBUG
-
 #include "Bot.h"
 #include "PieceSquareTable.h"
 #include "RepetitionTable.h"
@@ -16,13 +14,7 @@
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "../moveHandler/MoveGenerator.h"
 #include "../moveHandler/MovePlayer.h"
-#include "../../testing/LogChessStructs.h"
 #include "../utils/Math.h"
-
-
-#ifdef DEBUG
-FILE* loggingFile = NULL;
-#endif
 
 #define INFINITY 2000000
 #define MINUS_INFINITY -INFINITY
@@ -208,9 +200,12 @@ int Bot_staticEvaluation() {
 
 // Max depth is 100 for now
 ChessPosition posHistory[MAXIMUM_DEPTH];
-int maximumDepth;
-Move bestMoveFromSearch = NULL_MOVE;
-int bestEvalFromSearch = 0;
+int currentDepth;
+
+Move bestMoveFromCurrentDepthSearch;
+int bestEvalFromCurrentSearch;
+
+Move bestMoveFromFullDepthSearch;
 
 int negamax(int depth) {
     if (endSearch) {
@@ -228,14 +223,14 @@ int negamax(int depth) {
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     MoveHandler_getValidMoves(validMoves, &nbOfMoves, currentPosition);
 
-    posHistory[maximumDepth - depth] = currentPosition;
+    posHistory[currentDepth - depth] = currentPosition;
 
     for (int i = 0; i < nbOfMoves; i++) {
         Move move = validMoves[i];
         MoveHandler_playMove(move, &currentPosition, true);
 
         int score = -negamax(depth - 1);
-        memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+        memcpy(&currentPosition, &posHistory[currentDepth - depth], sizeof(ChessPosition));
 
         if (score > max) {
             max = score;
@@ -253,8 +248,10 @@ int negamax(int depth) {
 Move Bot_think() {
     RepetitionTable_setCurrentIndexAsRootPosition();
 
-    bestMoveFromSearch = NULL_MOVE;
-    bestEvalFromSearch = MINUS_INFINITY;
+    bestMoveFromCurrentDepthSearch = NULL_MOVE;
+    bestEvalFromCurrentSearch = MINUS_INFINITY;
+    bestMoveFromFullDepthSearch = NULL_MOVE;
+
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int nbMoves;
     MoveHandler_getValidMoves(moves, &nbMoves, currentPosition);
@@ -263,7 +260,13 @@ Move Bot_think() {
     posHistory[0] = currentPosition;
 
     for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
-        maximumDepth = depth;
+        currentDepth = depth;
+        // At every depth, we need to reset the bestEvalFromSearch to MINUS_INFINITY
+        // because the result from a lower depth are irrelevant when searching at a higher depth
+        bestEvalFromCurrentSearch = MINUS_INFINITY;
+
+        // Check endSearch before the long search loop
+        if (endSearch) goto stop_search;
 
         for (int index = 0; index < nbMoves; index++) {
             Move move = moves[index];
@@ -273,24 +276,28 @@ Move Bot_think() {
             // We need to do the negative of negamax because a good score for our opponent is a bad score for us
             int score = -negamax(depth - 1);
 
-            if (score > bestEvalFromSearch) {
-                bestEvalFromSearch = score;
-                bestMoveFromSearch = move;
+            // Check endSearch before using the calculated score because it could be 0 
+            // if endSearch is triggered when we were searching
+            if (endSearch) goto stop_search;
+
+
+            if (score > bestEvalFromCurrentSearch) {
+                bestEvalFromCurrentSearch = score;
+                bestMoveFromCurrentDepthSearch = move;
             }
 
             memcpy(&currentPosition, posHistory, sizeof(ChessPosition));
-            if (endSearch) {
-                break;
-            }
 
         }
         RepetitionTable_returnToRootPosition();
 
-        if (endSearch) {
-            break;
-        }
+        // We have done one full depth search and so we update the full search best move
+        bestMoveFromFullDepthSearch = bestMoveFromCurrentDepthSearch;
+
+        if (endSearch) goto stop_search;
     }
 
+stop_search:
     RepetitionTable_returnToRootPosition();
-    return bestMoveFromSearch;
+    return bestMoveFromFullDepthSearch;
 }

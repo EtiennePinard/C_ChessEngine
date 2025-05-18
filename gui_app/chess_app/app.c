@@ -35,6 +35,11 @@ bool initializeApp(App app) {
     // Chessboard position will not change while the app is running, so we can add it once at app startup
     app.events->clickableAreas.data[CHESSBOARD_INDEX] = (ClickableArea){ .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard };
 
+    MagicBitBoard_init();
+    ZobristKey_init();
+    PieceSquareTable_init();
+    TranspositionTable_init();
+
     if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentState)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
         SDL_DestroyRenderer(app.state->sdlState.renderer);
@@ -56,10 +61,6 @@ bool initializeApp(App app) {
 
     app.state->draggingState.isDragging = false;
 
-    MagicBitBoard_init();
-    ZobristKey_init();
-    PieceSquareTable_init();
-    TranspositionTable_init();
 
     // We are officially running the app!
     app.events->hasQuitEventHappened = false;
@@ -83,7 +84,6 @@ void cleanupApp(App app) {
     quitSDL();
 }
 
-// TODO: Add a way to go back in moves
 // TODO: Add sounds Note: Upgrade to SDL3 before doing audio
 int main() {
     AppState appState = { 0 };

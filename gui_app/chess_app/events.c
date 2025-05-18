@@ -179,15 +179,15 @@ static inline void playTurn(GameState* gameState, Move playerMove) {
 }
 
 static void resetGame(GameState* gameState) {
-    if (gameState->previousStateIndex == 0) {
-        return; // Game is already reset
+    // If we are not already at the beginning go back to the beginning
+    if (gameState->previousStateIndex != 0) {
+        gameState->currentState = gameState->previousStates[0];
+        gameState->previousStateIndex = 0;
     }
-    gameState->currentState = gameState->previousStates[0];
-    gameState->previousStateIndex = 0;
     gameState->result = GAME_IS_NOT_DONE;
-    gameState->turnStartTick = SDL_GetTicks64();
     gameState->blackRemainingTime = STARTING_TIME_MS;
     gameState->whiteRemainingTime = STARTING_TIME_MS;
+    gameState->turnStartTick = SDL_GetTicks64();
     // Note that we are not changing the player color
 }
 
@@ -249,7 +249,6 @@ static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, App app
     if (move == 0) { return false; }
 
     playTurn(&app.state->gameState, move);
-
     return true;
 }
 
@@ -330,10 +329,8 @@ void clickedChessBoard(SDL_Event event, App app) {
 void clickedBackButton(SDL_Event event, App app) {
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
-        printf("%d, %d\n", app.state->gameState.previousStateIndex, app.state->gameState.previousStateCapacity);
-        if (app.state->gameState.previousStateIndex == 0) {
-            return; // We cannot go back
-        }
+        if (app.state->gameState.previousStateIndex == 0) return; // We cannot go back
+
         // Note that the time controls will not be updated because this is just for debugging purposes
         app.state->gameState.currentState = app.state->gameState.previousStates[--app.state->gameState.previousStateIndex];
         break;

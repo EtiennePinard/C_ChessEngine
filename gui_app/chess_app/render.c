@@ -361,7 +361,7 @@ static void renderChessboard(SDL_Renderer* renderer,
         SDL_RenderFillRect(renderer, &square);
 
         // Don't render the dragged pieces at their position and at the mouse coordinates
-        if (draggingState.isDragging && squareIndex == draggingState.from) { continue; }
+        if (draggingState.isDragging && squareIndex == draggingState.from && gameState->result == GAME_IS_NOT_DONE) { continue; }
 
         Piece piece = Board_pieceAtIndex(gameState->currentState.board, squareIndex);
         if (piece != NOPIECE) {
@@ -378,9 +378,17 @@ void render(App app) {
     renderPlaceholder(app.state->sdlState.renderer, app.state->sdlState.font, &app.state->gameState, &app.events->clickableAreas);
     renderChessboard(app.state->sdlState.renderer, app.state->textures, &app.state->gameState, app.state->draggingState);
     if (app.state->draggingState.isDragging) {
-        int mouseX, mouseY;
-        SDL_GetMouseState(&mouseX, &mouseY);
-        renderDraggedPiece(app.state->sdlState.renderer, app.state->textures, app.state->draggingState, mouseX, mouseY);
+        if (app.state->gameState.result == GAME_IS_NOT_DONE) {
+            int mouseX, mouseY;
+            SDL_GetMouseState(&mouseX, &mouseY);
+            renderDraggedPiece(app.state->sdlState.renderer, app.state->textures, app.state->draggingState, mouseX, mouseY);
+        } else {
+            // Resetting draggingState
+            app.state->draggingState.isDragging = false;
+            app.state->draggingState.from = 0;
+            app.state->draggingState.to = 0;
+            app.state->draggingState.draggedPiece = NOPIECE;
+        }
     }
 
     SDL_RenderPresent(app.state->sdlState.renderer);

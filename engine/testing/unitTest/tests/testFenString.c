@@ -9,9 +9,9 @@
 #include <stdlib.h>
 
 // Starting position
-#define TEST_1 ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+#define TEST_1 INITIAL_FEN
 
-bool test1(ChessPosition *position) {
+bool test1(ChessPosition* position) {
     if (position->colorToGo != WHITE) { return false; }
     if (position->castlingPerm != (0b1111)) { return false; }
     if (position->turnsForFiftyRule != 0) { return false; }
@@ -52,7 +52,7 @@ bool test1(ChessPosition *position) {
 
 #define TEST_2 ("r2qkb1r/3b1ppp/p1n1pn2/3p4/1p1P4/P1NBPN2/1P3PPP/R1BQ1RK1 w kq - 0 1")
 
-bool test2(ChessPosition *position) {
+bool test2(ChessPosition* position) {
     if (position->colorToGo != WHITE) { return false; }
     if (position->castlingPerm != (0b11)) { return false; }
     if (position->enPassantTargetSquare != 0) { return false; }
@@ -136,13 +136,13 @@ bool test2(ChessPosition *position) {
 
 #define TEST3 ("")
 
-bool test3(__attribute__ ((unused)) ChessPosition *position) {
+bool test3(__attribute__((unused)) ChessPosition* position) {
     return false;
 }
 
 #define TEST4 ("8/8/8/8/8/8/8/8 b - - 338749012 00001341293847")
 
-bool test4(ChessPosition *position) {
+bool test4(ChessPosition* position) {
     if (position->colorToGo != BLACK) { return false; }
     if (position->castlingPerm != (0)) { return false; }
     if (position->enPassantTargetSquare != 0) { return false; }
@@ -158,13 +158,13 @@ bool test4(ChessPosition *position) {
 
 #define TEST5 ("8/8/8/8/8/8/8/8 t")
 
-bool test5(__attribute__ ((unused)) ChessPosition *position) {
+bool test5(__attribute__((unused)) ChessPosition* position) {
     return false;
 }
 
 #define TEST6 ("8/8/8/8/8/8/8/8 b - f7 0 1")
 
-bool test6(ChessPosition *position) {
+bool test6(ChessPosition* position) {
     if (position->colorToGo != BLACK) { return false; }
     if (position->castlingPerm != (0)) { return false; }
     if (position->enPassantTargetSquare != 13) { return false; }
@@ -179,7 +179,7 @@ bool test6(ChessPosition *position) {
 }
 
 typedef struct FenStringTestCase {
-    char *fen;
+    char* fen;
     bool (*test_func)(ChessPosition*);
     bool setPositionReturnValue;
 } FenStringTestCase;
@@ -190,7 +190,7 @@ FenStringTestCase fenStringTests[NB_TEST] = {
         .fen = TEST_1,
         .test_func = &test1,
         .setPositionReturnValue = true
-    }, 
+    },
     (FenStringTestCase) {
         .fen = TEST_2,
         .test_func = &test2,
@@ -200,23 +200,172 @@ FenStringTestCase fenStringTests[NB_TEST] = {
         .fen = TEST3,
         .test_func = &test3,
         .setPositionReturnValue = false
-    }, 
+    },
     (FenStringTestCase) {
         .fen = TEST4,
         .test_func = &test4,
         .setPositionReturnValue = true
-    },     
+    },
     (FenStringTestCase) {
         .fen = TEST5,
         .test_func = &test5,
         .setPositionReturnValue = false
-    }, 
+    },
     (FenStringTestCase) {
         .fen = TEST6,
         .test_func = &test6,
         .setPositionReturnValue = true
     },
 };
+
+bool test_FenString_chessPositionToFenString() {
+    char actual[MAX_FEN_STRING_SIZE];
+    ChessPosition position1 = {
+            .key = 0,
+            .colorToGo = WHITE,
+            .castlingPerm = 0b1111,
+            .enPassantTargetSquare = 0,
+            .turnsForFiftyRule = 0,
+            .nbMoves = 1,
+            .board = (Board) {
+                    .bitboards = {
+                            (BitBoard)0xFF000000000000, // White Pawn
+                            (BitBoard)0x4200000000000000, // White Knight
+                            (BitBoard)0x2400000000000000, // White Bishop
+                            (BitBoard)0x8100000000000000, // White Rook
+                            (BitBoard)0x800000000000000, // White Queen
+                            (BitBoard)0x1000000000000000, // White King
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0xFF00, // Black Pawn
+                            (BitBoard)0x42, // Black Knight
+                            (BitBoard)0x24, // Black Bishop
+                            (BitBoard)0x81, // Black Rook
+                            (BitBoard)0x8, // Black Queen
+                            (BitBoard)0x10, // Black King
+                    }
+            }
+    };
+    char* expected1 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    FenString_chessPositionToFenString(position1, actual);
+    if (!string_compareStrings(expected1, actual)) {
+        printf("ERROR: FenString_chessPositionToFenString(position1, actual)\n");
+        printf("\tExpected: %s\n", expected1);
+        printf("\tActual  : %s\n", actual);
+        return false;
+    }
+    memset(actual, 0, MAX_FEN_STRING_SIZE);
+
+    ChessPosition position2 = {
+            .key = 0,
+            .colorToGo = WHITE,
+            .castlingPerm = 0b0011,
+            .enPassantTargetSquare = 0,
+            .turnsForFiftyRule = 0,
+            .nbMoves = 1,
+            .board = (Board) {
+                    .bitboards = {
+                            (BitBoard)0xE2110800000000, // White Pawn
+                            (BitBoard)0x240000000000, // White Knight
+                            (BitBoard)0x400080000000000, // White Bishop
+                            (BitBoard)0x2100000000000000, // White Rook
+                            (BitBoard)0x800000000000000, // White Queen
+                            (BitBoard)0x4000000000000000, // White King
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x20811E000, // Black Pawn
+                            (BitBoard)0x240000, // Black Knight
+                            (BitBoard)0x820, // Black Bishop
+                            (BitBoard)0x81, // Black Rook
+                            (BitBoard)0x8, // Black Queen
+                            (BitBoard)0x10, // Black King
+                    }
+            }
+    };
+    char* expected2 = "r2qkb1r/3b1ppp/p1n1pn2/3p4/1p1P4/P1NBPN2/1P3PPP/R1BQ1RK1 w kq - 0 1";
+    FenString_chessPositionToFenString(position2, actual);
+    if (!string_compareStrings(expected2, actual)) {
+        printf("ERROR: FenString_chessPositionToFenString(position2, actual)\n");
+        printf("\tExpected: %s\n", expected2);
+        printf("\tActual  : %s\n", actual);
+        return false;
+    }
+    memset(actual, 0, MAX_FEN_STRING_SIZE);
+
+    ChessPosition position4 = {
+            .key = 0,
+            .colorToGo = BLACK,
+            .castlingPerm = 0b0000,
+            .enPassantTargetSquare = 0,
+            .turnsForFiftyRule = 49,
+            .nbMoves = MAX_NB_LEGAL_MOVES_IN_GAME,
+            .board = (Board) {
+                    .bitboards = {
+                            (BitBoard)0x0, // White Pawn
+                            (BitBoard)0x0, // White Knight
+                            (BitBoard)0x0, // White Bishop
+                            (BitBoard)0x0, // White Rook
+                            (BitBoard)0x0, // White Queen
+                            (BitBoard)0x0, // White King
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // Black Pawn
+                            (BitBoard)0x0, // Black Knight
+                            (BitBoard)0x0, // Black Bishop
+                            (BitBoard)0x0, // Black Rook
+                            (BitBoard)0x0, // Black Queen
+                            (BitBoard)0x0, // Black King
+                    }
+            }
+    };
+    char* expected4 = "8/8/8/8/8/8/8/8 b - - 49 8849";
+    FenString_chessPositionToFenString(position4, actual);
+    if (!string_compareStrings(expected4, actual)) {
+        printf("ERROR: FenString_chessPositionToFenString(position4, actual)\n");
+        printf("\tExpected: %s\n", expected4);
+        printf("\tActual  : %s\n", actual);
+        return false;
+    }
+    memset(actual, 0, MAX_FEN_STRING_SIZE);
+
+    ChessPosition position6 = {
+            .key = 0,
+            .colorToGo = BLACK,
+            .castlingPerm = 0b0000,
+            .enPassantTargetSquare = 13,
+            .turnsForFiftyRule = 0,
+            .nbMoves = 1,
+            .board = (Board) {
+                    .bitboards = {
+                            (BitBoard)0x0, // White Pawn
+                            (BitBoard)0x0, // White Knight
+                            (BitBoard)0x0, // White Bishop
+                            (BitBoard)0x0, // White Rook
+                            (BitBoard)0x0, // White Queen
+                            (BitBoard)0x0, // White King
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // UNUSED
+                            (BitBoard)0x0, // Black Pawn
+                            (BitBoard)0x0, // Black Knight
+                            (BitBoard)0x0, // Black Bishop
+                            (BitBoard)0x0, // Black Rook
+                            (BitBoard)0x0, // Black Queen
+                            (BitBoard)0x0, // Black King
+                    }
+            }
+    };
+    char* expected6 = "8/8/8/8/8/8/8/8 b - f7 0 1";
+    FenString_chessPositionToFenString(position6, actual);
+    if (!string_compareStrings(expected6, actual)) {
+        printf("ERROR: FenString_chessPositionToFenString(position6, actual)\n");
+        printf("\tExpected: %s\n", expected6);
+        printf("\tActual  : %s\n", actual);
+        return false;
+    }
+    memset(actual, 0, MAX_FEN_STRING_SIZE);
+
+    return true;
+}
 
 bool Test_FenString() {
     // Note: We do not care about the Zobrist keys of the positions so we don't call ZobristKey_init here
@@ -227,7 +376,7 @@ bool Test_FenString() {
 
         // We need to copy the strings because we are dealing with string literals which are read only
         bool returnValue = FenString_setChessPositionFromCopiedFenString(testCase.fen, &position);
-        
+
         if (returnValue == false) {
             if (testCase.setPositionReturnValue != returnValue) {
                 printf("TEST #%d failed\n", testIndex + 1);
@@ -236,7 +385,7 @@ bool Test_FenString() {
             }
             continue;
         }
-    
+        
         if (!testCase.test_func(&position)) {
             printf("TEST #%d failed!\n", testIndex + 1);
             printf("\tColor to go: %s\n", position.colorToGo == WHITE ? "white" : "black");
@@ -248,5 +397,6 @@ bool Test_FenString() {
             return false;
         }
     }
-    return true;
+
+    return test_FenString_chessPositionToFenString();
 }

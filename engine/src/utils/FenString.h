@@ -36,4 +36,15 @@ bool FenString_setChessPositionFromFenString(char *fen, ChessPosition* position)
  */
 bool FenString_setChessPositionFromTokens(Tokens *fenTokenized, ChessPosition *position);
 
+/**
+ * @brief Converts a chess position to a fen string.
+ * 
+ * @param position The position to convert to a fen string
+ * @param fen The resulting char array that the fen string will be put in.
+ * It is assumed that this array is big enough to contain the fen string.
+ * To guarantee that its size is sufficient just use the MAX_FEN_STRING_SIZE 
+ * constants when declaring the array.
+ */
+void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]);
+
 #endif

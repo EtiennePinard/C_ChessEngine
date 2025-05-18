@@ -4,6 +4,8 @@
 #include <assert.h>
 
 #include "CharBuffer.h"
+#include "Constants.h"
+#include "Math.h"
 
 #define SPACE_CHAR (' ')
 
@@ -172,14 +174,16 @@ Move string_longAlgebraicToMove(const char* algebraic) {
 void string_moveToLongAlgebraic(Move move, char buffer[6]) {
   assert(buffer != NULL);
 
-  int from = Move_fromSquare(move);
-  int to = Move_toSquare(move);
-  int row1 = from / 8;
-  int col1 = from % 8;
+  Square from = Move_fromSquare(move);
+  Square to = Move_toSquare(move);
+
+  int row1 = rank(from);
+  int col1 = file(from);
   buffer[0] = 'a' + col1;
   buffer[1] = '1' + (7 - row1);
-  int row2 = to / 8;
-  int col2 = to % 8;
+
+  int row2 = rank(to);
+  int col2 = file(to);
   buffer[2] = 'a' + col2;
   buffer[3] = '1' + (7 - row2);
 

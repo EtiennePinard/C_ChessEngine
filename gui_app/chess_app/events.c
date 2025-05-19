@@ -179,15 +179,15 @@ static inline void playTurn(GameState* gameState, Move playerMove) {
 
 static void resetGame(GameState* gameState) {
     // If we are not already at the beginning go back to the beginning
-    if (gameState->undoStates.previousStateIndex != 0) {
-        gameState->currentPosition = gameState->undoStates.previousStates[0];
-        gameState->undoStates.previousStateIndex = 0;
+    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &gameState->currentPosition)) {
+        printf("Error when resetting the game\n");
+        exit(EXIT_FAILURE);
     }
+    gameState->undoStates.previousStateIndex = 0;
     gameState->result = GAME_IS_NOT_DONE;
     gameState->blackRemainingTime = STARTING_TIME_MS;
     gameState->whiteRemainingTime = STARTING_TIME_MS;
     gameState->turnStartTick = SDL_GetTicks64();
-    // Note that we are not changing the player color
 }
 
 void clickedSwitchColorButton(SDL_Event event, App app) {

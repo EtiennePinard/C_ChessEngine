@@ -87,9 +87,4 @@ int TranspositionTable_getEvaluationFromKey(ZobristKey key, int depth, int alpha
  */
 void TranspositionTable_recordEntry(ZobristKey key, u8 depth, EntryType type, Move move, int evaluation);
 
-#ifdef DEBUG
-    extern u64 totalHashHits;
-#endif
-
-
 #endif /* DABFA9B8_518A_4F61_8F43_4EE80C2CAA6B */

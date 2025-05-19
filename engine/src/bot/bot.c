@@ -196,9 +196,8 @@ int Bot_staticEvaluation() {
     return score;
 }
 
-#define MAXIMUM_DEPTH (100)
-
 // Max depth is 100 for now
+#define MAXIMUM_DEPTH (100)
 ChessPosition posHistory[MAXIMUM_DEPTH];
 int currentDepth;
 
@@ -207,20 +206,33 @@ int bestEvalFromCurrentSearch;
 
 Move bestMoveFromFullDepthSearch;
 
-u64 totalNodes;
-u64 leafNodes;
+u32 totalNodes;
+u32 leafNodes;
+u32 transpositionTableHits;
 
 int alpha_beta_negamax(int alpha, int beta, int depth) {
     if (endSearch) return 0;
     
     totalNodes++;
 
+    int startingAlpha = alpha;
+
+    int ttEval = TranspositionTable_getEvaluationFromKey(currentPosition.key, depth, alpha, beta);
+    if (ttEval != LOOKUP_FAILED) {
+        transpositionTableHits++;
+        return ttEval;
+    }
+
     if (depth == 0) {
         leafNodes++;
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
         int whoToMove = currentPosition.colorToGo == WHITE ? 1 : -1;
-        return Bot_staticEvaluation() * whoToMove;
+        int evaluation = Bot_staticEvaluation() * whoToMove;
+        return evaluation;
     }
+
+    // We want to have the best move from this depth
+    Move bestMove = NULL_MOVE;
     int bestEval = MINUS_INFINITY;
 
     int nbOfMoves;
@@ -242,17 +254,26 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
         // Update the best evaluation that we found
         if (eval > bestEval) {
+            bestMove = move;
             bestEval = eval;
-            // Update the best move that we found from the previous depth
-            // or this depth if we have already updated alpha during this depth search
-            if (eval > alpha) alpha = eval;
         }
+
+        // Update the best move that we found from the previous depth
+        // or this depth if we have already updated alpha during this depth search
+        if (eval > alpha) alpha = eval;
 
         // Fail-soft beta cutoff: This move is too good, our opponent will not allow it
         if (eval >= beta) break;
-        
+
         if (endSearch) return 0;
     }
+
+    EntryType type;
+    if (bestEval <= startingAlpha) type = UPPER_BOUND;
+    else if (bestEval >= beta) type = LOWER_BOUND; 
+    else type = EXACT;
+    
+    TranspositionTable_recordEntry(currentPosition.key, currentDepth, type, bestMove, bestEval);
 
     return bestEval;
 }
@@ -266,17 +287,20 @@ Move Bot_think() {
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int nbMoves;
     MoveHandler_getValidMoves(moves, &nbMoves, currentPosition);
-    
+
     // The first element is the root position
     posHistory[0] = currentPosition;
-    
+
     for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
         currentDepth = depth;
         // At every depth, we need to reset the bestEvalFromSearch to MINUS_INFINITY
         // because the result from a lower depth are irrelevant when searching at a higher depth
         bestEvalFromCurrentSearch = MINUS_INFINITY;
+
+        // debug information
         totalNodes = 0;
         leafNodes = 0;
+        transpositionTableHits = 0;
 
         // Check endSearch before the long search loop
         if (endSearch) goto stop_search;
@@ -308,11 +332,12 @@ Move Bot_think() {
         bestMoveFromFullDepthSearch = bestMoveFromCurrentDepthSearch;
 
         // Added this print statement to make it more convenient when debugging the bot
-        printf("Depth %d search finished, %ld leaf nodes, %ld total nodes, %d best eval, %c%d%c%d move\n", 
-            depth, 
-            leafNodes, 
+        printf("Depth %d search finished, %u leaf nodes, %u total nodes, %u ttHits, %d best eval, %c%d%c%d best move\n",
+            depth,
+            leafNodes,
             totalNodes,
-            bestEvalFromCurrentSearch, 
+            transpositionTableHits,
+            bestEvalFromCurrentSearch,
             'a' + file(Move_fromSquare(bestMoveFromFullDepthSearch)),
             8 - rank(Move_fromSquare(bestMoveFromCurrentDepthSearch)),
             'a' + file(Move_toSquare(bestMoveFromFullDepthSearch)),

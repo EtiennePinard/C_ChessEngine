@@ -162,8 +162,8 @@ static inline void playBotMove(GameState* gameState) {
         if (gameState->result == GAME_IS_NOT_DONE) {
             // The app does not think the game is done
             printf("ERROR:  The bot cannot play a move because it thinks the game is done yet app does not label the game as done\n");
+            exit(EXIT_FAILURE);
         }
-        return;
     }
     playMoveOnBoard(gameState, botMove);
 }
@@ -362,6 +362,7 @@ void clickedCopyFenButton(SDL_Event event, App app) {
         printf("Fen: %s\n", fen);
         if (clipboardReturnValue) {
             printf("Error setting clipboard: %s\n", SDL_GetError());
+            exit(EXIT_FAILURE);
         }
         break;
     default: // Only do something for mouse button down

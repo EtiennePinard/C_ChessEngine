@@ -144,14 +144,15 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
         memcpy(text, "Black won\non time", 18);
         break;
     default:
-        memcpy(text, "Error on switch", 16);
+        printf("Error on switch for game state text, result is %d\n", gameState->result);
+        exit(EXIT_FAILURE);
         break;
     }
 
     SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, WHITE_COLOR, 0);
-    if (textSurface == NULL) { printf("Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 }; }
+    if (textSurface == NULL) { printf("Game result Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (textTexture == NULL) { printf("Text Texture is NULL\n");  SDL_FreeSurface(textSurface); return (SDL_Rect) { -1, -1, -1, -1 }; }
+    if (textTexture == NULL) { printf("Game result Text Texture is NULL\n"); exit(EXIT_FAILURE); }
 
     int textWidth = textSurface->w;
     int textHeight = textSurface->h;
@@ -170,9 +171,9 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
 
 static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect textRect, ClickableAreas* clickableAreas) {
     SDL_Surface* buttonTextSurface = TTF_RenderText_Solid(font, "Restart", BUTTON_TEXT_COLOR);
-    if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 }; }
+    if (buttonTextSurface == NULL) { printf("Restart Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
-    if (buttonTextSurface == NULL) { printf("Button Text Texture is NULL\n"); SDL_FreeSurface(buttonTextSurface); return (SDL_Rect) { -1, -1, -1, -1 }; }
+    if (buttonTextSurface == NULL) { printf("Restart Text Texture is NULL\n"); exit(EXIT_FAILURE); }
 
     int buttonTextWidth = buttonTextSurface->w;
     int buttonTextHeight = buttonTextSurface->h;
@@ -212,9 +213,9 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
 
 static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
     SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Switch", BUTTON_TEXT_COLOR, 0);
-    if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 };; }
+    if (buttonTextSurface == NULL) { printf("Switch Text Surface is NULL\n"); exit(EXIT_FAILURE);; }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
-    if (buttonTextSurface == NULL) { printf("Button Text Texture is NULL\n"); SDL_FreeSurface(buttonTextSurface); return (SDL_Rect) { -1, -1, -1, -1 };; }
+    if (buttonTextSurface == NULL) { printf("Switch Text Texture is NULL\n"); exit(EXIT_FAILURE);; }
 
     int buttonTextWidth = buttonTextSurface->w;
     int buttonTextHeight = buttonTextSurface->h;
@@ -255,9 +256,9 @@ static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, 
 
 static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect switchButtonRect, ClickableAreas* clickableAreas) {
     SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Back", BUTTON_TEXT_COLOR, 0);
-    if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return; }
+    if (buttonTextSurface == NULL) { printf("Back Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
-    if (buttonTextSurface == NULL) { printf("Button Text Texture is NULL\n"); SDL_FreeSurface(buttonTextSurface); return; }
+    if (buttonTextSurface == NULL) { printf("Back Text Texture is NULL\n"); exit(EXIT_FAILURE); }
 
     int buttonTextWidth = buttonTextSurface->w;
     int buttonTextHeight = buttonTextSurface->h;
@@ -297,9 +298,9 @@ static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect sw
 
 static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
     SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Copy Fen", BUTTON_TEXT_COLOR, 0);
-    if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return; }
+    if (buttonTextSurface == NULL) { printf("Copy Fen Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
-    if (buttonTextSurface == NULL) { printf("Button Text Texture is NULL\n"); SDL_FreeSurface(buttonTextSurface); return; }
+    if (buttonTextSurface == NULL) { printf("Copy Fen Text Texture is NULL\n"); exit(EXIT_FAILURE); }
 
     int buttonTextWidth = buttonTextSurface->w;
     int buttonTextHeight = buttonTextSurface->h;
@@ -343,21 +344,8 @@ static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState*
     SDL_RenderDrawRect(renderer, &placeholderRect);
 
     SDL_Rect textRect = renderGameStateText(renderer, font, gameState);
-    if (textRect.x == -1) {
-        printf("ERROR while rendering the game state text\n");
-        return;
-    }
     SDL_Rect restartButtonRect = renderRestartButton(renderer, font, textRect, clickableAreas);
-    if (restartButtonRect.x == -1) {
-        printf("ERROR while rendering the restart button\n");
-        return;
-    }
     SDL_Rect switchButtonRect = renderSwitchColorButton(renderer, font, restartButtonRect, clickableAreas);
-    if (switchButtonRect.x == -1) {
-        printf("ERROR while rendering the switch button\n");
-        return;
-    }
-
     renderBackButton(renderer, font, switchButtonRect, clickableAreas);
     renderCopyFenButton(renderer, font, restartButtonRect, clickableAreas);
 

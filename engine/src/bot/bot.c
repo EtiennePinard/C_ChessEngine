@@ -207,17 +207,18 @@ int bestEvalFromCurrentSearch;
 
 Move bestMoveFromFullDepthSearch;
 
-int negamax(int depth) {
-    if (endSearch) {
-        return 0;
-    }
+u64 nodesVisited;
 
+int alpha_beta_negamax(int alpha, int beta, int depth) {
+    nodesVisited++;
+    if (endSearch) return 0;
+    
     if (depth == 0) {
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
         int whoToMove = currentPosition.colorToGo == WHITE ? 1 : -1;
         return Bot_staticEvaluation() * whoToMove;
     }
-    int max = MINUS_INFINITY;
+    int bestEval = MINUS_INFINITY;
 
     int nbOfMoves;
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
@@ -229,20 +230,28 @@ int negamax(int depth) {
         Move move = validMoves[i];
         MoveHandler_playMove(move, &currentPosition, true);
 
-        int score = -negamax(depth - 1);
+        // We switch alpha and beta, because alpha is the lower bound for the color to play 
+        // but it is the upper bound for the other color. Opposite is true for beta
+        // so we need to switch them we it is the opposite color to play
+        int eval = -alpha_beta_negamax(-beta, -alpha, depth - 1);
+
         memcpy(&currentPosition, &posHistory[currentDepth - depth], sizeof(ChessPosition));
 
-        if (score > max) {
-            max = score;
+        // Update the best evaluation that we found
+        if (eval > bestEval) {
+            bestEval = eval;
+            // Update the best move that we found from the previous depth
+            // or this depth if we have already updated alpha during this depth search
+            if (eval > alpha) alpha = eval;
         }
 
-        if (endSearch) {
-            return 0;
-        }
-
+        // Fail-soft beta cutoff: This move is too good, our opponent will not allow it
+        if (eval >= beta) break;
+        
+        if (endSearch) return 0;
     }
 
-    return max;
+    return bestEval;
 }
 
 Move Bot_think() {
@@ -264,6 +273,7 @@ Move Bot_think() {
         // At every depth, we need to reset the bestEvalFromSearch to MINUS_INFINITY
         // because the result from a lower depth are irrelevant when searching at a higher depth
         bestEvalFromCurrentSearch = MINUS_INFINITY;
+        nodesVisited = 0;
 
         // Check endSearch before the long search loop
         if (endSearch) goto stop_search;
@@ -274,7 +284,7 @@ Move Bot_think() {
 
             // We input the depth minus 1 because we already make one move with the root negamax loop
             // We need to do the negative of negamax because a good score for our opponent is a bad score for us
-            int score = -negamax(depth - 1);
+            int score = -alpha_beta_negamax(MINUS_INFINITY, INFINITY, depth - 1);
 
             // Check endSearch before using the calculated score because it could be 0 
             // if endSearch is triggered when we were searching
@@ -293,6 +303,17 @@ Move Bot_think() {
 
         // We have done one full depth search and so we update the full search best move
         bestMoveFromFullDepthSearch = bestMoveFromCurrentDepthSearch;
+
+        // Added this print statement to make it more convenient when debugging the bot
+        printf("Depth %d search finished, %ld nodes visited, %d best eval, %c%d%c%d move\n", 
+            depth, 
+            nodesVisited, 
+            bestEvalFromCurrentSearch, 
+            'a' + file(Move_fromSquare(bestMoveFromFullDepthSearch)),
+            8 - rank(Move_fromSquare(bestMoveFromCurrentDepthSearch)),
+            'a' + file(Move_toSquare(bestMoveFromFullDepthSearch)),
+            8 - rank(Move_toSquare(bestMoveFromCurrentDepthSearch))
+        );
 
         if (endSearch) goto stop_search;
     }

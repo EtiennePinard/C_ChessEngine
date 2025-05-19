@@ -207,13 +207,16 @@ int bestEvalFromCurrentSearch;
 
 Move bestMoveFromFullDepthSearch;
 
-u64 nodesVisited;
+u64 totalNodes;
+u64 leafNodes;
 
 int alpha_beta_negamax(int alpha, int beta, int depth) {
-    nodesVisited++;
     if (endSearch) return 0;
     
+    totalNodes++;
+
     if (depth == 0) {
+        leafNodes++;
         // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
         int whoToMove = currentPosition.colorToGo == WHITE ? 1 : -1;
         return Bot_staticEvaluation() * whoToMove;
@@ -258,7 +261,6 @@ Move Bot_think() {
     RepetitionTable_setCurrentIndexAsRootPosition();
 
     bestMoveFromCurrentDepthSearch = NULL_MOVE;
-    bestEvalFromCurrentSearch = MINUS_INFINITY;
     bestMoveFromFullDepthSearch = NULL_MOVE;
 
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
@@ -267,13 +269,14 @@ Move Bot_think() {
     
     // The first element is the root position
     posHistory[0] = currentPosition;
-
+    
     for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
         currentDepth = depth;
         // At every depth, we need to reset the bestEvalFromSearch to MINUS_INFINITY
         // because the result from a lower depth are irrelevant when searching at a higher depth
         bestEvalFromCurrentSearch = MINUS_INFINITY;
-        nodesVisited = 0;
+        totalNodes = 0;
+        leafNodes = 0;
 
         // Check endSearch before the long search loop
         if (endSearch) goto stop_search;
@@ -305,9 +308,10 @@ Move Bot_think() {
         bestMoveFromFullDepthSearch = bestMoveFromCurrentDepthSearch;
 
         // Added this print statement to make it more convenient when debugging the bot
-        printf("Depth %d search finished, %ld nodes visited, %d best eval, %c%d%c%d move\n", 
+        printf("Depth %d search finished, %ld leaf nodes, %ld total nodes, %d best eval, %c%d%c%d move\n", 
             depth, 
-            nodesVisited, 
+            leafNodes, 
+            totalNodes,
             bestEvalFromCurrentSearch, 
             'a' + file(Move_fromSquare(bestMoveFromFullDepthSearch)),
             8 - rank(Move_fromSquare(bestMoveFromCurrentDepthSearch)),

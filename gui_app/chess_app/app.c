@@ -40,7 +40,7 @@ bool initializeApp(App app) {
     PieceSquareTable_init();
     TranspositionTable_init();
 
-    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentState)) {
+    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentPosition)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
         SDL_DestroyRenderer(app.state->sdlState.renderer);
         SDL_DestroyWindow(app.state->sdlState.window);
@@ -49,13 +49,13 @@ bool initializeApp(App app) {
         return false;
     }
 
-    app.state->gameState.playerColor = app.state->gameState.currentState.colorToGo;
+    app.state->gameState.playerColor = app.state->gameState.currentPosition.colorToGo;
     app.state->gameState.whiteRemainingTime = STARTING_TIME_MS;
     app.state->gameState.blackRemainingTime = STARTING_TIME_MS;
 
-    app.state->gameState.previousStates = malloc(sizeof(ChessPosition) * 64);
-    app.state->gameState.previousStateCapacity = 64;
-    app.state->gameState.previousStateIndex = 0;
+    app.state->gameState.undoStates.previousStates = malloc(sizeof(ChessPosition) * 64);
+    app.state->gameState.undoStates.previousStateCapacity = 64;
+    app.state->gameState.undoStates.previousStateIndex = 0;
     app.state->gameState.result = GAME_IS_NOT_DONE;
 
 
@@ -77,7 +77,7 @@ void cleanupApp(App app) {
 
     cleanupTextures(app.state->textures);
 
-    free(app.state->gameState.previousStates);
+    free(app.state->gameState.undoStates.previousStates);
 
     cleanupClickableAreas(app.events);
     cleanupSDL_State(app.state->sdlState);

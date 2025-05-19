@@ -53,8 +53,7 @@ static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* time
     timeControlRect.x = PLACEHOLDER_X + (PLACEHOLDER_WIDTH - textWidth) / 2;
     if (side == BOTTOM) {
         timeControlRect.y = PLACEHOLDER_Y + PLACEHOLDER_HEIGHT - timeControlRect.h - BUTTON_PADDING;
-    }
-    else {
+    } else {
         timeControlRect.y = PLACEHOLDER_Y + BUTTON_PADDING;
     }
 
@@ -80,7 +79,7 @@ static void renderTimeControls(SDL_Renderer* renderer, TTF_Font* font, GameState
     // Logic for game end in here cause I don't use threads for now
     if (gameState->result == GAME_IS_NOT_DONE) {
         u64 currentTick = SDL_GetTicks64();
-        if (gameState->currentState.colorToGo == WHITE) {
+        if (gameState->currentPosition.colorToGo == WHITE) {
             if (gameState->whiteRemainingTime <= currentTick - gameState->turnStartTick) {
                 gameState->whiteRemainingTime = 0;
                 gameState->result = BLACK_WON_ON_TIME;
@@ -99,7 +98,6 @@ static void renderTimeControls(SDL_Renderer* renderer, TTF_Font* font, GameState
             }
         }
         gameState->turnStartTick = currentTick;
-
     }
 
     char blackTimeText[TIME_TEXT_LENGTH];
@@ -171,7 +169,6 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
 }
 
 static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect textRect, ClickableAreas* clickableAreas) {
-    // Render the "Restart" button text
     SDL_Surface* buttonTextSurface = TTF_RenderText_Solid(font, "Restart", BUTTON_TEXT_COLOR);
     if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 }; }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
@@ -214,7 +211,6 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
 }
 
 static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
-    // Render the "Restart" button text
     SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Switch", BUTTON_TEXT_COLOR, 0);
     if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return (SDL_Rect) { -1, -1, -1, -1 };; }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
@@ -258,7 +254,6 @@ static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, 
 }
 
 static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect switchButtonRect, ClickableAreas* clickableAreas) {
-    // Render the "Restart" button text
     SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Back", BUTTON_TEXT_COLOR, 0);
     if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return; }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
@@ -300,6 +295,47 @@ static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect sw
 
 }
 
+static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
+    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Copy Fen", BUTTON_TEXT_COLOR, 0);
+    if (buttonTextSurface == NULL) { printf("Button Text Surface is NULL\n"); return; }
+    SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
+    if (buttonTextSurface == NULL) { printf("Button Text Texture is NULL\n"); SDL_FreeSurface(buttonTextSurface); return; }
+
+    int buttonTextWidth = buttonTextSurface->w;
+    int buttonTextHeight = buttonTextSurface->h;
+
+    int buttonWidth = buttonTextWidth + BUTTON_PADDING;
+    int buttonHeight = buttonTextHeight + BUTTON_PADDING;
+    SDL_Rect buttonRect = {
+        .x = restartButtonRect.x + (restartButtonRect.w - buttonWidth) / 2,
+        .y = restartButtonRect.y + restartButtonRect.h + BUTTON_PADDING,
+        .w = buttonWidth,
+        .h = buttonHeight };
+
+    SDL_Rect buttonTextRect = {
+        .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
+        .y = buttonRect.y + (buttonRect.h - buttonTextHeight) / 2,
+        .w = buttonTextWidth,
+        .h = buttonTextHeight
+    };
+
+    // Render the button background
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &buttonRect);
+
+
+    SDL_FreeSurface(buttonTextSurface);
+    SDL_RenderCopy(renderer, buttonTextTexture, NULL, &buttonTextRect);
+    SDL_DestroyTexture(buttonTextTexture);
+
+    ClickableArea area = {
+        .rect = buttonRect,
+        .callback = &clickedCopyFenButton
+    };
+
+    clickableAreas->data[COPY_FEN_BUTTON_INDEX] = area;
+}
+
 static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState, ClickableAreas* clickableAreas) {
     SDL_Rect placeholderRect = PLACEHOLDER_RECT;
     // Draw rectangle border
@@ -311,15 +347,20 @@ static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState*
         printf("ERROR while rendering the game state text\n");
         return;
     }
-    SDL_Rect buttonRect = renderRestartButton(renderer, font, textRect, clickableAreas);
-    if (buttonRect.x == -1) {
+    SDL_Rect restartButtonRect = renderRestartButton(renderer, font, textRect, clickableAreas);
+    if (restartButtonRect.x == -1) {
         printf("ERROR while rendering the restart button\n");
         return;
     }
-    SDL_Rect switchButtonRect = renderSwitchColorButton(renderer, font, buttonRect, clickableAreas);
+    SDL_Rect switchButtonRect = renderSwitchColorButton(renderer, font, restartButtonRect, clickableAreas);
+    if (switchButtonRect.x == -1) {
+        printf("ERROR while rendering the switch button\n");
+        return;
+    }
 
     renderBackButton(renderer, font, switchButtonRect, clickableAreas);
-    
+    renderCopyFenButton(renderer, font, restartButtonRect, clickableAreas);
+
     renderTimeControls(renderer, font, gameState);
 }
 
@@ -363,7 +404,7 @@ static void renderChessboard(SDL_Renderer* renderer,
         // Don't render the dragged pieces at their position and at the mouse coordinates
         if (draggingState.isDragging && squareIndex == draggingState.from && gameState->result == GAME_IS_NOT_DONE) { continue; }
 
-        Piece piece = Board_pieceAtIndex(gameState->currentState.board, squareIndex);
+        Piece piece = Board_pieceAtIndex(gameState->currentPosition.board, squareIndex);
         if (piece != NOPIECE) {
             SDL_Rect pieceRect = { square.x, square.y, squareSize, squareSize };
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);

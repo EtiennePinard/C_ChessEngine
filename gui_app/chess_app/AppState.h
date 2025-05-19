@@ -32,6 +32,7 @@ typedef enum ClickableAreaIndex {
     RESTART_BUTTON_INDEX,
     SWITCH_BUTTON_INDEX,
     BACK_BUTTON_INDEX,
+    COPY_FEN_BUTTON_INDEX,
     TOTAL_CLICKABLE_AREA
 } ClickableAreaIndex;
 
@@ -56,16 +57,20 @@ typedef enum GameResult {
 
 typedef u32 TimeControl_MS;
 
+typedef struct UndoGameStates {
+    ChessPosition* previousStates;
+    int previousStateCapacity;
+    int previousStateIndex;
+} UndoGameStates;
+
 typedef struct GameState {
-    ChessPosition currentState;
+    ChessPosition currentPosition;
     PieceCharacteristics playerColor;
     u64 turnStartTick;
     TimeControl_MS whiteRemainingTime;
     TimeControl_MS blackRemainingTime;
 
-    ChessPosition* previousStates;
-    int previousStateCapacity;
-    int previousStateIndex;
+    UndoGameStates undoStates;
 
     GameResult result;
 } GameState;

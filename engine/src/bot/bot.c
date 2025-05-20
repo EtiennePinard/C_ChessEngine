@@ -202,7 +202,7 @@ int currentDepth;
 Move bestMoveFromCurrentDepthSearch;
 int bestEvalFromCurrentSearch;
 
-Move bestMoveFromFullDepthSearch;
+Move principalVariation;
 
 u32 totalNodes;
 u32 leafNodes;
@@ -229,7 +229,7 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
         return evaluation;
     }
 
-    // We want to have the best move from this depth
+    // The best move from this depth is the principal variation at this depth
     Move bestMove = NULL_MOVE;
     int bestEval = BOT_MINUS_INFINITY;
 
@@ -271,9 +271,9 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
     EntryType type;
     if (bestEval <= startingAlpha) type = UPPER_BOUND;
-    else if (bestEval >= beta) type = LOWER_BOUND; 
+    else if (bestEval >= beta) type = LOWER_BOUND;
     else type = EXACT;
-    
+
     TranspositionTable_recordEntry(currentPosition.key, currentDepth, type, bestMove, bestEval);
 
     return bestEval;
@@ -283,11 +283,11 @@ Move Bot_think() {
     RepetitionTable_setCurrentIndexAsRootPosition();
 
     bestMoveFromCurrentDepthSearch = NULL_MOVE;
-    bestMoveFromFullDepthSearch = NULL_MOVE;
+    principalVariation = NULL_MOVE; // aka best move from full depth search
 
-    Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
+    Move rootMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int nbMoves;
-    MoveHandler_getValidMoves(moves, &nbMoves, currentPosition);
+    MoveHandler_getValidMoves(rootMoves, &nbMoves, currentPosition);
 
     // The first element is the root position
     posHistory[0] = currentPosition;
@@ -303,11 +303,13 @@ Move Bot_think() {
         leafNodes = 0;
         transpositionTableHits = 0;
 
+        MoveOrdering_orderMoves(rootMoves, nbMoves, principalVariation, currentPosition.board);
+
         // Check endSearch before the long search loop
         if (endSearch) goto stop_search;
 
         for (int index = 0; index < nbMoves; index++) {
-            Move move = moves[index];
+            Move move = rootMoves[index];
             MoveHandler_playMove(move, &currentPosition, true);
 
             // We input the depth minus 1 because we already make one move with the root negamax loop
@@ -330,7 +332,7 @@ Move Bot_think() {
         RepetitionTable_returnToRootPosition();
 
         // We have done one full depth search and so we update the full search best move
-        bestMoveFromFullDepthSearch = bestMoveFromCurrentDepthSearch;
+        principalVariation = bestMoveFromCurrentDepthSearch;
 
         // Added this print statement to make it more convenient when debugging the bot
         printf("Depth %d search finished, %u leaf nodes, %u total nodes, %u ttHits, %d best eval, %c%d%c%d best move\n",
@@ -339,10 +341,10 @@ Move Bot_think() {
             totalNodes,
             transpositionTableHits,
             bestEvalFromCurrentSearch,
-            'a' + file(Move_fromSquare(bestMoveFromFullDepthSearch)),
-            8 - rank(Move_fromSquare(bestMoveFromFullDepthSearch)),
-            'a' + file(Move_toSquare(bestMoveFromFullDepthSearch)),
-            8 - rank(Move_toSquare(bestMoveFromFullDepthSearch))
+            'a' + file(Move_fromSquare(principalVariation)),
+            8 - rank(Move_fromSquare(principalVariation)),
+            'a' + file(Move_toSquare(principalVariation)),
+            8 - rank(Move_toSquare(principalVariation))
         );
 
         if (endSearch) goto stop_search;
@@ -350,5 +352,5 @@ Move Bot_think() {
 
 stop_search:
     RepetitionTable_returnToRootPosition();
-    return bestMoveFromFullDepthSearch;
+    return principalVariation;
 }

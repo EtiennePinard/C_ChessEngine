@@ -20,8 +20,8 @@ const int moveOrderingPieceValue[6] = {
     999  // King is a freeloader that usually runs away from his problems
 };
 
-int scoreMove(Move move, Move ttMove, const Board currentBoard) {
-    if (move == ttMove) return BOT_INFINITY; // Highest priority: TT move
+int scoreMove(Move move, Move importantMove, const Board currentBoard) {
+    if (move == importantMove) return BOT_INFINITY;
 
     Piece victim = Board_pieceAtIndex(currentBoard, Move_toSquare(move));
     Piece attacker = Board_pieceAtIndex(currentBoard, Move_fromSquare(move));
@@ -42,14 +42,14 @@ int scoreMove(Move move, Move ttMove, const Board currentBoard) {
     return 0;
 }
 
-void MoveOrdering_orderMoves(Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int numMoves, Move ttMove, const Board currentBoard) {
-    
+void MoveOrdering_orderMoves(Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int numMoves, Move importantMove, const Board currentBoard) {
+
     int scores[numMoves];
-    
+
     // This is insertion sort but we compute the elements when accessing them
     for (int index = 0; index < numMoves; index++) {
-        int score = scoreMove(moves[index], ttMove, currentBoard);
-        Move currentMove = moves[index]; 
+        int score = scoreMove(moves[index], importantMove, currentBoard);
+        Move currentMove = moves[index];
 
         int sortedIndex = index;
         // Shifting all the elements smaller than score to make room for it

@@ -172,7 +172,7 @@ bool FenString_setChessPositionFromTokens(Tokens* fenTokenized, ChessPosition* p
 
     return true;
 }
-#include <stdio.h>
+
 void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]) {
     int fenIndex = 0;
 

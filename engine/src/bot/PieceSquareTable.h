@@ -30,4 +30,6 @@ extern int pieceSquareTable[MAX_PIECE_INDEX - 9 + 1][BOARD_SIZE];
  */
 bool PieceSquareTable_init();
 
+#define PST_value(piece, square) (pieceSquareTable[piece - 9][square])
+
 #endif /* FC7C9618_1157_4392_921D_5EA7262D829E */

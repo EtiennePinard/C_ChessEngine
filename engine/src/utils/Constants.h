@@ -9,10 +9,13 @@
  * @brief The fen string for the initial starting position
  * IMPORTANT: You cannot pass this string directly to the FenString_setChessPositionFromFenString function
  * because this is a string literal and these are placed in read-only memory. The FenString_setChessPositionFromFenString
- * requires modification of the string and so you need to put it into a temporary variable before passing it to the function
+ * requires modification of the string and so you need to put it into a temporary variable before passing it to the function.
+ * 
  * One way to put the string literal and is to copy it to a char array using memcpy. For example:
  *     char initialFen[57];
  *     memcpy(initialFen, INITIAL_FEN, 57);
+ * 
+ * Another way is to use the FenString_setChessPositionFromCopiedFenString function which will copy the string
 */
 #define INITIAL_FEN ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 

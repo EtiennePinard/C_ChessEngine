@@ -10,14 +10,12 @@
 #include "PieceSquareTable.h"
 #include "RepetitionTable.h"
 #include "TranspositionTable.h"
+#include "MoveOrdering.h"
 
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "../moveHandler/MoveGenerator.h"
 #include "../moveHandler/MovePlayer.h"
 #include "../utils/Math.h"
-
-#define INFINITY 2000000
-#define MINUS_INFINITY -INFINITY
 
 bool useTranspositionTable = true;
 volatile bool endSearch = false;
@@ -101,7 +99,7 @@ int Bot_staticEvaluation() {
     if (numMoves == 0) {
         if (inCheck) {
             // The player has lost
-            return currentPosition.colorToGo == BLACK ? INFINITY : MINUS_INFINITY;
+            return currentPosition.colorToGo == BLACK ? BOT_INFINITY : BOT_MINUS_INFINITY;
         }
         // It is a stalemate
         return 0;
@@ -184,7 +182,7 @@ int Bot_staticEvaluation() {
                 // Piece Square Table mixed with Material
                 // We combined the material score and the piece square table score in the PieceSquareTable.c file
                 // Note that all of the scores were taken from Stockfish 14
-                score += pieceSquareTable[Piece_makePiece(color, type) - 9][square];
+                score += PST_value(Piece_makePiece(color, type), square);
 
                 bitboard &= bitboard - 1;
             }
@@ -212,7 +210,7 @@ u32 transpositionTableHits;
 
 int alpha_beta_negamax(int alpha, int beta, int depth) {
     if (endSearch) return 0;
-    
+
     totalNodes++;
 
     int startingAlpha = alpha;
@@ -233,11 +231,14 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
     // We want to have the best move from this depth
     Move bestMove = NULL_MOVE;
-    int bestEval = MINUS_INFINITY;
+    int bestEval = BOT_MINUS_INFINITY;
 
     int nbOfMoves;
     Move validMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     MoveHandler_getValidMoves(validMoves, &nbOfMoves, currentPosition);
+
+    Move ttMove = TranspositionTable_getMoveFromKey(currentPosition.key);
+    MoveOrdering_orderMoves(validMoves, nbOfMoves, ttMove, currentPosition.board);
 
     posHistory[currentDepth - depth] = currentPosition;
 
@@ -293,9 +294,9 @@ Move Bot_think() {
 
     for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
         currentDepth = depth;
-        // At every depth, we need to reset the bestEvalFromSearch to MINUS_INFINITY
+        // At every depth, we need to reset the bestEvalFromSearch to BOT_MINUS_INFINITY
         // because the result from a lower depth are irrelevant when searching at a higher depth
-        bestEvalFromCurrentSearch = MINUS_INFINITY;
+        bestEvalFromCurrentSearch = BOT_MINUS_INFINITY;
 
         // debug information
         totalNodes = 0;
@@ -311,7 +312,7 @@ Move Bot_think() {
 
             // We input the depth minus 1 because we already make one move with the root negamax loop
             // We need to do the negative of negamax because a good score for our opponent is a bad score for us
-            int score = -alpha_beta_negamax(MINUS_INFINITY, INFINITY, depth - 1);
+            int score = -alpha_beta_negamax(BOT_MINUS_INFINITY, BOT_INFINITY, depth - 1);
 
             // Check endSearch before using the calculated score because it could be 0 
             // if endSearch is triggered when we were searching
@@ -339,9 +340,9 @@ Move Bot_think() {
             transpositionTableHits,
             bestEvalFromCurrentSearch,
             'a' + file(Move_fromSquare(bestMoveFromFullDepthSearch)),
-            8 - rank(Move_fromSquare(bestMoveFromCurrentDepthSearch)),
+            8 - rank(Move_fromSquare(bestMoveFromFullDepthSearch)),
             'a' + file(Move_toSquare(bestMoveFromFullDepthSearch)),
-            8 - rank(Move_toSquare(bestMoveFromCurrentDepthSearch))
+            8 - rank(Move_toSquare(bestMoveFromFullDepthSearch))
         );
 
         if (endSearch) goto stop_search;

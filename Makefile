@@ -70,6 +70,7 @@ chessEngine_SRC = \
     engine/src/bot/bot.c \
     engine/src/bot/pieceSquareTable.c \
     engine/src/bot/transpositionTable.c \
+    engine/src/bot/moveOrdering.c \
     engine/src/bot/repetitionTable.c \
     engine/src/moveHandler/movePlayer.c \
     engine/src/moveHandler/moveGenerator.c \
@@ -103,6 +104,7 @@ app_SRC = \
     engine/src/bot/pieceSquareTable.c \
     engine/src/bot/repetitionTable.c \
     engine/src/bot/transpositionTable.c \
+    engine/src/bot/moveOrdering.c \
     engine/testing/logChessStructs.c \
     gui_app/chess_app/app.c \
     gui_app/chess_app/events.c \

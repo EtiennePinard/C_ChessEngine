@@ -4,7 +4,6 @@
 #include "../sdl_framework/State.h"
 
 #include "../../engine/src/state/GameState.h"
-#include "../../engine/src/bot/Bot.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600

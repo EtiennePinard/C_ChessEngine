@@ -16,6 +16,11 @@
 #include "PerftTranspositionTable.h"
 #include "../LogChessStructs.h"
 
+// This is because we don't use the repetition table so we need
+// RepetitionTable_storeKey to be define for the MoveHandler_playMove 
+// function to compile
+void RepetitionTable_storeKey(void) {}
+
 #define TEST_ITERATION 100
 #define MAXIMUM_DEPTH 20
 
@@ -54,8 +59,7 @@ u64 perft(u8 depth) {
 
         Move move = validMoves[moveIndex];
 
-
-        MoveHandler_playMove(move, &currentPosition, false); // Move is made
+        MoveHandler_playMove(move, &currentPosition, false);
 
         u64 moveOutput = PerftTranspositionTable_getPerftFromKey(currentPosition.key, depth);
 

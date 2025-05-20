@@ -252,7 +252,8 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
         int eval = -alpha_beta_negamax(-beta, -alpha, depth - 1);
 
         memcpy(&currentPosition, &posHistory[currentDepth - depth], sizeof(ChessPosition));
-
+        RepetitionTable_pop();
+        
         // Update the best evaluation that we found
         if (eval > bestEval) {
             bestMove = move;
@@ -280,8 +281,6 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 }
 
 Move Bot_think() {
-    RepetitionTable_setCurrentIndexAsRootPosition();
-
     bestMoveFromCurrentDepthSearch = NULL_MOVE;
     principalVariation = NULL_MOVE; // aka best move from full depth search
 
@@ -327,9 +326,8 @@ Move Bot_think() {
             }
 
             memcpy(&currentPosition, posHistory, sizeof(ChessPosition));
-
+            RepetitionTable_pop();
         }
-        RepetitionTable_returnToRootPosition();
 
         // We have done one full depth search and so we update the full search best move
         principalVariation = bestMoveFromCurrentDepthSearch;
@@ -351,6 +349,5 @@ Move Bot_think() {
     }
 
 stop_search:
-    RepetitionTable_returnToRootPosition();
     return principalVariation;
 }

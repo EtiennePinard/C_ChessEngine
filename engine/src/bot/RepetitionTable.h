@@ -15,17 +15,16 @@
 bool RepetitionTable_storeKey(ZobristKey key);
 
 /**
- * @brief Set the current index as the root position. Call this method before 
- * you start a search, so that the keys which are added to the array can be 
- * discarded after the search is done.
+ * @brief Removes the last element stored in the repetition table.
  * 
  */
-void RepetitionTable_setCurrentIndexAsRootPosition();
+void RepetitionTable_pop();
 
 /**
- * @brief Sets the curent index of the table to the root position index
+ * @brief Removes all elements from the repetition table
+ * 
  */
-void RepetitionTable_returnToRootPosition();
+void RepetitionTable_clear();
 
 /**
  * @brief Returns true if the ZobristKey is already contained twice in the table

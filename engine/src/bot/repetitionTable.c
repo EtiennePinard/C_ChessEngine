@@ -21,7 +21,6 @@
  */
 ZobristKey repetitionTable[REPETITION_TABLE_CAPACITY];
 u16 currentIndex = 0;
-u16 rootPosition = 0;
 
 bool RepetitionTable_storeKey(ZobristKey key) {
     if (currentIndex == REPETITION_TABLE_CAPACITY) {
@@ -32,9 +31,9 @@ bool RepetitionTable_storeKey(ZobristKey key) {
     return true;
 }
 
-void RepetitionTable_setCurrentIndexAsRootPosition() { rootPosition = currentIndex; }
+void RepetitionTable_pop() { currentIndex--; }
 
-void RepetitionTable_returnToRootPosition() { currentIndex = rootPosition; }
+void RepetitionTable_clear() { currentIndex = 0; }
 
 bool RepetitionTable_isKeyContainedTwiceInTable(ZobristKey key) {
     bool hasOneDuplicate = false;

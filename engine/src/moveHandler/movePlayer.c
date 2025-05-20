@@ -59,8 +59,7 @@ void _updateFiftyMoveRule(Piece pieceToMove, Square to, ChessPosition* state) {
     }
 }
 
-// Note: The __attribute__ ((unused)) is there so that gcc don't put us a warning if we don't include the repetition table
-void MoveHandler_playMove(Move move, ChessPosition* position, __attribute__((unused)) bool storePositionInRepetitionTable) {
+void MoveHandler_playMove(Move move, ChessPosition* position, bool storePositionInRepetitionTable) {
     assert(position != NULL);
     assert(move != NULL_MOVE);
     assert(Move_fromSquare(move) != Move_toSquare(move));
@@ -174,12 +173,10 @@ void MoveHandler_playMove(Move move, ChessPosition* position, __attribute__((unu
     }
     newZobristKey ^= zobristRandomNumber.sideToMove;
 
-    // Storing the old Zobrist key only if the repetitionTable.c file is included
-#ifdef RepetitionTable_storeKey
+    // Storing the old Zobrist key
     if (storePositionInRepetitionTable) {
         RepetitionTable_storeKey(position->key);
     }
-#endif
 
     // Updating the zobrist key
     position->key = newZobristKey;

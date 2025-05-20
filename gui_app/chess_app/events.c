@@ -188,6 +188,8 @@ static void resetGame(GameState* gameState) {
     gameState->blackRemainingTime = STARTING_TIME_MS;
     gameState->whiteRemainingTime = STARTING_TIME_MS;
     gameState->turnStartTick = SDL_GetTicks64();
+
+    RepetitionTable_clear();
 }
 
 void clickedSwitchColorButton(SDL_Event event, App app) {
@@ -332,10 +334,12 @@ void clickedBackButton(SDL_Event event, App app) {
 
         // Note that the time controls will not be updated because this is just for debugging purposes
         ChessPosition previousPos = app.state->gameState.undoStates.previousStates[--app.state->gameState.undoStates.previousStateIndex];
+        RepetitionTable_pop();
         if (previousPos.colorToGo == app.state->gameState.playerColor) {
             app.state->gameState.currentPosition = previousPos;
         } else {
             app.state->gameState.currentPosition = app.state->gameState.undoStates.previousStates[--app.state->gameState.undoStates.previousStateIndex];
+            RepetitionTable_pop();
         }
 
         break;

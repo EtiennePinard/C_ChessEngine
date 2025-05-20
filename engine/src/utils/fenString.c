@@ -137,36 +137,40 @@ bool FenString_setChessPositionFromFenString(char* fen, ChessPosition* position)
 }
 
 bool FenString_setChessPositionFromTokens(Tokens* fenTokenized, ChessPosition* position) {
-    if (position == NULL || fenTokenized == NULL) { return false; }
+    if (position == NULL || fenTokenized == NULL) return false;
 
-    if (fenTokenized->length != 6) { return false; }
+    if (fenTokenized->length != 6) return false;
 
     // Setting up the board
     Piece boardArray[BOARD_SIZE] = { 0 };
-    if (!setBoardArrayFromFenString(fenTokenized->tokens[0], boardArray)) { return false; }
+    if (!setBoardArrayFromFenString(fenTokenized->tokens[0], boardArray)) return false;
     Board board = { 0 };
     Board_fromArray(&board, boardArray);
     position->board = board;
 
     // Setting the color to go
     position->colorToGo = getColorToGo(fenTokenized->tokens[1]);
-    if ((int)position->colorToGo == -1) { return false; }
+    if ((int)position->colorToGo == -1) return false;
 
     // Setting the castling perm
-    position->castlingPerm = getCastlingPermFromFenString(fenTokenized->tokens[2]);
-    if (position->castlingPerm == -1) { return false; }
+    int num = getCastlingPermFromFenString(fenTokenized->tokens[2]);
+    if (num == -1) return false;
+    position->castlingPerm = num;
 
     // Setting the en passant target square
-    position->enPassantTargetSquare = string_algebraicToIndex(fenTokenized->tokens[3]);
-    if (position->enPassantTargetSquare == -1) { return false; }
+    num = string_algebraicToIndex(fenTokenized->tokens[3]);
+    if (num == -1) return false;
+    position->enPassantTargetSquare = num;
 
     // Setting the fifty rule turns
-    position->turnsForFiftyRule = string_parseNumber(fenTokenized->tokens[4]);
-    if (position->turnsForFiftyRule == -1) { return false; }
+    num = string_parseNumber(fenTokenized->tokens[4]);
+    if (num == -1) return false;
+    position->turnsForFiftyRule = num;
 
     // Setting the number of moves
-    position->nbMoves = string_parseNumber(fenTokenized->tokens[5]);
-    if (position->turnsForFiftyRule == -1) { return false; }
+    num = string_parseNumber(fenTokenized->tokens[5]);
+    if (num == -1) return false;
+    position->nbMoves = num;
 
     ZobristKey_calculateInitialKey(position);
 
@@ -181,13 +185,13 @@ void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN
         Piece piece = Board_pieceAtIndex(position.board, square);
         char pieceChar = '\0';
         switch (Piece_type(piece)) {
-            case PAWN: pieceChar = 'p'; break;
-            case KNIGHT: pieceChar = 'n'; break;
-            case BISHOP: pieceChar = 'b'; break;
-            case ROOK: pieceChar = 'r'; break;
-            case QUEEN: pieceChar = 'q'; break;
-            case KING: pieceChar = 'k'; break;
-            default: break;
+        case PAWN: pieceChar = 'p'; break;
+        case KNIGHT: pieceChar = 'n'; break;
+        case BISHOP: pieceChar = 'b'; break;
+        case ROOK: pieceChar = 'r'; break;
+        case QUEEN: pieceChar = 'q'; break;
+        case KING: pieceChar = 'k'; break;
+        default: break;
         }
 
         if (Piece_color(piece) == WHITE) {
@@ -197,7 +201,8 @@ void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN
 
         if (piece == NOPIECE) {
             emptySquare++;
-        } else {
+        }
+        else {
             if (emptySquare != 0) {
                 fen[fenIndex++] = '0' + emptySquare;
                 emptySquare = 0;
@@ -218,11 +223,12 @@ void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN
         // Writing the remaining empty squares
         fen[fenIndex++] = '0' + emptySquare;
     }
-    
+
     fen[fenIndex++] = ' ';
     if (position.colorToGo == WHITE) {
         fen[fenIndex++] = 'w';
-    } else {
+    }
+    else {
         fen[fenIndex++] = 'b';
     }
 
@@ -252,7 +258,7 @@ void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN
     do {
         fen[fenIndex++] = digits[--digitLength];
     } while (digitLength);
-    
+
 
     fen[fenIndex++] = ' ';
     num = position.nbMoves;

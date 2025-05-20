@@ -140,14 +140,14 @@ bool test3(__attribute__((unused)) ChessPosition* position) {
     return false;
 }
 
-#define TEST4 ("8/8/8/8/8/8/8/8 b - - 338749012 00001341293847")
+#define TEST4 ("8/8/8/8/8/8/8/8 b - - 51 000008849")
 
 bool test4(ChessPosition* position) {
     if (position->colorToGo != BLACK) { return false; }
     if (position->castlingPerm != (0)) { return false; }
     if (position->enPassantTargetSquare != 0) { return false; }
-    if (position->turnsForFiftyRule != 338749012) { return false; }
-    if (position->nbMoves != 1341293847) { return false; }
+    if (position->turnsForFiftyRule != 51) { return false; }
+    if (position->nbMoves != MAX_NB_LEGAL_MOVES_IN_GAME) { return false; }
 
     for (int square = 0; square < 64; square++) {
         if (Board_pieceAtIndex(position->board, square) != NOPIECE) { return false; }

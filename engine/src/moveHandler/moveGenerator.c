@@ -315,7 +315,7 @@ void generateKingMoves() {
             checkBitBoard |= toggle << potentialPawn;
 
             // Adding this condition if en-passant were to remove the check
-            if (potentialPawn + 8 * delta == currentState.enPassantTargetSquare) {
+            if (potentialPawn + 8 * delta == (int) currentState.enPassantTargetSquare) {
                 // Eating this pawn by en-passant would remove the check
                 // I cannot set the en-passant bit in the checkBitBoard else non-pawn pieces would try to do en-passant
                 enPassantWillRemoveTheCheck = true;

@@ -50,7 +50,7 @@ typedef struct {
 
 typedef struct FenStringFileData {
     // This is about 237 kb, which is fine
-    Tokens* lines;
+    char** lines;
     int currentLineIndex;
     int totalLinesInFile;
 } FenStringFileData;
@@ -119,14 +119,14 @@ void drawButton(AppState* state) {
 }
 
 void nextLineIndex(FenStringFileData* fenStringFileData) {
-    fenStringFileData->currentLineIndex++;
+    fenStringFileData->currentLineIndex = (fenStringFileData->currentLineIndex + 1) % fenStringFileData->totalLinesInFile;
 }
 
 void changePosition(AppState* state) {
     nextLineIndex(&state->fenStringFileData);
-    Tokens fen = state->fenStringFileData.lines[state->fenStringFileData.currentLineIndex];
-    if (!FenString_setChessPositionFromTokens(&fen, &state->evaluation.position)) {
-        fprintf(stderr, "Failed to initialize the position, exiting...\n");
+    char* fen = state->fenStringFileData.lines[state->fenStringFileData.currentLineIndex];
+    if (!FenString_setChessPositionFromFenString(fen, &state->evaluation.position)) {
+        fprintf(stderr, "Failed to initialize the position `%s`, exiting...\n", fen);
         exit(EXIT_FAILURE);
     }
     state->evaluation.staticEvaluation = Bot_staticEvaluation(state->evaluation.position);
@@ -145,7 +145,7 @@ void clickedButton(SDL_Event event, App app) {
 #define BUF_SIZE (1 << 8)
 
 FenStringFileData initializeFenStringFileData(FILE* file) {
-    Tokens* fens = malloc(BUF_SIZE * sizeof(Tokens));
+    char** fens = malloc(BUF_SIZE * sizeof(char*));
     char fen[MAX_FEN_STRING_SIZE] = { 0 };
 
     int capacity = BUF_SIZE;
@@ -177,22 +177,13 @@ FenStringFileData initializeFenStringFileData(FILE* file) {
         // We ignore lines which are only comments
         if (fenLength == 0) { continue; }
 
-        fens[counter].length = string_removeUnecessarySpaces(fen);
-        if (fens[counter].length != 6) {
-            fprintf(stderr, "A fen string is composed of exactly 6 strings separated by spaces. This supposed fen string does not do that: `%s`\nExiting...", fen);
-            exit(EXIT_FAILURE);
-        }
+        fens[counter] = calloc(fenLength + 1, sizeof(char));
+        strcpy(fens[counter], fen);
 
-        fens[counter].tokens = malloc(fens[counter].length * sizeof(char*));
-        char* newFen = malloc(fenLength * sizeof(char));
-        memcpy(newFen, fen, fenLength);
-        string_tokenizeStringBySpace(newFen, fens + counter);
-        
         counter++;
-
         if (counter == capacity) {
             capacity *= 2;
-            fens = realloc(fens, sizeof(Tokens) * capacity);
+            fens = realloc(fens, sizeof(char*) * capacity);
         }
     }
 
@@ -260,12 +251,7 @@ void cleanupApp(App app) {
     free(app.state->button.text);
 
     for (int index = 0; index < app.state->fenStringFileData.totalLinesInFile; index++) {
-        // Please note that since the tokens were created with the string_tokenizeStringBySpace
-        // function than the elements of the char** tokens array are actually the same string
-        // that had its space replace by null terminator. This means that we can simply free the
-        // first element of the array and then the array itself
-        free(app.state->fenStringFileData.lines[index].tokens[0]);
-        free(app.state->fenStringFileData.lines[index].tokens);
+        free(app.state->fenStringFileData.lines[index]);
     }
 
     free(app.state->fenStringFileData.lines);

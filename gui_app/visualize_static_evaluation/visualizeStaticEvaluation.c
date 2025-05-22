@@ -9,9 +9,7 @@
 #include "../../engine/src/utils/Math.h"
 #include "../../engine/src/utils/FenString.h"
 #include "../../engine/src/utils/CharBuffer.h"
-#include "../../engine/src/bot/Bot.h"
-#include "../../engine/src/state/Board.h"
-#include "../../engine/src/state/Move.h"
+#include "../../engine/src/bot/Evaluation.h"
 #include "../../engine/src/bot/PieceSquareTable.h"
 #include "../../engine/src/magicBitBoard/MagicBitBoard.h"
 
@@ -21,7 +19,7 @@
 #include "../sdl_framework/Render.h"
 #include "../sdl_framework/AppCleanup.h"
 
-#define WINDOWN_TITLE ("Piece Square Table Visualization")
+#define WINDOWN_TITLE ("Evaluation Visualization")
 #define WINDOW_WIDTH (640)
 #define WINDOW_HEIGHT (640 + BUTTON_HEIGHT)
 #define SQUARE_SIZE (WINDOW_WIDTH / BOARD_LENGTH) // Size of each square
@@ -131,8 +129,7 @@ void changePosition(AppState* state) {
         fprintf(stderr, "Failed to initialize the position, exiting...\n");
         exit(EXIT_FAILURE);
     }
-    Bot_provideGameStateForBot(state->evaluation.position);
-    state->evaluation.staticEvaluation = Bot_staticEvaluation();
+    state->evaluation.staticEvaluation = Bot_staticEvaluation(state->evaluation.position);
 }
 
 void clickedButton(SDL_Event event, App app) {

@@ -29,13 +29,6 @@ void Bot_provideGameStateForBot(ChessPosition position);
 Move Bot_think();
 
 /**
- * @brief Returns a score that was calculated by statically analyzing the position.
- * Static analysis means only looking at information currently available, not considering 
- * potential good moves in the score.
-*/
-int Bot_staticEvaluation();
-
-/**
  * @brief Variable used to stop the search.
  * The volatile label is because this is used
  * by a timer thread which will dictate

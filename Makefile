@@ -72,6 +72,7 @@ chessEngine_SRC = \
     engine/src/bot/transpositionTable.c \
     engine/src/bot/moveOrdering.c \
     engine/src/bot/repetitionTable.c \
+    engine/src/bot/evaluation.c \
     engine/src/moveHandler/movePlayer.c \
     engine/src/moveHandler/moveGenerator.c \
     engine/src/utils/fenString.c \
@@ -105,6 +106,7 @@ app_SRC = \
     engine/src/bot/repetitionTable.c \
     engine/src/bot/transpositionTable.c \
     engine/src/bot/moveOrdering.c \
+    engine/src/bot/evaluation.c \
     engine/testing/logChessStructs.c \
     gui_app/chess_app/app.c \
     gui_app/chess_app/events.c \
@@ -119,7 +121,7 @@ visualizeEval_SRC = \
 	engine/src/bot/pieceSquareTable.c \
 	engine/src/bot/transpositionTable.c \
 	engine/src/bot/repetitionTable.c \
-	engine/src/bot/bot.c \
+	engine/src/bot/evaluation.c \
 	engine/src/moveHandler/movePlayer.c \
 	engine/src/moveHandler/moveGenerator.c \
     engine/src/utils/fenString.c \

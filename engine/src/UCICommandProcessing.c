@@ -6,8 +6,6 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include "UCICommandProcessing.h"
-
 #include "state/EngineState.h"
 #include "state/Move.h"
 
@@ -20,8 +18,10 @@
 #include "utils/Math.h"
 #include "utils/FenString.h"
 
+#include "UCICommandProcessing.h"
+
 // Thank you to https://stackoverflow.com/a/1516384
-void sendResponse(const char *format, ...) {
+void sendResponse(const char* format, ...) {
     va_list args;
     va_start(args, format);
     vprintf(format, args);
@@ -31,25 +31,25 @@ void sendResponse(const char *format, ...) {
 static char pieceToFenChar(Piece piece) {
     char result;
     switch (Piece_type(piece)) {
-        case KING:
+    case KING:
         result = 'k';
         break;
-        case QUEEN:
-        result = 'q';  
+    case QUEEN:
+        result = 'q';
         break;
-        case ROOK: 
-        result = 'r';       
+    case ROOK:
+        result = 'r';
         break;
-        case BISHOP:
-        result = 'b';   
+    case BISHOP:
+        result = 'b';
         break;
-        case KNIGHT:
-        result = 'n';   
+    case KNIGHT:
+        result = 'n';
         break;
-        case PAWN:
+    case PAWN:
         result = 'p';
         break;
-        default:
+    default:
         return ' ';
         break;
     }
@@ -69,9 +69,9 @@ static void processDCommand() {
 
     for (int index = 0; index < BOARD_SIZE; index++) {
 
-        
+
         sendResponse(COLUMN_SEPARATOR " ");
-        
+
         Piece pieceAtPosition = Board_pieceAtIndex(ourCurrentPosition.board, index);
         sendResponse("%c ", pieceToFenChar(pieceAtPosition));
 
@@ -94,8 +94,8 @@ static Move findMatchingMove(Move moveToMatch) {
     MoveHandler_getValidMoves(moves, &moveCount, ourCurrentPosition);
     for (int index = 0; index < moveCount; index++) {
         Move move = moves[index];
-        if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) && 
-            Move_toSquare(move) == Move_toSquare(moveToMatch) && 
+        if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) &&
+            Move_toSquare(move) == Move_toSquare(moveToMatch) &&
             (Move_flag(moveToMatch) == NOFLAG || Move_flag(move) == Move_flag(moveToMatch))) {
             moveToMake = move;
             break;
@@ -104,14 +104,14 @@ static Move findMatchingMove(Move moveToMatch) {
     return moveToMake;
 }
 
-static void processPlayCommand(Tokens *tokens) {
+static void processPlayCommand(Tokens* tokens) {
     if (tokens->length == 1) {
         // The command is just: play
         // In this case we just do nothing
         return;
     }
     size_t tokenIndex = 1;
-    while (tokenIndex < tokens->length) {        
+    while (tokenIndex < tokens->length) {
         Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
 
         if (moveToMake == NULL_MOVE) {
@@ -129,14 +129,14 @@ static void processPlayCommand(Tokens *tokens) {
 // Format: 'position startpos moves e2e4 e7e5'
 // Or: 'position fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 moves e2e4 e7e5'
 // Note: 'moves' section is optional
-static void processPositionCommand(Tokens *tokens) {
+static void processPositionCommand(Tokens* tokens) {
 
     if (tokens->length == 1) {
         // The command is just: position
         // In this case we just do nothing
         return;
     }
-    
+
     size_t tokenIndex = 1;
 
     string_toLower(tokens->tokens[tokenIndex]);
@@ -147,7 +147,8 @@ static void processPositionCommand(Tokens *tokens) {
             sendResponse("ERROR: While initializing the starting position\n");
             return;
         }
-    } else if (string_compareStrings(tokens->tokens[tokenIndex], "fen")) {
+    }
+    else if (string_compareStrings(tokens->tokens[tokenIndex], "fen")) {
 
         if (tokens->length < 8) {
             sendResponse("ERROR: Fen string is not long enough in the position command\n");
@@ -155,7 +156,7 @@ static void processPositionCommand(Tokens *tokens) {
         }
 
         tokenIndex++;
-        char *fenStringTokenize[6];
+        char* fenStringTokenize[6];
         fenStringTokenize[0] = tokens->tokens[tokenIndex]; tokenIndex++; // fen board
         fenStringTokenize[1] = tokens->tokens[tokenIndex]; tokenIndex++; // color to go
         fenStringTokenize[2] = tokens->tokens[tokenIndex]; tokenIndex++; // castling perm
@@ -172,7 +173,8 @@ static void processPositionCommand(Tokens *tokens) {
             sendResponse("ERROR: While initializing the position fen string\n");
             return;
         }
-    } else {
+    }
+    else {
         sendResponse("ERROR: Invalid option `%s` in position command\n", tokens->tokens[tokenIndex]);
         return;
     }
@@ -181,9 +183,9 @@ static void processPositionCommand(Tokens *tokens) {
         // There is no `moves` part to this position command
         return;
     }
-    
+
     string_toLower(tokens->tokens[tokenIndex]);
-    if (!string_compareStrings(tokens->tokens[tokenIndex], "moves")) { 
+    if (!string_compareStrings(tokens->tokens[tokenIndex], "moves")) {
         sendResponse("ERROR: Invalid `moves` option of position command `%s`\n", tokens->tokens[tokenIndex]);
         return;
     }
@@ -191,35 +193,82 @@ static void processPositionCommand(Tokens *tokens) {
     Tokens moveTokens = {
         // We don't increment the tokenIndex because the processPlayCommand function discards the first token
         .tokens = tokens->tokens + tokenIndex,
-        .length =  tokens->length - tokenIndex
+        .length = tokens->length - tokenIndex
     };
     processPlayCommand(&moveTokens);
 }
 
 // The function that the timer thread will execute
 static void* timerThread(void* arg) {
-    u64 time_limit_MS = *((u64*) arg);
+    u64 time_limit_MS = *((u64*)arg);
     usleep(time_limit_MS * 1000);
     endSearch = true;
     return NULL;
 }
 
-// Command format: go <wtime> <btime> <winc> <binc> <movestogo> <movetime>
-static void processGoCommand(Tokens *tokens) {
-    
-    // TODO: Find a way to calculate the time to take to search for the optimal moves
+#define INVALID_NUM(optionName) \
+    if (num == -1) {\
+        sendResponse("ERROR: Invalid %s: `%s`\n", optionName, nextToken); \
+        return; \
+    } \
+
+static void processGoCommand(Tokens* tokens) {
+    u64 moveTimeDuration = 0;
+    u64 whiteTime = 0;
+    u64 blackTime = 0;
+    u64 whiteInc = 0;
+    u64 blackInc = 0;
 
     size_t tokenIndex = 0;
     while (tokenIndex < tokens->length) {
-        // TODO: handle the options: <wtime> <btime> <winc> <binc> <movestogo> <movetime>
-        tokenIndex++;
+        const char* token = tokens->tokens[tokenIndex++];
+        const char* nextToken;
+        int num;
+
+        if (string_compareStrings(token, "movetime")) {
+            nextToken = tokens->tokens[tokenIndex++];
+            num = string_parseNumber(nextToken);
+            INVALID_NUM("movetime duration");
+            moveTimeDuration = (u64)num;
+        }
+        else if (string_compareStrings(token, "wtime")) {
+            nextToken = tokens->tokens[tokenIndex++];
+            num = (u64)string_parseNumber(nextToken);
+            INVALID_NUM("white time");
+            whiteTime = (u64)num;
+        }
+        else if (string_compareStrings(token, "btime")) {
+            nextToken = tokens->tokens[tokenIndex++];
+            num = (u64)string_parseNumber(nextToken);
+            INVALID_NUM("black time");
+            blackTime = (u64)num;
+        }
+        else if (string_compareStrings(token, "winc")) {
+            nextToken = tokens->tokens[tokenIndex++];
+            num = (u64)string_parseNumber(nextToken);
+            INVALID_NUM("white increment");
+            whiteInc = (u64)num;
+        }
+        else if (string_compareStrings(token, "binc")) {
+            nextToken = tokens->tokens[tokenIndex++];
+            num = (u64)string_parseNumber(nextToken);
+            INVALID_NUM("black increment");
+            blackInc = (u64)num;
+        }
+
     }
-    u64 durationInMilliseconds = 100;
+
+    // Check if the movetime option was provided if not calculate optimal time
+    // Note that if the wtime and btime is 0 then the think time will be the default think time
+    if (!moveTimeDuration) {
+        bool isWhiteToMove = ourCurrentPosition.colorToGo == WHITE;
+        moveTimeDuration = Bot_calculateThinkTime(whiteTime, blackTime, whiteInc, blackInc, isWhiteToMove);
+    }
 
     Bot_provideGameStateForBot(ourCurrentPosition);
-    
+
     pthread_t timer;
-    if (pthread_create(&timer, NULL, timerThread, &durationInMilliseconds) != 0) {
+    if (pthread_create(&timer, NULL, timerThread, &moveTimeDuration) != 0) {
         sendResponse("ERROR: Failed to create a timer thread, exiting the program\n");
         exit(EXIT_FAILURE);
     }
@@ -235,7 +284,6 @@ static void processGoCommand(Tokens *tokens) {
     char bestMoveLongAlgebraicNotation[6];
     string_moveToLongAlgebraic(bestMove, bestMoveLongAlgebraicNotation);
 
-    // No need for a stop command since we are that cool
     sendResponse("bestmove %s\n", bestMoveLongAlgebraicNotation);
 }
 
@@ -251,15 +299,15 @@ These are all the uci commands this engine supports:
     d (done)
 */
 #define MAX_UCI_COMMAND_WITH_OPTION_SIZE (9)
-bool processUCICommand(char *command) {
+bool processUCICommand(char* command) {
 
     Tokens tokens;
     size_t nbTokens = string_removeUnecessarySpaces(command);
-    char *tokens_arr[nbTokens];
+    char* tokens_arr[nbTokens];
     tokens.length = nbTokens;
     tokens.tokens = tokens_arr;
     string_tokenizeStringBySpace(command, &tokens);
-    
+
     if (tokens.length == 0) {
         // user sent an empty message, returning but not exiting
         return true;
@@ -278,30 +326,38 @@ bool processUCICommand(char *command) {
         sendResponse("id name %s %s\n", ENGINE_NAME, VERSION);
         sendResponse("id author %s\n", AUTHOR);
         sendResponse("\nuciok\n");
-    
-    } else if (string_compareStrings(messageType, "isready")) {
+
+    }
+    else if (string_compareStrings(messageType, "isready")) {
         sendResponse("readyok\n");
 
-    } else if (string_compareStrings(messageType, "ucinewgame")) {
+    }
+    else if (string_compareStrings(messageType, "ucinewgame")) {
         // I guess we gonna handle uci new game when it is necessary   
 
-    } else if (string_compareStrings(messageType, "position")) {
+    }
+    else if (string_compareStrings(messageType, "position")) {
         processPositionCommand(&tokens);
-    
-    } else if (string_compareStrings(messageType, "play")) {
+
+    }
+    else if (string_compareStrings(messageType, "play")) {
         processPlayCommand(&tokens);
 
-    } else if (string_compareStrings(messageType, "go")) {
+    }
+    else if (string_compareStrings(messageType, "go")) {
         processGoCommand(&tokens);
-    
-    } else if (string_compareStrings(messageType, "stop")) {
+
+    }
+    else if (string_compareStrings(messageType, "stop")) {
         // Stop the bot from thinking
-    
-    } else if (string_compareStrings(messageType, "d")) {
+
+    }
+    else if (string_compareStrings(messageType, "d")) {
         processDCommand();
-    } else {
+    }
+    else {
         sendResponse("ERROR: Command `%s` invalid or not supported by this engine\n", command);
     }
-    
+
     return true;
 }

@@ -1,6 +1,8 @@
 #ifndef CEE33778_9653_4427_BB21_5DA3340DEB43
 #define CEE33778_9653_4427_BB21_5DA3340DEB43
 
+#include <stdbool.h>
+
 #include "../state/GameState.h"
 #include "../state/Move.h"
 

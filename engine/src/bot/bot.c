@@ -119,7 +119,7 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
         memcpy(&currentPosition, &posHistory[currentDepth - depth], sizeof(ChessPosition));
         RepetitionTable_pop();
-        
+
         // Update the best evaluation that we found
         if (eval > bestEval) {
             bestMove = move;
@@ -218,4 +218,27 @@ Move Bot_think() {
 
 stop_search:
     return principalVariation;
+}
+
+// Standard time fraction of 2.5%
+#define TIME_FRACTION (40)
+
+u64 Bot_calculateThinkTime(
+    u64 whiteTime, u64 blackTime,
+    u64 whiteInc, u64 blackInc,
+    bool isWhiteToMove
+) {
+    u64 myTime = isWhiteToMove ? whiteTime : blackTime;
+    u64 myInc = isWhiteToMove ? whiteInc : blackInc;
+
+    u64 baseTime = myTime / TIME_FRACTION;
+    u64 bonusTime = myInc >> 1;
+
+    u64 thinkTime = baseTime + bonusTime;
+
+    // Clamp to a minimum to prevent 0ms think time
+    // The division by 4 is from a Sebastian Lague video
+    if (thinkTime >> 2 < BOT_DEFAULT_THINK_TIME_MS) thinkTime = BOT_DEFAULT_THINK_TIME_MS;
+
+    return thinkTime;
 }

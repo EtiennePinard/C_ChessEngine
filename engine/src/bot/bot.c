@@ -36,6 +36,46 @@ Move principalVariation;
 u32 totalNodes;
 u32 leafNodes;
 u32 transpositionTableHits;
+u32 quiescenceNodes;
+
+int quiescence(int alpha, int beta) {
+    if (endSearch) return 0;
+
+    quiescenceNodes++;
+
+    // Standing pat
+    // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
+    int whoToMove = currentPosition.colorToGo == WHITE ? 1 : -1;
+    int bestValue = Bot_staticEvaluation(currentPosition) * whoToMove;
+
+    // The evaluation is better than our upper bound to we return staticEval (fail soft)
+    if (bestValue >= beta) return bestValue;
+
+    // If staticEval is better than the current lower bound it becomes that lower bound
+    if (bestValue > alpha) alpha = bestValue;
+
+    int nbOfMoves;
+    Move captureMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
+    MoveHandler_getCaptures(captureMoves, &nbOfMoves, currentPosition);
+
+    ChessPosition previousPosition = currentPosition;
+
+    for (int i = 0; i < nbOfMoves; i++) {
+        Move move = captureMoves[i];
+        MoveHandler_playMove(move, &currentPosition, true);
+
+        int score = -quiescence(-beta, -alpha);
+
+        currentPosition = previousPosition;
+        RepetitionTable_pop();
+
+        if (score >= beta) return score;
+        if (score > bestValue) bestValue = score;
+        if (score > alpha) alpha = score;
+    }
+
+    return bestValue;
+}
 
 int alpha_beta_negamax(int alpha, int beta, int depth) {
     if (endSearch) return 0;
@@ -52,10 +92,7 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
     if (depth == 0) {
         leafNodes++;
-        // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
-        int whoToMove = currentPosition.colorToGo == WHITE ? 1 : -1;
-        int evaluation = Bot_staticEvaluation(currentPosition) * whoToMove;
-        return evaluation;
+        return quiescence(alpha, beta);
     }
 
     // The best move from this depth is the principal variation at this depth
@@ -130,6 +167,7 @@ Move Bot_think() {
         totalNodes = 0;
         leafNodes = 0;
         transpositionTableHits = 0;
+        quiescenceNodes = 0;
 
         MoveOrdering_orderMoves(rootMoves, nbMoves, principalVariation, currentPosition.board);
 
@@ -162,9 +200,10 @@ Move Bot_think() {
         principalVariation = bestMoveFromCurrentDepthSearch;
 
         // Added this print statement to make it more convenient when debugging the bot
-        printf("Depth %d search finished, %u leaf nodes, %u total nodes, %u ttHits, %d best eval, %c%d%c%d best move\n",
+        printf("Depth %d, %u leaf nodes, %u quiescence nodes, %u total nodes, %u ttHits, %d best eval, %c%d%c%d best move\n",
             depth,
             leafNodes,
+            quiescenceNodes,
             totalNodes,
             transpositionTableHits,
             bestEvalFromCurrentSearch,

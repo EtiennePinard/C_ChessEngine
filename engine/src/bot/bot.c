@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "../UCICommandProcessing.h"
 #include "../magicBitBoard/MagicBitBoard.h"
 #include "../moveHandler/MoveGenerator.h"
 #include "../moveHandler/MovePlayer.h"
@@ -28,20 +29,16 @@ void Bot_provideGameStateForBot(ChessPosition state) {
 ChessPosition posHistory[MAXIMUM_DEPTH];
 int currentDepth;
 
+Move principalVariations[MAXIMUM_DEPTH];
+
 Move bestMoveFromCurrentDepthSearch;
 int bestEvalFromCurrentSearch;
 
-Move principalVariation;
-
 u32 totalNodes;
-u32 leafNodes;
 u32 transpositionTableHits;
-u32 quiescenceNodes;
 
 int quiescence(int alpha, int beta) {
     if (endSearch) return 0;
-
-    quiescenceNodes++;
 
     // Standing pat
     // Negamax needs a relative evaluation, so positive means good for color to go and vice-versa
@@ -91,7 +88,6 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
     }
 
     if (depth == 0) {
-        leafNodes++;
         return quiescence(alpha, beta);
     }
 
@@ -143,12 +139,15 @@ int alpha_beta_negamax(int alpha, int beta, int depth) {
 
     TranspositionTable_recordEntry(currentPosition.key, currentDepth, type, bestMove, bestEval);
 
+    principalVariations[currentDepth - depth] = bestMove;
+
     return bestEval;
 }
 
 Move Bot_think() {
+    char* pvString = calloc(7 * sizeof(char), MAXIMUM_DEPTH);
+    currentDepth = 0;
     bestMoveFromCurrentDepthSearch = NULL_MOVE;
-    principalVariation = NULL_MOVE; // aka best move from full depth search
 
     Move rootMoves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int nbMoves;
@@ -156,6 +155,7 @@ Move Bot_think() {
 
     // The first element is the root position
     posHistory[0] = currentPosition;
+    principalVariations[0] = NULL_MOVE;
 
     for (int depth = 1; depth < MAXIMUM_DEPTH; depth++) {
         currentDepth = depth;
@@ -163,13 +163,11 @@ Move Bot_think() {
         // because the result from a lower depth are irrelevant when searching at a higher depth
         bestEvalFromCurrentSearch = BOT_MINUS_INFINITY;
 
-        // debug information
+        // values for uci info command
         totalNodes = 0;
-        leafNodes = 0;
         transpositionTableHits = 0;
-        quiescenceNodes = 0;
 
-        MoveOrdering_orderMoves(rootMoves, nbMoves, principalVariation, currentPosition.board);
+        MoveOrdering_orderMoves(rootMoves, nbMoves, principalVariations[0], currentPosition.board);
 
         // Check endSearch before the long search loop
         if (endSearch) goto stop_search;
@@ -197,27 +195,30 @@ Move Bot_think() {
         }
 
         // We have done one full depth search and so we update the full search best move
-        principalVariation = bestMoveFromCurrentDepthSearch;
+        principalVariations[0] = bestMoveFromCurrentDepthSearch;
 
-        // Added this print statement to make it more convenient when debugging the bot
-        printf("Depth %d, %u leaf nodes, %u quiescence nodes, %u total nodes, %u ttHits, %d best eval, %c%d%c%d best move\n",
+        int charIndex = 0;
+        for (int index = 0; index < currentDepth; index++) {
+            charIndex += string_moveToLongAlgebraic(principalVariations[index], pvString + charIndex);
+            pvString[charIndex++] = ' ';
+        }
+        pvString[charIndex] = '\0';
+
+        UCI_sendResponse(
+            "info depth %d nodes %u tbhits %u score cp %d pv %s\n",
             depth,
-            leafNodes,
-            quiescenceNodes,
             totalNodes,
             transpositionTableHits,
             bestEvalFromCurrentSearch,
-            'a' + file(Move_fromSquare(principalVariation)),
-            8 - rank(Move_fromSquare(principalVariation)),
-            'a' + file(Move_toSquare(principalVariation)),
-            8 - rank(Move_toSquare(principalVariation))
+            pvString
         );
 
         if (endSearch) goto stop_search;
     }
 
 stop_search:
-    return principalVariation;
+    free(pvString);
+    return principalVariations[0];
 }
 
 // Standard time fraction of 2.5%

@@ -176,21 +176,16 @@ Move string_longAlgebraicToMove(const char* algebraic) {
     return Move_makeMove(from, to, flag);
 }
 
-void string_moveToLongAlgebraic(Move move, char buffer[6]) {
+int string_moveToLongAlgebraic(Move move, char buffer[6]) {
     assert(buffer != NULL);
 
     Square from = Move_fromSquare(move);
+    buffer[0] = 'a' + file(from);
+    buffer[1] = '1' + (7 - rank(from));
+    
     Square to = Move_toSquare(move);
-
-    int row1 = rank(from);
-    int col1 = file(from);
-    buffer[0] = 'a' + col1;
-    buffer[1] = '1' + (7 - row1);
-
-    int row2 = rank(to);
-    int col2 = file(to);
-    buffer[2] = 'a' + col2;
-    buffer[3] = '1' + (7 - row2);
+    buffer[2] = 'a' + file(to);
+    buffer[3] = '1' + (7 - rank(to));
 
     Flag flag = Move_flag(move);
 
@@ -209,6 +204,8 @@ void string_moveToLongAlgebraic(Move move, char buffer[6]) {
         break;
     default:
         buffer[4] = '\0';
+        return 4;
     }
     buffer[5] = '\0';
+    return 5;
 }

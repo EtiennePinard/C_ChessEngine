@@ -122,7 +122,8 @@ Move string_longAlgebraicToMove(const char* algebraic);
  * 
  * @param move The move to convert to its long algebraic notation
  * @param buffer The buffer to store the notation data into
+ * @return int The number of characters of the move
  */
-void string_moveToLongAlgebraic(Move move, char buffer[6]);
+int string_moveToLongAlgebraic(Move move, char buffer[6]);
 
 #endif /* C485539C_6204_42BC_B1A9_D330E7C34EBE */

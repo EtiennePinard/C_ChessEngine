@@ -223,7 +223,7 @@ pthread_mutex_t timerThreadMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void* searchThreadFunction(void*) {
     Move bestMove = Bot_think();
-    
+
     char bestMoveStr[6];
     string_moveToLongAlgebraic(bestMove, bestMoveStr);
     UCI_sendResponse("bestmove %s\n", bestMoveStr);
@@ -356,6 +356,8 @@ static void processGoCommand(Tokens* tokens) {
 }
 
 static void processStopCommand() {
+    // If we are not searching then we cannot stop a search
+    if (endSearch) return;
     endSearch = true;
     
     if (pthread_join(searchThread, NULL)) {

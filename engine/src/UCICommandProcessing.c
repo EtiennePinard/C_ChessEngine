@@ -245,6 +245,11 @@ static void* timerThreadFunction(void* arg) {
     if (timerThreadRunning) {
         endSearch = true;
         timerThreadRunning = false;
+
+        // Since the timerThread ended by itself without a stop command 
+        // then these threads will not be joined
+        pthread_detach(searchThread);
+        pthread_detach(pthread_self()); // We are detaching from ourselves cause POSIX allows it
     }
     pthread_mutex_unlock(&timerThreadMutex);
 

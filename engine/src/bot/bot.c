@@ -15,7 +15,7 @@
 #include "MoveOrdering.h"
 #include "Bot.h"
 
-volatile bool endSearch = false;
+volatile bool endSearch = true;
 
 ChessPosition currentPosition;
 
@@ -23,8 +23,8 @@ void Bot_provideGameStateForBot(ChessPosition state) {
     currentPosition = state;
 }
 
-// Max depth is 100 for now
-#define MAXIMUM_DEPTH (100)
+// Max depth is a constant for now
+#define MAXIMUM_DEPTH (128)
 ChessPosition posHistory[MAXIMUM_DEPTH];
 int currentDepth;
 
@@ -223,11 +223,7 @@ stop_search:
 // Standard time fraction of 2.5%
 #define TIME_FRACTION (40)
 
-u64 Bot_calculateThinkTime(
-    u64 whiteTime, u64 blackTime,
-    u64 whiteInc, u64 blackInc,
-    bool isWhiteToMove
-) {
+u64 Bot_calculateThinkTime(u64 whiteTime, u64 blackTime, u64 whiteInc, u64 blackInc, bool isWhiteToMove) {
     u64 myTime = isWhiteToMove ? whiteTime : blackTime;
     u64 myInc = isWhiteToMove ? whiteInc : blackInc;
 

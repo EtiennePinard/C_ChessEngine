@@ -19,16 +19,17 @@ static void initEngine() {
         !TranspositionTable_init() ||
         !FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &ourCurrentPosition)) {
         
-        sendResponse("Failed to initialize the engine properly, terminating the program...\n");
+        UCI_sendResponse("Failed to initialize the engine properly, terminating the program...\n");
         exit(EXIT_FAILURE);
     }
 
-    sendResponse("%s version %s by %s is initialized and ready to go!\n", ENGINE_NAME, VERSION, AUTHOR);
+    UCI_sendResponse("%s version %s by %s is initialized and ready to go!\n", ENGINE_NAME, VERSION, AUTHOR);
 }
 
 static void terminateEngine() {
     MagicBitBoard_terminate();
     TranspositionTable_terminate();
+    UCI_terminate();
 }
 
 #define STARTING_BUFFER_SIZE (128)
@@ -63,7 +64,7 @@ static void readUCICommands() {
     char *command = calloc(STARTING_BUFFER_SIZE, sizeof(char));
     while (true) {
         command = readArbitraryLongLineFromStdin(command, STARTING_BUFFER_SIZE);
-        if (!processUCICommand(command)) { break; }
+        if (!UCI_processUCICommand(command)) { break; }
     }
     free(command);
 }

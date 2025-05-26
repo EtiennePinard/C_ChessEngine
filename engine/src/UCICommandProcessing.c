@@ -28,6 +28,7 @@ void UCI_sendResponse(const char* format, ...) {
     va_start(args, format);
     vprintf(format, args);
     va_end(args);
+    fflush(stdout);
 }
 
 static void processUCICommand() {
@@ -136,6 +137,7 @@ static void processPlayCommand(Tokens* tokens) {
             UCI_sendResponse("The move `%s` cannot be made from the current position, aborting play command\n", tokens->tokens[tokenIndex]);
             break;
         }
+        RepetitionTable_storeKey(ourCurrentPosition.key);
         MoveHandler_playMove(moveToMake, &ourCurrentPosition, true);
 
         tokenIndex++;
@@ -196,6 +198,10 @@ static void processPositionCommand(Tokens* tokens) {
         UCI_sendResponse("ERROR: Invalid option `%s` in position command\n", tokens->tokens[tokenIndex]);
         return;
     }
+
+    // Clearing the repetition table since we will add them from the moves command
+    RepetitionTable_clear();
+
     tokenIndex++;
     if (tokenIndex == tokens->length) {
         // There is no `moves` part to this position command

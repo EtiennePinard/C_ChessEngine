@@ -26,12 +26,13 @@ void string_toLower(char *string);
 
 /**
  * @brief Trims contiguous spaces, meaning a double space becomes a single space and so on. 
- * Will also remove leading and ending spaces.
+ * Will also remove leading and ending spaces. Tabs will be converted to spaces.
+ * Line breaks will be placed at the end of the token before the line break.
  * 
- * @param string The string to remove the unecessary spaces from
+ * @param string The string to remove the unecessary spaces and tabs from
  * @return size_t The number of tokens containing no spaces in the string
  */
-size_t string_removeUnecessarySpaces(char *string);
+size_t string_removeUnecessarySpacesAndTabs(char *string);
 
 /**
  * @brief Represents a list of strings containing no space character 
@@ -54,7 +55,7 @@ typedef struct Tokens {
  * 
  * @code{.c}
  *  Tokens tokens;  
- *  size_t nbTokens = string_removeUnecessarySpaces(string);  
+ *  size_t nbTokens = string_removeUnecessarySpacesAndTabs(string);  
  *  char *tokens_arr[nbTokens]; 
  *  tokens.length = nbTokens;  
  *  tokens.tokens = tokens_arr;  

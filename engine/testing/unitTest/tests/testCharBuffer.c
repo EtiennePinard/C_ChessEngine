@@ -1,10 +1,10 @@
-#include "../../../src/utils/CharBuffer.h"
-#include "../../../src/utils/Constants.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "../../../src/utils/CharBuffer.h"
+#include "../../../src/utils/Constants.h"
 
 bool test_string_compareStrings() {
     bool actual;
@@ -83,18 +83,18 @@ bool test_string_toLower() {
     return true;
 }
 
-bool test_string_removeUnecessarySpaces() {
+bool test_string_removeUnecessarySpacesAndTabs() {
 
     size_t actualReturnValue;
     size_t expectedReturnValue;
 
-    char test1[] = "      test    case      1     ";
+    char test1[] = "   \t  \t   test    case  \t   \t    1     \t\t\t\t";
     char expected1[] = "test case 1";
-    actualReturnValue = string_removeUnecessarySpaces(test1);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test1);
     expectedReturnValue = 3;
 
     if (strcmp(test1, expected1) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"      test    case      1     \")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"      test    case      1     \")\n");
         printf("\tExpected: \"%s\"\n", expected1);
         printf("\tActual: \"%s\"\n", test1);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -104,11 +104,11 @@ bool test_string_removeUnecessarySpaces() {
 
     char test2[] = "test_case_2";
     char expected2[] = "test_case_2";
-    actualReturnValue = string_removeUnecessarySpaces(test2);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test2);
     expectedReturnValue = 1;
 
     if (strcmp(test2, expected2) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"test_case_2\")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"test_case_2\")\n");
         printf("\tExpected: \"%s\"\n", expected2);
         printf("\tActual: \"%s\"\n", test2);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -118,11 +118,11 @@ bool test_string_removeUnecessarySpaces() {
 
     char test3[] = "";
     char expected3[] = "";
-    actualReturnValue = string_removeUnecessarySpaces(test3);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test3);
     expectedReturnValue = 0;
     
     if (strcmp(test3, expected3) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"\")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"\")\n");
         printf("\tExpected: \"%s\"\n", expected3);
         printf("\tActual: \"%s\"\n", test3);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -132,11 +132,11 @@ bool test_string_removeUnecessarySpaces() {
 
     char test4[] = "position startpos";
     char expected4[] = "position startpos";
-    actualReturnValue = string_removeUnecessarySpaces(test4);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test4);
     expectedReturnValue = 2;
 
     if (strcmp(test4, expected4) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"position startpos\")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"position startpos\")\n");
         printf("\tExpected: \"%s\"\n", expected4);
         printf("\tActual: \"%s\"\n", test4);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -144,13 +144,13 @@ bool test_string_removeUnecessarySpaces() {
         return false;
     }
 
-    char test5[] = "                                     ";
+    char test5[] = "\t\t\t\t\t                \t    \t                     \t\t\t\t\t\t";
     char expected5[] = "";
-    actualReturnValue = string_removeUnecessarySpaces(test5);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test5);
     expectedReturnValue = 0;
     
     if (strcmp(test5, expected5) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"                                     \")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"                                     \")\n");
         printf("\tExpected: \"%s\"\n", expected5);
         printf("\tActual: \"%s\"\n", test5);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -160,10 +160,10 @@ bool test_string_removeUnecessarySpaces() {
 
     char test6[] = "        Hello       World     1,     2,    3!    ";
     char expected6[] = "Hello World 1, 2, 3!";
-    actualReturnValue = string_removeUnecessarySpaces(test6);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test6);
     expectedReturnValue = 5;
     if (strcmp(test6, expected6) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"        Hello       World     1,     2,    3!    \")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"        Hello       World     1,     2,    3!    \")\n");
         printf("\tExpected: \"%s\"\n", expected6);
         printf("\tActual: \"%s\"\n", test6);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
@@ -173,12 +173,38 @@ bool test_string_removeUnecessarySpaces() {
 
     char test7[] = INITIAL_FEN;
     char expected7[] = INITIAL_FEN;
-    actualReturnValue = string_removeUnecessarySpaces(test7);
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test7);
     expectedReturnValue = 6;
     if (strcmp(test7, expected7) != 0 || actualReturnValue != expectedReturnValue) {
-        printf("ERROR: string_removeUnecessarySpaces(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\")\n");
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\")\n");
         printf("\tExpected: \"%s\"\n", expected7);
         printf("\tActual: \"%s\"\n", test7);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
+        return false;
+    }
+
+    char test8[] = "test8   \n";
+    char expected8[] = "test8\n";
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test8);
+    expectedReturnValue = 1;
+    if (strcmp(test8, expected8) != 0 || actualReturnValue != expectedReturnValue) {
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"test8   \\n\")\n");
+        printf("\tExpected: \"%s\"\n", expected8);
+        printf("\tActual: \"%s\"\n", test8);
+        printf("\tExpected return Value: %ld\n", expectedReturnValue);
+        printf("\tActual return Value: %ld\n", actualReturnValue);
+        return false;
+    }
+
+    char test9[] = "\n test9   \ntest9";
+    char expected9[] = "\n test9\ntest9";
+    actualReturnValue = string_removeUnecessarySpacesAndTabs(test9);
+    expectedReturnValue = 2;
+    if (strcmp(test9, expected9) != 0 || actualReturnValue != expectedReturnValue) {
+        printf("ERROR: string_removeUnecessarySpacesAndTabs(\"\\n test9   \\ntest9\")\n");
+        printf("\tExpected: \"%s\"\n", expected9);
+        printf("\tActual: \"%s\"\n", test9);
         printf("\tExpected return Value: %ld\n", expectedReturnValue);
         printf("\tActual return Value: %ld\n", actualReturnValue);
         return false;
@@ -194,7 +220,7 @@ bool test_string_tokenizeStringBySpace() {
     };
     Tokens actual;
     char test1[] = "        Hello       World     1,     2,    3!    ";
-    actual.length = string_removeUnecessarySpaces(test1);
+    actual.length = string_removeUnecessarySpacesAndTabs(test1);
     char *uniqueName1[actual.length];
     actual.tokens = uniqueName1;
     string_tokenizeStringBySpace(test1, &actual);
@@ -215,13 +241,12 @@ bool test_string_tokenizeStringBySpace() {
         }
     }
     
-    
     expected = (Tokens) {
         .tokens = (char *[]) { "ThisIsJustOneString" },
         .length = 1
     };
     char test2[] = "    ThisIsJustOneString      ";
-    actual.length = string_removeUnecessarySpaces(test2);
+    actual.length = string_removeUnecessarySpacesAndTabs(test2);
     char *uniqueName2[actual.length];
     actual.tokens = uniqueName2;
     string_tokenizeStringBySpace(test2, &actual);
@@ -246,7 +271,7 @@ bool test_string_tokenizeStringBySpace() {
         .length = 0
     };
     char test3[] = "                   ";
-    actual.length = string_removeUnecessarySpaces(test3);
+    actual.length = string_removeUnecessarySpacesAndTabs(test3);
     char *uniqueName3[actual.length];
     actual.tokens = uniqueName3;
     string_tokenizeStringBySpace(test3, &actual);
@@ -271,7 +296,7 @@ bool test_string_tokenizeStringBySpace() {
         .length = 12
     };
     char test4[] = "This test case is a long string just to test longer inputs";
-    actual.length = string_removeUnecessarySpaces(test4);
+    actual.length = string_removeUnecessarySpacesAndTabs(test4);
     char *uniqueName4[actual.length];
     actual.tokens = uniqueName4;
     string_tokenizeStringBySpace(test4, &actual);
@@ -296,7 +321,7 @@ bool test_string_tokenizeStringBySpace() {
         .length = 6
     };
     char test5[] = INITIAL_FEN;
-    actual.length = string_removeUnecessarySpaces(test5);
+    actual.length = string_removeUnecessarySpacesAndTabs(test5);
     char *uniqueName5[actual.length];
     actual.tokens = uniqueName5;
     string_tokenizeStringBySpace(test5, &actual);
@@ -636,7 +661,7 @@ bool Test_CharBuffer() {
     if (!test_string_compareStrings()) return false;
     if (!test_string_compareStrings()) return false;
     if (!test_string_toLower()) return false;
-    if (!test_string_removeUnecessarySpaces()) return false;
+    if (!test_string_removeUnecessarySpacesAndTabs()) return false;
     if (!test_string_tokenizeStringBySpace()) return false;
     if (!test_string_parseNumber()) return false;
     if (!test_string_algebraicToIndex()) return false;

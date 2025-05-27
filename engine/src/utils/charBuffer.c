@@ -24,11 +24,18 @@ void string_toLower(char* string) {
         string[index] = tolower(string[index]);
     }
 }
-
-size_t string_removeUnecessarySpaces(char* string) {
+#include <stdio.h>
+size_t string_removeUnecessarySpacesAndTabs(char* string) {
     assert(string != NULL);
 
-    size_t lengthOfString = strlen(string);
+    size_t lengthOfString = 0;
+    while (true) {
+        char character = string[lengthOfString];
+        if (character == '\t') string[lengthOfString] = SPACE_CHAR;
+        if (character == '\0') break;
+        lengthOfString++;
+    }
+    
     size_t currentIndex = 0;
     // There is always one token, except if the string is empty or only has spaces
     // The empty string and all spaces case is handled at the first if statement
@@ -70,6 +77,12 @@ size_t string_removeUnecessarySpaces(char* string) {
             // There is more than one space between the non space character, so we need to trim them
             memmove(string + currentIndex, string + nextSpaceIndex, lengthOfString - nextSpaceIndex + 1);
             lengthOfString -= (nextSpaceIndex - currentIndex);
+        }
+        if (string[currentIndex] == '\n') {
+            // We need to put this '\n' to the end of the previous token
+            memmove(string + currentIndex - 1, string + currentIndex, lengthOfString - currentIndex + 1);
+            lengthOfString--;
+            nbToken--;
         }
 
         for (; string[currentIndex] != SPACE_CHAR && currentIndex < lengthOfString; currentIndex++);

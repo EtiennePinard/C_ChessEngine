@@ -109,7 +109,8 @@ int string_algebraicToIndex(const char *algebraic);
 /**
  * @brief Converts a string which represents a move in long algebraic notation to a move in this program representation.
  * The long algebraic notation goes as such: <start square><end square><promotion piece, if necessary>
- * The square are notated in algebraic notation, so e4 for example. This means that `algebraic` has a length of 4 or 5.
+ * The square are notated in algebraic notation, so e4 for example. This means that `algebraic` has at least a length of 4
+ * and at least a length of 5 for promotions. 
  * 
  * @param algebraic The string containing the long algebraic notated move
  * @return Move The resulting move or NULL_MOVE if `algebraic` is invalid

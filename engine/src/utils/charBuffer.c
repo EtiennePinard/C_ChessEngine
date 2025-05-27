@@ -35,7 +35,7 @@ size_t string_removeUnecessarySpacesAndTabs(char* string) {
         if (character == '\0') break;
         lengthOfString++;
     }
-    
+
     size_t currentIndex = 0;
     // There is always one token, except if the string is empty or only has spaces
     // The empty string and all spaces case is handled at the first if statement
@@ -155,7 +155,7 @@ int string_algebraicToIndex(const char* algebraic) {
 Move string_longAlgebraicToMove(const char* algebraic) {
     size_t algebraicLength = strlen(algebraic);
 
-    if (algebraicLength != 4 && algebraicLength != 5) {
+    if (algebraicLength < 4) {
         return NULL_MOVE;
     }
 
@@ -168,22 +168,13 @@ Move string_longAlgebraicToMove(const char* algebraic) {
 
     Flag flag = NOFLAG;
     // Checking for promotion flags
-    if (algebraicLength == 5) {
-        char fenCharToPromote = algebraic[4];
-        if (fenCharToPromote == 'q') {
-            flag = PROMOTE_TO_QUEEN;
-        }
-        else if (fenCharToPromote == 'n') {
-            flag = PROMOTE_TO_KNIGHT;
-        }
-        else if (fenCharToPromote == 'r') {
-            flag = PROMOTE_TO_ROOK;
-        }
-        else if (fenCharToPromote == 'b') {
-            flag = PROMOTE_TO_BISHOP;
-        }
-        else {
-            return NULL_MOVE;
+    if (algebraicLength >= 5) {
+        switch (algebraic[4]) {
+        case 'q': flag = PROMOTE_TO_QUEEN; break;
+        case 'n': flag = PROMOTE_TO_KNIGHT; break;
+        case 'r': flag = PROMOTE_TO_ROOK; break;
+        case 'b': flag = PROMOTE_TO_BISHOP; break;
+        default: break; // If it matches neither then we simply have no flags
         }
     }
     return Move_makeMove(from, to, flag);
@@ -195,7 +186,7 @@ int string_moveToLongAlgebraic(Move move, char buffer[6]) {
     Square from = Move_fromSquare(move);
     buffer[0] = 'a' + file(from);
     buffer[1] = '1' + (7 - rank(from));
-    
+
     Square to = Move_toSquare(move);
     buffer[2] = 'a' + file(to);
     buffer[3] = '1' + (7 - rank(to));

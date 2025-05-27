@@ -107,11 +107,14 @@ app_SRC = \
     engine/src/bot/transpositionTable.c \
     engine/src/bot/moveOrdering.c \
     engine/src/bot/evaluation.c \
+    engine/src/UCICommandProcessing.c \
+    engine/src/state/engineState.c \
     engine/testing/logChessStructs.c \
     gui_app/chess_app/app.c \
     gui_app/chess_app/events.c \
     gui_app/chess_app/render.c \
     gui_app/chess_app/overlay.c \
+    gui_app/chess_app/uciEngineCommunication.c \
 	$(sdlFramework_SRC)
 
 visualizePST_SRC = $(sdlFramework_SRC) gui_app/visualize_pst/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
@@ -180,7 +183,7 @@ perft: build_perft
 engine: build_chessEngine
 	@cd build && ./chessEngine
 
-app: build_app build/assets
+app: build_app build/assets build_chessEngine
 	@cd build && ./app
 
 visualizePST: build_visualizePST build/assets

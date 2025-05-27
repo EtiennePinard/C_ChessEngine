@@ -5,7 +5,7 @@
 
 #include "../src/state/Move.h"
 
-bool stockfishInit(const char *stockfishPath);
+bool init(const char *stockfishPath);
 
 void terminate();
 

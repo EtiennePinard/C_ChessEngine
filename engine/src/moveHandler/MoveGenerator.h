@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
-#include "../state/GameState.h"
+#include "../state/ChessPosition.h"
 #include "../state/Move.h"
 
 /**

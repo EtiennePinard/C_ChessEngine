@@ -3,7 +3,7 @@
 
 #include "../sdl_framework/State.h"
 
-#include "../../engine/src/state/GameState.h"
+#include "../../engine/src/state/ChessPosition.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
@@ -70,6 +70,7 @@ typedef struct GameState {
     TimeControl_MS blackRemainingTime;
 
     UndoGameStates undoStates;
+    Move* movesPlayed;
 
     GameResult result;
 } GameState;

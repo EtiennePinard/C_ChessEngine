@@ -1,7 +1,7 @@
 #ifndef FB19040F_C714_43C1_A4F7_A0380FD02F7C
 #define FB19040F_C714_43C1_A4F7_A0380FD02F7C
 
-#include "../state/GameState.h"
+#include "../state/ChessPosition.h"
 
 /**
  * @brief Returns a score that was calculated by statically analyzing the position.

@@ -1,9 +1,10 @@
 #ifndef E6F9D86C_5687_4DF1_9FEB_54DDB21FA54E
 #define E6F9D86C_5687_4DF1_9FEB_54DDB21FA54E
 
-#include "Piece.h"
-#include "../../src/utils/Constants.h"
+#include "../utils/Constants.h"
 #include "../utils/Types.h"
+
+#include "Piece.h"
 
 typedef u64 BitBoard;
 

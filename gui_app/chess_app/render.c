@@ -11,7 +11,6 @@
 
 #include "../../engine/src/moveHandler/MoveGenerator.h"
 #include "../../engine/src/state/Piece.h"
-#include "../../engine/src/state/GameState.h"
 #include "../../engine/src/utils/Types.h"
 #include "../../engine/src/utils/Math.h"
 

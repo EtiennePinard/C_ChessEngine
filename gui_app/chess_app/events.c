@@ -115,8 +115,12 @@ static inline void playMoveOnBoard(GameState* gameState, Move move) {
     if (gameState->undoStates.previousStateIndex >= gameState->undoStates.previousStateCapacity) {
         gameState->undoStates.previousStateCapacity *= 2;
         gameState->undoStates.previousStates = realloc(gameState->undoStates.previousStates, sizeof(GameState) * gameState->undoStates.previousStateCapacity);
+        gameState->movesPlayed = realloc(gameState->movesPlayed, sizeof(Move) * gameState->undoStates.previousStateCapacity);
     }
-    gameState->undoStates.previousStates[gameState->undoStates.previousStateIndex++] = gameState->currentPosition;
+    gameState->undoStates.previousStates[gameState->undoStates.previousStateIndex] = gameState->currentPosition;
+    gameState->movesPlayed[gameState->undoStates.previousStateIndex] = move;
+    gameState->undoStates.previousStateIndex++;
+
     MoveHandler_playMove(move, &gameState->currentPosition, true);
 }
 

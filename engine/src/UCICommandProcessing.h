@@ -2,7 +2,7 @@
 #define BE5C3626_D8A7_4BB7_B7D4_8F70EF4329DB
 
 #include <stdbool.h>
-#include "state/GameState.h"
+#include "state/ChessPosition.h"
 #include "utils/CharBuffer.h"
 
 /**

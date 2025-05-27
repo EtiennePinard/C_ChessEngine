@@ -194,21 +194,11 @@ int string_moveToLongAlgebraic(Move move, char buffer[6]) {
     Flag flag = Move_flag(move);
 
     switch (flag) {
-    case PROMOTE_TO_BISHOP:
-        buffer[4] = 'b';
-        break;
-    case PROMOTE_TO_KNIGHT:
-        buffer[4] = 'n';
-        break;
-    case PROMOTE_TO_ROOK:
-        buffer[4] = 'r';
-        break;
-    case PROMOTE_TO_QUEEN:
-        buffer[4] = 'q';
-        break;
-    default:
-        buffer[4] = '\0';
-        return 4;
+    case PROMOTE_TO_BISHOP: buffer[4] = 'b'; break;
+    case PROMOTE_TO_KNIGHT: buffer[4] = 'n'; break;
+    case PROMOTE_TO_ROOK: buffer[4] = 'r'; break;
+    case PROMOTE_TO_QUEEN: buffer[4] = 'q'; break;
+    default: buffer[4] = '\0'; return 4;
     }
     buffer[5] = '\0';
     return 5;

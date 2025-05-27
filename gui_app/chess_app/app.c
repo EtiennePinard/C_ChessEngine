@@ -14,6 +14,7 @@
 
 #include "AppState.h"
 #include "Events.h"
+#include "UCIEngineCommunication.h"
 
 static const char* PIECE_NAMES[NB_PIECES] = {
     "./assets/png/white_pawn.png", "./assets/png/white_knight.png", "./assets/png/white_bishop.png", "./assets/png/white_rook.png", "./assets/png/white_queen.png", "./assets/png/white_king.png",
@@ -42,26 +43,27 @@ bool initializeApp(App app) {
 
     if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentPosition)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
-        SDL_DestroyRenderer(app.state->sdlState.renderer);
-        SDL_DestroyWindow(app.state->sdlState.window);
-        TTF_Quit();
-        SDL_Quit();
         return false;
     }
-
+    
+    if (!UCIEngine_initialize("./chessEngine")) {
+        fprintf(stderr, "Failed to initialize the uci engine\n");
+        return false;
+    }
+    
     app.state->gameState.playerColor = app.state->gameState.currentPosition.colorToGo;
     app.state->gameState.whiteRemainingTime = STARTING_TIME_MS;
     app.state->gameState.blackRemainingTime = STARTING_TIME_MS;
-
-    app.state->gameState.undoStates.previousStates = malloc(sizeof(ChessPosition) * 64);
-    app.state->gameState.undoStates.previousStateCapacity = 64;
-    app.state->gameState.undoStates.previousStateIndex = 0;
     app.state->gameState.result = GAME_IS_NOT_DONE;
-
-
+    
     app.state->draggingState.isDragging = false;
-
-
+    
+    app.state->gameState.undoStates.previousStateCapacity = 64;
+    app.state->gameState.undoStates.previousStates = malloc(sizeof(ChessPosition) * app.state->gameState.undoStates.previousStateCapacity);
+    app.state->gameState.undoStates.previousStateIndex = 0;
+    
+    app.state->gameState.movesPlayed = malloc(sizeof(Move) * app.state->gameState.undoStates.previousStateCapacity);
+    
     // We are officially running the app!
     app.events->hasQuitEventHappened = false;
 
@@ -74,6 +76,8 @@ bool initializeApp(App app) {
 void cleanupApp(App app) {
     MagicBitBoard_terminate();
     TranspositionTable_terminate();
+
+    UCIEngine_terminate();
 
     cleanupTextures(app.state->textures);
 

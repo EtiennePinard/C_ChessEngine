@@ -389,7 +389,7 @@ static void processStopCommand() {
 bool UCI_processUCICommand(char* command) {
 
     Tokens tokens;
-    size_t nbTokens = string_removeUnecessarySpaces(command);
+    size_t nbTokens = string_removeUnecessarySpacesAndTabs(command);
     char* tokens_arr[nbTokens];
     tokens.length = nbTokens;
     tokens.tokens = tokens_arr;

@@ -35,7 +35,7 @@ typedef struct {
     pid_t stockfishPid;
 } StockfishUCIState;
 
-StockfishUCIState stockfishUCIState;
+StockfishUCIState engineUCIState;
 
 typedef struct StockfishResponse {
     char buffer[BUFFER_SIZE];
@@ -43,14 +43,14 @@ typedef struct StockfishResponse {
 } StockfishResponse;
 
 void sendCommand(const char *command) {
-    write(stockfishUCIState.outPipe, command, strlen(command));
-    write(stockfishUCIState.outPipe, "\n", 1); // End each command with a newline
+    write(engineUCIState.outPipe, command, strlen(command));
+    write(engineUCIState.outPipe, "\n", 1); // End each command with a newline
 }
 
 // We have a buffer overflow if the line length is larger than 256 characters
 void readResponse(StockfishResponse* response) {
     int offset = 0;
-    while (read(stockfishUCIState.inPipe, response->buffer + offset, 1) == 1) {
+    while (read(engineUCIState.inPipe, response->buffer + offset, 1) == 1) {
         if (response->buffer[offset] == '\n') break;
         offset += 1;
         if (offset >= BUFFER_SIZE) {
@@ -103,7 +103,7 @@ bool sendUCICommand() {
     return findResponse("uciok", &response);
 }
 
-bool stockfishInit(const char *stockfishPath) {
+bool init(const char *stockfishPath) {
 
     pid_t pid = 0;
     FileDescriptor inpipefd[2];
@@ -141,7 +141,7 @@ bool stockfishInit(const char *stockfishPath) {
     close(outpipefd[PIPE_READ_INDEX]);
     close(inpipefd[PIPE_WRITE_INDEX]);
 
-    stockfishUCIState = (StockfishUCIState){
+    engineUCIState = (StockfishUCIState){
         .inPipe = inpipefd[PIPE_READ_INDEX],
         .outPipe = outpipefd[PIPE_WRITE_INDEX],
         .stockfishPid = pid};
@@ -152,7 +152,7 @@ bool stockfishInit(const char *stockfishPath) {
 void terminate() {
     // Terminate the child process
     int status;
-    pid_t pid = stockfishUCIState.stockfishPid;
+    pid_t pid = engineUCIState.stockfishPid;
     kill(pid, SIGKILL);
     waitpid(pid, &status, 0); // Wait for the child process to terminate
     printf("Stockfish terminated.\n");

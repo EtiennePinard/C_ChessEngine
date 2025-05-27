@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "../src/state/GameState.h"
+#include "../src/state/ChessPosition.h"
 #include "../src/state/Move.h"
 #include "../src/state/Board.h"
 

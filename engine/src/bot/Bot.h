@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 #include "../state/Move.h"
-#include "../state/GameState.h"
+#include "../state/ChessPosition.h"
 
 // Move from square 0 to square 0 with NOFLAG
 #define BOT_ERROR NULL_MOVE

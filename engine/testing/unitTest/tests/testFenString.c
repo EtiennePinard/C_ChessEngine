@@ -1,12 +1,13 @@
-#include "../../../src/utils/FenString.h"
-#include "../../../src/state/GameState.h"
-#include "../../../src/state/Board.h"
-#include "../../LogChessStructs.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "../../../src/utils/FenString.h"
+#include "../../../src/state/ChessPosition.h"
+#include "../../../src/state/Board.h"
+#include "../../LogChessStructs.h"
+
 
 // Starting position
 #define TEST_1 INITIAL_FEN
@@ -247,11 +248,14 @@ bool test_FenString_chessPositionToFenString() {
             }
     };
     char* expected1 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    FenString_chessPositionToFenString(position1, actual);
-    if (!string_compareStrings(expected1, actual)) {
+    int expectedReturnValue = 56;
+    int actualReturnValue = FenString_chessPositionToFenString(position1, actual);
+    if (!string_compareStrings(expected1, actual) || expectedReturnValue != actualReturnValue) {
         printf("ERROR: FenString_chessPositionToFenString(position1, actual)\n");
         printf("\tExpected: %s\n", expected1);
         printf("\tActual  : %s\n", actual);
+        printf("Expected return value: %d\n", expectedReturnValue);
+        printf("Actual return value: %d\n", actualReturnValue);
         return false;
     }
     memset(actual, 0, MAX_FEN_STRING_SIZE);
@@ -283,11 +287,14 @@ bool test_FenString_chessPositionToFenString() {
             }
     };
     char* expected2 = "r2qkb1r/3b1ppp/p1n1pn2/3p4/1p1P4/P1NBPN2/1P3PPP/R1BQ1RK1 w kq - 0 1";
-    FenString_chessPositionToFenString(position2, actual);
-    if (!string_compareStrings(expected2, actual)) {
+    expectedReturnValue = 67;
+    actualReturnValue = FenString_chessPositionToFenString(position2, actual);
+    if (!string_compareStrings(expected2, actual) || expectedReturnValue != actualReturnValue) {
         printf("ERROR: FenString_chessPositionToFenString(position2, actual)\n");
         printf("\tExpected: %s\n", expected2);
         printf("\tActual  : %s\n", actual);
+        printf("Expected return value: %d\n", expectedReturnValue);
+        printf("Actual return value: %d\n", actualReturnValue);
         return false;
     }
     memset(actual, 0, MAX_FEN_STRING_SIZE);
@@ -319,11 +326,14 @@ bool test_FenString_chessPositionToFenString() {
             }
     };
     char* expected4 = "8/8/8/8/8/8/8/8 b - - 49 8849";
-    FenString_chessPositionToFenString(position4, actual);
-    if (!string_compareStrings(expected4, actual)) {
+    expectedReturnValue = 29;
+    actualReturnValue = FenString_chessPositionToFenString(position4, actual);
+    if (!string_compareStrings(expected4, actual) || expectedReturnValue != actualReturnValue) {
         printf("ERROR: FenString_chessPositionToFenString(position4, actual)\n");
         printf("\tExpected: %s\n", expected4);
         printf("\tActual  : %s\n", actual);
+        printf("Expected return value: %d\n", expectedReturnValue);
+        printf("Actual return value: %d\n", actualReturnValue);
         return false;
     }
     memset(actual, 0, MAX_FEN_STRING_SIZE);
@@ -355,11 +365,14 @@ bool test_FenString_chessPositionToFenString() {
             }
     };
     char* expected6 = "8/8/8/8/8/8/8/8 b - f7 0 1";
-    FenString_chessPositionToFenString(position6, actual);
-    if (!string_compareStrings(expected6, actual)) {
+    expectedReturnValue = 26;
+    actualReturnValue = FenString_chessPositionToFenString(position6, actual);
+    if (!string_compareStrings(expected6, actual) || expectedReturnValue != actualReturnValue) {
         printf("ERROR: FenString_chessPositionToFenString(position6, actual)\n");
         printf("\tExpected: %s\n", expected6);
         printf("\tActual  : %s\n", actual);
+        printf("Expected return value: %d\n", expectedReturnValue);
+        printf("Actual return value: %d\n", actualReturnValue);
         return false;
     }
     memset(actual, 0, MAX_FEN_STRING_SIZE);
@@ -385,7 +398,7 @@ bool Test_FenString() {
             }
             continue;
         }
-        
+
         if (!testCase.test_func(&position)) {
             printf("TEST #%d failed!\n", testIndex + 1);
             printf("\tColor to go: %s\n", position.colorToGo == WHITE ? "white" : "black");

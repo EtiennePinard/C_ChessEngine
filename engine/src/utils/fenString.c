@@ -128,7 +128,7 @@ bool FenString_setChessPositionFromFenString(char* fen, ChessPosition* position)
     if (fen == NULL) { return false; }
 
     Tokens tokens;
-    tokens.length = string_removeUnecessarySpaces(fen);
+    tokens.length = string_removeUnecessarySpacesAndTabs(fen);
     char* uniqueName[tokens.length];
     tokens.tokens = uniqueName;
     string_tokenizeStringBySpace(fen, &tokens);
@@ -177,7 +177,7 @@ bool FenString_setChessPositionFromTokens(Tokens* fenTokenized, ChessPosition* p
     return true;
 }
 
-void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]) {
+int FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]) {
     int fenIndex = 0;
 
     int emptySquare = 0;
@@ -271,4 +271,5 @@ void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN
     } while (digitLength);
 
     fen[fenIndex] = '\0';
+    return fenIndex;
 }

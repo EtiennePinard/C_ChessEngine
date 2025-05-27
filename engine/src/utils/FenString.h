@@ -2,7 +2,9 @@
 #define FEN_STRING_H
 
 #include <stdbool.h>
-#include "../state/GameState.h"
+
+#include "../state/ChessPosition.h"
+
 #include "CharBuffer.h"
 
 /**
@@ -44,7 +46,8 @@ bool FenString_setChessPositionFromTokens(Tokens *fenTokenized, ChessPosition *p
  * It is assumed that this array is big enough to contain the fen string.
  * To guarantee that its size is sufficient just use the MAX_FEN_STRING_SIZE 
  * constants when declaring the array.
+ * @return int The actual length of the resulting string 
  */
-void FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]);
+int FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_STRING_SIZE]);
 
 #endif

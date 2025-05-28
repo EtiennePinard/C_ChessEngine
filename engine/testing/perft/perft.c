@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include "../../src/moveHandler/MoveGenerator.h"
 #include "../../src/moveHandler/MovePlayer.h"
@@ -78,7 +79,7 @@ u64 perft(u8 depth) {
 
         if (divide && depth == maximumDepth) {
             printMoveToAlgebraic(move);
-            printf(": %lu\n", moveOutput);
+            printf(": %" PRIu64 "\n", moveOutput);
         }
         nodes += moveOutput;
 
@@ -227,7 +228,7 @@ void test() {
             end = clock();
             timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
 
-            printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%lu" RESET "  HashHits: " CYN "%u" RESET "  Time: " BLU "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
+            printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%" PRIu64 RESET " HashHits: " YEL "%u" RESET "  Time: " CYN "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
             if (perftResult == (u64)testPosition.perftResults[depth]) {
                 printf("%s" RESET "\n", testPassed);
             }
@@ -245,7 +246,7 @@ void test() {
 
     clock_t fullTestEnd = clock();
     double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
-    printf(RESET "The full test took " BLU "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+    printf(RESET "The full test took " CYN "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();
@@ -341,7 +342,7 @@ int main(int argc, char* argv[]) {
 
     double timeSpent_ms = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
 
-    printf("Perft depth %d returned a total number of moves of %lu, had %u hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
+    printf("Perft depth %d returned a total number of moves of %" PRIu64 ", had %u hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();

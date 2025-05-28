@@ -72,14 +72,14 @@ int main(void) {
 
     size_t nbTests = sizeof(tests) / sizeof(Test);
 
-    clock_t begin = clock();
+    clock_t start = clock();
 
     for (size_t testIndex = 0; testIndex < nbTests; testIndex++) {
         runTest(tests[testIndex]);
     }
 
     clock_t end = clock();
-    double fullTestTimeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("\nAll unit tests passed in %fms\n", fullTestTimeSpent * 1000);
+    double fullTestTimeSpent = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("\nAll unit tests passed in %fms\n", fullTestTimeSpent);
     return 0;
 }

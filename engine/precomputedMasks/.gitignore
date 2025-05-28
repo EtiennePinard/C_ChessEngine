@@ -1,0 +1,11 @@
+# The executable used to generate magic shift values
+generateMagic
+
+# The executable used to generate mask data
+generateMask
+
+# Output file for magic generation
+MagicBitBoardOutput.txt
+
+# Output file for mask generation
+precomputedMaskOutput.txt

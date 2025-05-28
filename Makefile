@@ -27,6 +27,7 @@ RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 app_LDFLAGS = -lm -lSDL2 -lSDL2_ttf -lSDL2_image
 visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
 visualizeEval_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
+chessEngine_LDFLAGS = -pthread 
 
 # Program arguments
 PARG ?= test

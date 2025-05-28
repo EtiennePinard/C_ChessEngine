@@ -227,7 +227,7 @@ pthread_t timerThread;
 bool timerThreadRunning = false;
 pthread_mutex_t timerThreadMutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void* searchThreadFunction(void*) {
+static void* searchThreadFunction(void* _) {
     Move bestMove = Bot_think();
 
     char bestMoveStr[6];
@@ -345,7 +345,7 @@ static void processGoCommand(Tokens* tokens) {
     }
 
     // If we are not in infinite mode we need a timer thread to manage the search time
-    if (!infiniteMode) {        
+    if (!infiniteMode) {
         // Check if the movetime option was provided if not calculate optimal time
         // Note that if the wtime and btime is 0 then the think time will be the default think time
         if (!moveTimeDuration) {
@@ -354,11 +354,11 @@ static void processGoCommand(Tokens* tokens) {
         }
         u64* durationInMilliseconds = malloc(sizeof(u64));
         *durationInMilliseconds = moveTimeDuration;
-    
+
         pthread_mutex_lock(&timerThreadMutex);
         timerThreadRunning = true;
         pthread_mutex_unlock(&timerThreadMutex);
-    
+
         if (pthread_create(&timerThread, NULL, timerThreadFunction, durationInMilliseconds) != 0) {
             UCI_sendResponse("ERROR: Failed to create a timer thread, exiting the program\n");
             exit(EXIT_FAILURE);
@@ -370,12 +370,12 @@ static void processStopCommand() {
     // If we are not searching then we cannot stop a search
     if (endSearch) return;
     endSearch = true;
-    
+
     if (pthread_join(searchThread, NULL)) {
         UCI_sendResponse("ERROR: Failed to join the search thread, exiting the program\n");
         exit(EXIT_FAILURE);
     }
-    
+
     pthread_mutex_lock(&timerThreadMutex);
     if (timerThreadRunning) {
         pthread_cancel(timerThread);
@@ -414,7 +414,7 @@ bool UCI_processUCICommand(char* command) {
     else if (string_compareStrings(messageType, "stop")) processStopCommand();
     else if (string_compareStrings(messageType, "d")) processDCommand();
     else UCI_sendResponse("ERROR: Command `%s` invalid or not supported by this engine\n", command);
-    
+
     return true;
 }
 

@@ -7,13 +7,13 @@
 #include "../../engine/src/state/Move.h"
 #include "../../engine/src/moveHandler/MoveGenerator.h"
 #include "../../engine/src/moveHandler/MovePlayer.h"
-#include "../../engine/src/bot/Bot.h"
 #include "../../engine/src/bot/RepetitionTable.h"
 #include "../../engine/src/utils/Math.h"
 #include "../../engine/src/utils/FenString.h"
 
-#include "Events.h"
+#include "UCIEngineCommunication.h"
 #include "Overlay.h"
+#include "Events.h"
 
 // Note: This will be correct if the point (x, y) is in the chessboard
 inline static Square squareFromxy(int x, int y, bool flip) {
@@ -124,58 +124,38 @@ static inline void playMoveOnBoard(GameState* gameState, Move move) {
     MoveHandler_playMove(move, &gameState->currentPosition, true);
 }
 
-// The function that the timer thread will execute
-static void* timerThread(void* arg) {
-    u64 time_limit_MS = *((u64*)arg);
-    usleep(time_limit_MS * 1000);
-    endSearch = true;
-    return NULL;
-}
-
 static inline void playBotMove(GameState* gameState) {
-    Bot_provideGameStateForBot(gameState->currentPosition);
+    ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
+        gameState->currentPosition :
+        gameState->undoStates.previousStates[0];
+    Move botMove = UCIEngine_bestMoveFromTimeControls(
+        startingPosition,
+        gameState->movesPlayed,
+        gameState->undoStates.previousStateIndex,
+        gameState->whiteRemainingTime,
+        gameState->blackRemainingTime,
+        gameState->whiteIncrement,
+        gameState->blackIncrement,
+        -1 // We don't have movesToGo for now
+    );
 
-    // Well be searching for 100 ms
-    u64 durationInMilliseconds = 100;
-
-    pthread_t timer;
-    if (pthread_create(&timer, NULL, timerThread, &durationInMilliseconds) != 0) {
-        printf("ERROR: Failed to create a timer thread, exiting the program\n");
-        exit(EXIT_FAILURE); // the app cleanup will take care of itself
+    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->result == GAME_IS_NOT_DONE) {
+        printf("ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
+        exit(EXIT_FAILURE);
     }
 
-    Move botMove = Bot_think();
-
-    // Wait for the timer thread to finish
-    pthread_join(timer, NULL);
-
-    // Setting endsearch back for the next go command
-    endSearch = false;
+    playMoveOnBoard(gameState, botMove);
 
     u64 currentTick = SDL_GetTicks64();
-    if (gameState->playerColor != WHITE) {
-        gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
-    }
-    else {
-        gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
-    }
+    if (gameState->playerColor != WHITE) gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
+    else gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
     gameState->turnStartTick = currentTick;
-
-    if (botMove == BOT_ERROR) {
-        // The bot thinks the game is done
-        if (gameState->result == GAME_IS_NOT_DONE) {
-            // The app does not think the game is done
-            printf("ERROR:  The bot cannot play a move because it thinks the game is done yet app does not label the game as done\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-    playMoveOnBoard(gameState, botMove);
 }
 
 static inline void playTurn(GameState* gameState, Move playerMove) {
     playMoveOnBoard(gameState, playerMove);
     computeGameEnd(gameState);
-    if (gameState->result != GAME_IS_NOT_DONE) { return; }
+    if (gameState->result != GAME_IS_NOT_DONE) return;
 
     playBotMove(gameState);
     computeGameEnd(gameState);
@@ -209,7 +189,6 @@ void clickedSwitchColorButton(SDL_Event event, App app) {
         break;
     }
 }
-
 
 void clickedRestartButton(SDL_Event event, App app) {
     switch (event.type) {
@@ -341,7 +320,8 @@ void clickedBackButton(SDL_Event event, App app) {
         RepetitionTable_pop();
         if (previousPos.colorToGo == app.state->gameState.playerColor) {
             app.state->gameState.currentPosition = previousPos;
-        } else {
+        }
+        else {
             app.state->gameState.currentPosition = app.state->gameState.undoStates.previousStates[--app.state->gameState.undoStates.previousStateIndex];
             RepetitionTable_pop();
         }
@@ -360,7 +340,8 @@ void clickedCopyFenButton(SDL_Event event, App app) {
         if (event.button.button == SDL_BUTTON_LEFT) {
             FenString_chessPositionToFenString(app.state->gameState.currentPosition, fen);
             clipboardReturnValue = SDL_SetClipboardText(fen);
-        } else if (event.button.button == SDL_BUTTON_RIGHT) {
+        }
+        else if (event.button.button == SDL_BUTTON_RIGHT) {
             if (app.state->gameState.undoStates.previousStateIndex > 0) {
                 FenString_chessPositionToFenString(app.state->gameState.undoStates.previousStates[app.state->gameState.undoStates.previousStateIndex - 1], fen);
                 clipboardReturnValue = SDL_SetClipboardText(fen);

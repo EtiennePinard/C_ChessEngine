@@ -82,8 +82,7 @@ chessEngine_SRC = \
     engine/src/state/engineState.c \
     engine/src/magicBitBoard/magicBitBoard.c \
     engine/src/magicBitBoard/rook.c \
-    engine/src/magicBitBoard/bishop.c \
-    engine/testing/logChessStructs.c
+    engine/src/magicBitBoard/bishop.c
 
 sdlFramework_SRC = \
 	gui_app/sdl_framework/appInit.c \
@@ -101,15 +100,7 @@ app_SRC = \
     engine/src/magicBitBoard/magicBitBoard.c \
     engine/src/magicBitBoard/rook.c \
     engine/src/magicBitBoard/bishop.c \
-    engine/src/bot/bot.c \
-    engine/src/bot/pieceSquareTable.c \
     engine/src/bot/repetitionTable.c \
-    engine/src/bot/transpositionTable.c \
-    engine/src/bot/moveOrdering.c \
-    engine/src/bot/evaluation.c \
-    engine/src/UCICommandProcessing.c \
-    engine/src/state/engineState.c \
-    engine/testing/logChessStructs.c \
     gui_app/chess_app/app.c \
     gui_app/chess_app/events.c \
     gui_app/chess_app/render.c \

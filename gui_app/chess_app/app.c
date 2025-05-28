@@ -36,10 +36,11 @@ bool initializeApp(App app) {
     // Chessboard position will not change while the app is running, so we can add it once at app startup
     app.events->clickableAreas.data[CHESSBOARD_INDEX] = (ClickableArea){ .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard };
 
-    MagicBitBoard_init();
-    ZobristKey_init();
-    PieceSquareTable_init();
-    TranspositionTable_init();
+    // We simply need the move generation and repetition table to work for this bot
+    if (!MagicBitBoard_init() || !ZobristKey_init()) {
+        fprintf(stderr, "Failed to initialize the magic bit boards and/or Zobrist keys\n");
+        return false;
+    }
 
     if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentPosition)) {
         fprintf(stderr, "Failed to initialize the initial position\n");
@@ -54,6 +55,9 @@ bool initializeApp(App app) {
     app.state->gameState.playerColor = app.state->gameState.currentPosition.colorToGo;
     app.state->gameState.whiteRemainingTime = STARTING_TIME_MS;
     app.state->gameState.blackRemainingTime = STARTING_TIME_MS;
+    app.state->gameState.blackIncrement = 0;
+    app.state->gameState.whiteIncrement = 0;
+
     app.state->gameState.result = GAME_IS_NOT_DONE;
     
     app.state->draggingState.isDragging = false;
@@ -75,8 +79,6 @@ bool initializeApp(App app) {
 
 void cleanupApp(App app) {
     MagicBitBoard_terminate();
-    TranspositionTable_terminate();
-
     UCIEngine_terminate();
 
     cleanupTextures(app.state->textures);

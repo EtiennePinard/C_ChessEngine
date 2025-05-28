@@ -4,6 +4,7 @@
 #include "../sdl_framework/State.h"
 
 #include "../../engine/src/state/ChessPosition.h"
+#include "../../engine/src/state/Move.h"
 
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
@@ -65,9 +66,12 @@ typedef struct UndoGameStates {
 typedef struct GameState {
     ChessPosition currentPosition;
     PieceCharacteristics playerColor;
+
     u64 turnStartTick;
     TimeControl_MS whiteRemainingTime;
     TimeControl_MS blackRemainingTime;
+    TimeControl_MS whiteIncrement;
+    TimeControl_MS blackIncrement;
 
     UndoGameStates undoStates;
     Move* movesPlayed;

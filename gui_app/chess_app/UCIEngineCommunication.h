@@ -33,7 +33,7 @@ void UCIEngine_terminate();
  * 
  * @param command The command to send to the engine
  */
-void sendCommand(const char* command);
+void UCIEngine_sendCommand(const char* command);
 
 /**
  * @brief Reads a reponse from the bot. Will halt if there was no data sent 
@@ -45,7 +45,7 @@ void sendCommand(const char* command);
  * @param capacity The capacity of this heap allocated string
  * @return char* A heap allocated string containing the response. It is the caller's duty to free it
  */
-char* readResponse(char* data, int capacity);
+char* UCIEngine_readResponse(char* data, int capacity);
 
 /**
  * @brief Get the best move according to the engine. 
@@ -61,7 +61,7 @@ char* readResponse(char* data, int capacity);
  * If this value is negative then it will not be sent to the engine
  * @return Move The best move according to the bot
  */
-Move bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS wtime, TimeControl_MS btime, TimeControl_MS winc, TimeControl_MS binc, int movesToGo);
+Move UCIEngine_bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS wtime, TimeControl_MS btime, TimeControl_MS winc, TimeControl_MS binc, int movesToGo);
 
 /**
  * @brief Get the best move according to the engine with a limited think time.
@@ -72,6 +72,6 @@ Move bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed,
  * @param timeToThink The amount of time in milliseconds the bot can think
  * @return Move The best move according to the bot
  */
-Move bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS timeToThink);
+Move UCIEngine_bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS timeToThink);
 
 #endif /* C52171AC_10DB_4019_994F_E4AC71EEB71E */

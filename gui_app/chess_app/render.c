@@ -17,10 +17,8 @@
 #include "Events.h"
 #include "AppStyle.h"
 
-static void formatTime(u32 milliseconds, char* output, size_t outputSize) {
-    if (!output || outputSize < 6) {
-        return;
-    }
+static void formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
+    if (!output || outputSize < 6) { printf("Invalid output or/and outputSize in formatTime at " __FILE__); exit(EXIT_FAILURE); }
 
     u32 totalSeconds = milliseconds / 1000;
     u32 minutes = totalSeconds / 60;
@@ -39,9 +37,9 @@ typedef enum Side {
 
 static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* timeText, Side side) {
     SDL_Surface* textSurface = TTF_RenderText_Blended(font, timeText, WHITE_COLOR);
-    if (textSurface == NULL) { printf("Text Surface is NULL\n"); return; }
+    if (textSurface == NULL) { printf("Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (textTexture == NULL) { printf("Text Texture is NULL\n"); SDL_FreeSurface(textSurface); return; }
+    if (textTexture == NULL) { printf("Text Texture is NULL\n"); exit(EXIT_FAILURE); }
 
     int textWidth = textSurface->w;
     int textHeight = textSurface->h;

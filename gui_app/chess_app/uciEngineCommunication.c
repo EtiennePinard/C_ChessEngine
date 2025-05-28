@@ -33,7 +33,7 @@ typedef struct EngineCommunication {
 
 EngineCommunication engineCommunication;
 
-void sendCommand(const char* command) {
+void UCIEngine_sendCommand(const char* command) {
     printf("%s\n", command);
     write(engineCommunication.outPipe, command, strlen(command));
     write(engineCommunication.outPipe, "\n", 1); // End each command with a newline
@@ -48,7 +48,7 @@ void sendCommand(const char* command) {
         assert(data != NULL && "Buy more ram lol at " __FILE__); \
     } \
 
-char* readResponse(char* data, int capacity) {
+char* UCIEngine_readResponse(char* data, int capacity) {
     assert(data != NULL && "Data is NULL at " __FILE__);
     int numBytesRead = 0;
     if (capacity == 0) data_resize(DEFAULT_BUF_SIZE);
@@ -67,12 +67,12 @@ char* readResponse(char* data, int capacity) {
 }
 
 bool sendUCICommand() {
-    sendCommand("uci");
+    UCIEngine_sendCommand("uci");
     int iterationCount = 0;
     int capacity = DEFAULT_BUF_SIZE;
     char* data = malloc(sizeof(char) * capacity);
     while (true) {
-        data = readResponse(data, DEFAULT_BUF_SIZE);
+        data = UCIEngine_readResponse(data, DEFAULT_BUF_SIZE);
         capacity = strlen(data);
         string_removeUnecessarySpacesAndTabs(data);
         if (string_compareStrings(data, "uciok\n") || iterationCount >= WHILE_LOOP_SAFEGUARD) break;
@@ -130,7 +130,7 @@ bool UCIEngine_initialize(const char* enginePath) {
 
 void UCIEngine_terminate() {
     // quitting the process by itself with the quit command
-    sendCommand("quit");
+    UCIEngine_sendCommand("quit");
     // Terminate the child process
     int status;
     pid_t pid = engineCommunication.enginePid;
@@ -171,7 +171,7 @@ void sendPositionCommand(ChessPosition startingPosition, Move* movesPlayed, int 
         positionCommandIndex += moveLength;
     }
     positionCommand[positionCommandIndex] = '\0';
-    sendCommand(positionCommand);
+    UCIEngine_sendCommand(positionCommand);
 }
 
 Move bestMoveFromOptions(ChessPosition startingPosition, Move* movesPlayed, int numMoves, char* goOptions) {
@@ -181,13 +181,13 @@ Move bestMoveFromOptions(ChessPosition startingPosition, Move* movesPlayed, int 
     char goCommand[goCommandSize];
     snprintf(goCommand, goCommandSize, "go %s", goOptions);
 
-    sendCommand(goCommand);
+    UCIEngine_sendCommand(goCommand);
 
     int capacity = DEFAULT_BUF_SIZE;
     char* data = malloc(sizeof(char) * capacity);
     Tokens engineResponse;
     do {
-        data = readResponse(data, capacity);
+        data = UCIEngine_readResponse(data, capacity);
         capacity = strlen(data);
         engineResponse.length = string_removeUnecessarySpacesAndTabs(data);
     } while (
@@ -213,7 +213,7 @@ Move bestMoveFromOptions(ChessPosition startingPosition, Move* movesPlayed, int 
     return result;
 }
 
-Move bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMoves, u32 timeToThink) {
+Move UCIEngine_bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS timeToThink) {
     size_t length = snprintf(NULL, 0, "movetime %u", timeToThink) + 1;
     char movetimeOption[length];
     snprintf(movetimeOption, length, "movetime %u", timeToThink);
@@ -221,7 +221,8 @@ Move bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMov
     return bestMoveFromOptions(startingPosition, movesPlayed, numMoves, movetimeOption);
 }
 
-Move bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves, u32 wtime, u32 btime, u32 winc, u32 binc, int movesToGo) {
+Move UCIEngine_bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves, 
+    TimeControl_MS wtime, TimeControl_MS btime, TimeControl_MS winc, TimeControl_MS binc, int movesToGo) {
     size_t length = snprintf(NULL, 0, "wtime %u btime %u winc %u binc %u", wtime, btime, winc, binc) + 1;
     if (movesToGo >= 0) length += snprintf(NULL, 0, " movestogo %d", movesToGo);
 

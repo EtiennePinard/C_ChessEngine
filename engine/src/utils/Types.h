@@ -1,7 +1,6 @@
 #ifndef D72FFD94_5421_4B14_B428_F846912DF2D5
 #define D72FFD94_5421_4B14_B428_F846912DF2D5
 
-#include <stdint-gcc.h> // For gcc
 #include <stdint.h>
 
 typedef uint64_t u64;

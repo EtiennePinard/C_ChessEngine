@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "../../../src/state/Board.h"
 
@@ -13,8 +14,8 @@ bool test_Board_bitBoardForPiece() {
 
     if (expected != actual) {
         printf("test_Board_bitBoardForPiece failed with test case: Board_bitBoardForPiece(board, Piece_Piece_makePiece(WHITE, PAWN))\n");
-        printf("\tExpected: 0x%lx\n", expected);
-        printf("\tActual: 0x%lx\n", actual);
+        printf("\tExpected: 0x%" PRIu64 "\n", expected);
+        printf("\tActual: 0x%" PRIu64 "\n", actual);
         return false;
     }
     return true;
@@ -30,8 +31,8 @@ bool test_Board_specificColorBitBoard() {
 
     if (expected != actual) {
         printf("test_Board_specificColorBitBoard failed with test case: Board_specificColorBitBoard(board, WHITE)\n");
-        printf("\tExpected: 0x%lx\n", expected);
-        printf("\tActual: 0x%lx\n", actual);
+        printf("\tExpected: 0x%" PRIu64 "\n", expected);
+        printf("\tActual: 0x%" PRIu64 "\n", actual);
         return false;
     }
     return true;
@@ -47,8 +48,8 @@ bool test_Board_allPiecesBitBoard() {
 
     if (expected != actual) {
         printf("test_Board_allPiecesBitBoard failed with test case: Board_allPiecesBitBoard(board)\n");
-        printf("\tExpected: 0x%lx\n", expected);
-        printf("\tActual: 0x%lx\n", actual);
+        printf("\tExpected: 0x%" PRIu64 "\n", expected);
+        printf("\tActual: 0x%" PRIu64 "\n", actual);
         return false;
     }
     return true;

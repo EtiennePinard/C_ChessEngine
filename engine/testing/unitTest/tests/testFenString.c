@@ -8,7 +8,6 @@
 #include "../../../src/state/Board.h"
 #include "../../LogChessStructs.h"
 
-
 // Starting position
 #define TEST_1 INITIAL_FEN
 

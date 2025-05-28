@@ -9,7 +9,7 @@
 #define WINDOW_WIDTH 900
 #define WINDOW_HEIGHT 600
 #define FONT_SIZE 24
-#define FONT_PATH ("./assets/font/cmunbl.ttf")
+#define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 #define TITLE ("Chess")
 
 #define STARTING_TIME_MS ((TimeControl_MS) (3 * 60 * 1000))

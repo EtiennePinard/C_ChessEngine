@@ -132,8 +132,8 @@ typedef struct testPosition {
 
 #define NUM_TEST_POSITIONS 6
 
-const char testPassed[] = GRN "✓" RESET;
-const char testFailedPrefix[] = RED "❌" RESET " Test failed (expected ";
+const char testPassed[] = GRN "" RESET;
+const char testFailedPrefix[] = RED "" RESET " Test failed (expected ";
 
 void test() {
     if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {

@@ -357,10 +357,10 @@ static void renderDraggedPiece(SDL_Renderer* renderer,
     // This should be always false because we are already checking if isDragging is true
     if (draggedPiece == NOPIECE) { return; }
 
+    int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
     int indexOffset = Piece_color(draggedPiece) == WHITE ? 9 : 11;
     TextureState chessImageData = chessImages.data[draggedPiece - indexOffset];
-    SDL_Rect destRect = { mouseX - chessImageData.width / 2, mouseY - chessImageData.height / 2,
-                         chessImageData.width, chessImageData.height };
+    SDL_Rect destRect = { mouseX - squareSize / 2, mouseY - squareSize / 2, squareSize, squareSize };
     SDL_RenderCopy(renderer, chessImageData.texture, NULL, &destRect);
 }
 

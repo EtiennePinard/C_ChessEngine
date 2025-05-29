@@ -80,6 +80,6 @@ int main(void) {
 
     clock_t end = clock();
     double fullTestTimeSpent = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    printf("\nAll unit tests passed in %fms\n", fullTestTimeSpent);
+    printf("\nAll unit tests passed in %.2fms\n", fullTestTimeSpent);
     return 0;
 }

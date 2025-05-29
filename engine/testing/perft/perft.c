@@ -122,19 +122,19 @@ typedef struct testPosition {
 } TestPosition;
 
 // These are the 8 ANSI color types
-#define RED   "\x1B[31m"
-#define GRN   "\x1B[32m"
-#define YEL   "\x1B[33m"
-#define BLU   "\x1B[34m"
-#define MAG   "\x1B[35m"
-#define CYN   "\x1B[36m"
-#define WHT   "\x1B[37m"
-#define RESET "\x1B[0m"
+#define RED   "\033[31m"
+#define GRN   "\033[32m"
+#define YEL   "\033[33m"
+#define BLU   "\033[34m"
+#define MAG   "\033[35m"
+#define CYN   "\033[36m"
+#define WHT   "\033[37m"
+#define RESET "\033[0m"
 
 #define NUM_TEST_POSITIONS 6
 
-const char testPassed[] = GRN "" RESET;
-const char testFailedPrefix[] = RED "" RESET " Test failed (expected ";
+const char* testPassed = GRN ":)" RESET;
+const char* testFailedPrefix = RED ":(" RESET " Test failed (expected ";
 
 void test() {
     if (!MagicBitBoard_init() || !ZobristKey_init() || !PerftTranspositionTable_init()) {
@@ -218,7 +218,7 @@ void test() {
 
         startingState = currentPosition;
 
-        printf(RESET "Running test for fen string: %s\n", testPosition.fenString);
+        printf("Running test for fen string: %s\n", testPosition.fenString);
 
         for (int depth = 0; depth < testPosition.nbTest; depth++) {
             maximumDepth = depth;
@@ -228,7 +228,7 @@ void test() {
             end = clock();
             timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
 
-            printf(RESET "Depth: " GRN "%d " RESET "ply  " RESET "Result: " RED "%" PRIu64 RESET " HashHits: " YEL "%u" RESET "  Time: " CYN "%f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
+            printf("Depth: " GRN "%d " RESET "ply " RESET "Result: " CYN "%" PRIu64 RESET " HashHits: " YEL "%u" RESET "  Time: " MAG "%.0f " RESET "ms ", depth, perftResult, hashHits, timeSpent * 1000);
             if (perftResult == (u64)testPosition.perftResults[depth]) {
                 printf("%s" RESET "\n", testPassed);
             }
@@ -246,7 +246,7 @@ void test() {
 
     clock_t fullTestEnd = clock();
     double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
-    printf(RESET "The full test took " CYN "%f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+    printf("The full test took " CYN "%.0f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();
@@ -342,7 +342,7 @@ int main(int argc, char* argv[]) {
 
     double timeSpent_ms = (double)(end - begin) / CLOCKS_PER_SEC * 1000;
 
-    printf("Perft depth %d returned a total number of moves of %" PRIu64 ", had %u hash hits and took %fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
+    printf("Perft depth %d returned a total number of moves of %" PRIu64 ", had %u hash hits and took %.0fms\n", maximumDepth, perftResult, hashHits, timeSpent_ms);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();

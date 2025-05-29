@@ -50,7 +50,8 @@ static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* time
     timeControlRect.x = PLACEHOLDER_X + (PLACEHOLDER_WIDTH - textWidth) / 2;
     if (side == BOTTOM) {
         timeControlRect.y = PLACEHOLDER_Y + PLACEHOLDER_HEIGHT - timeControlRect.h - BUTTON_PADDING;
-    } else {
+    }
+    else {
         timeControlRect.y = PLACEHOLDER_Y + BUTTON_PADDING;
     }
 
@@ -308,7 +309,8 @@ static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect
         .x = restartButtonRect.x + (restartButtonRect.w - buttonWidth) / 2,
         .y = restartButtonRect.y + restartButtonRect.h + BUTTON_PADDING,
         .w = buttonWidth,
-        .h = buttonHeight };
+        .h = buttonHeight
+    };
 
     SDL_Rect buttonTextRect = {
         .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
@@ -355,7 +357,7 @@ static void renderDraggedPiece(SDL_Renderer* renderer,
     int mouseX, int mouseY) {
     Piece draggedPiece = draggingState.draggedPiece;
     // This should be always false because we are already checking if isDragging is true
-    if (draggedPiece == NOPIECE) { return; }
+    if (draggedPiece == NOPIECE) return;
 
     int squareSize = CHESSBOARD_WIDTH / BOARD_LENGTH;
     int indexOffset = Piece_color(draggedPiece) == WHITE ? 9 : 11;
@@ -408,7 +410,8 @@ void render(App app) {
             int mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
             renderDraggedPiece(app.state->sdlState.renderer, app.state->textures, app.state->draggingState, mouseX, mouseY);
-        } else {
+        }
+        else {
             // Resetting draggingState
             app.state->draggingState.isDragging = false;
             app.state->draggingState.from = 0;

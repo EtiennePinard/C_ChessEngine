@@ -112,6 +112,13 @@ int string_algebraicToIndex(const char *algebraic);
  * The square are notated in algebraic notation, so e4 for example. This means that `algebraic` has at least a length of 4
  * and at least a length of 5 for promotions. 
  * 
+ * IMPORTANT: This function does not set the EN_PASSANT, DOUBLE_PAWN_PUSH, KING_SIDE_CASTLING
+ * and QUEEN_SIDE_CASTLING flags, since there is not enough information in long algebraic 
+ * notation to set those flags. This means that the caller of the function needs more
+ * checks to set those flags if, e.g. he needs this move to be played on a chessboard. 
+ * Use the MoveHandler_correctMoveFlag function if you need to have the correct move flag
+ * based on the position, from square and to square of the move.
+ * 
  * @param algebraic The string containing the long algebraic notated move
  * @return Move The resulting move or NULL_MOVE if `algebraic` is invalid
  */

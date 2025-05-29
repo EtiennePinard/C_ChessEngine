@@ -649,3 +649,31 @@ void MoveHandler_getCaptures(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES
 
     *numCaptures = total;
 }
+
+Move MoveHandler_correctMoveFlag(ChessPosition position, Move move) {
+    Square from = Move_fromSquare(move);
+    Square to = Move_toSquare(move);
+    Flag flag = Move_flag(move);
+    Piece targetPiece = Board_pieceAtIndex(position.board, from);
+
+    if (Piece_type(targetPiece) == PAWN) {
+        if (max(from, to) - min(from, to) == 16) {
+            flag = DOUBLE_PAWN_PUSH;
+        }
+        else if (position.enPassantTargetSquare == to) {
+            flag = EN_PASSANT;
+        }
+    }
+    else if (Piece_type(targetPiece) == KING) {
+        if (from == E1) {
+            if (to == G1) flag = KING_SIDE_CASTLING;
+            if (to == C1) flag = QUEEN_SIDE_CASTLING;
+        }
+        if (from == E8) {
+            if (to == G8) flag = KING_SIDE_CASTLING;
+            if (to == C8) flag = QUEEN_SIDE_CASTLING;
+        }
+    }
+
+    return Move_makeMove(from, to, flag);
+}

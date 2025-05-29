@@ -9,6 +9,8 @@
 
 #include "../../engine/src/utils/CharBuffer.h"
 #include "../../engine/src/utils/FenString.h"
+#include "../../engine/src/utils/Math.h"
+#include "../../engine/src/moveHandler/MoveGenerator.h"
 
 #include "UCIEngineCommunication.h"
 
@@ -205,12 +207,12 @@ Move bestMoveFromOptions(ChessPosition startingPosition, Move* movesPlayed, int 
     engineResponse.tokens = tokens;
     string_tokenizeStringBySpace(data, &engineResponse);
     // The second tokens should have the best move from the engine
-    Move result = string_longAlgebraicToMove(engineResponse.tokens[1]);
-    assert(result != NULL_MOVE && "Move is NULL_MOVE at " __FILE__);
+    Move move = string_longAlgebraicToMove(engineResponse.tokens[1]);
+    assert(move != NULL_MOVE && "Move is NULL_MOVE at " __FILE__);
 
     free(data);
 
-    return result;
+    return move;
 }
 
 Move UCIEngine_bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, int numMoves, TimeControl_MS timeToThink) {
@@ -221,7 +223,7 @@ Move UCIEngine_bestMoveTimed(ChessPosition startingPosition, Move* movesPlayed, 
     return bestMoveFromOptions(startingPosition, movesPlayed, numMoves, movetimeOption);
 }
 
-Move UCIEngine_bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves, 
+Move UCIEngine_bestMoveFromTimeControls(ChessPosition startingPosition, Move* movesPlayed, int numMoves,
     TimeControl_MS wtime, TimeControl_MS btime, TimeControl_MS winc, TimeControl_MS binc, int movesToGo) {
     size_t length = snprintf(NULL, 0, "wtime %u btime %u winc %u binc %u", wtime, btime, winc, binc) + 1;
     if (movesToGo >= 0) length += snprintf(NULL, 0, " movestogo %d", movesToGo);

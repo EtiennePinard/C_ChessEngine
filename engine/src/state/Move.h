@@ -16,7 +16,7 @@ typedef u16 Move;
  * @brief A flag is a 4 bit number which tells additional information
  * about move, e.g. that it leads to a promotion or a checkmate.
 */
-typedef enum {
+typedef enum Flag {
     NOFLAG, 
     EN_PASSANT, 
     DOUBLE_PAWN_PUSH, 

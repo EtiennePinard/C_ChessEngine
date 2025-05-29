@@ -121,51 +121,87 @@ static inline void playMoveOnBoard(GameState* gameState, Move move) {
     gameState->undoStates.previousStateIndex++;
 
     MoveHandler_playMove(move, &gameState->currentPosition, true);
+    computeGameEnd(gameState);
 }
 
-static inline void playBotMove(GameState* gameState) {
+static int botMove(void* data) {
+    GameState* gameState = (GameState*)data;
     ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
         gameState->currentPosition :
         gameState->undoStates.previousStates[0];
-    Move botMove = UCIEngine_bestMoveFromTimeControls(
+    Move botMove = UCIEngine_bestMoveTimed(
         startingPosition,
         gameState->movesPlayed,
         gameState->undoStates.previousStateIndex,
-        gameState->whiteRemainingTime,
-        gameState->blackRemainingTime,
-        gameState->whiteIncrement,
-        gameState->blackIncrement,
-        -1 // We don't have movesToGo for now
+        200
+        // gameState->whiteRemainingTime,
+        // gameState->blackRemainingTime,
+        // gameState->whiteIncrement,
+        // gameState->blackIncrement,
+        // -1 // We don't have movesToGo for now
     );
+
+    botMove = MoveHandler_correctMoveFlag(gameState->currentPosition, botMove);
 
     if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->result == GAME_IS_NOT_DONE) {
         printf("ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
         exit(EXIT_FAILURE);
+        return 1;
     }
-
-    playMoveOnBoard(gameState, botMove);
 
     u64 currentTick = SDL_GetTicks64();
     if (gameState->playerColor != WHITE) gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
     else gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
     gameState->turnStartTick = currentTick;
+    playMoveOnBoard(gameState, botMove);
+
+    return 0;
+}
+
+/**
+ * @brief Plays a move chosen by the bot. This function takes
+ * a long time and so it creates a thread to compute the bot
+ * move. The pointer to this thread is returned, which means
+ * it is the caller's responsibility to either wait for the
+ * thread or detach it, depending if it needs to use the value
+ * of the bot's move immediately. Use SDL_WaitThread(thread, NULL)
+ * to wait for the thread or SDL_DetachThread to detach the
+ * thread.
+ *
+ * IMPORTANT: The thread will modify the GameState, which means
+ * that if you don't wait for the thread you cannot modify
+ * the gameState will this thread has not finished since
+ * it would create race conditions. To check if this
+ * thread as finished from the gameState you can check if
+ * its the player color to go. If it is the case, then
+ * this function has finished executing.
+ *
+ * @param gameState The state of the game
+ * @return SDL_Thread* The bot's thread
+ */
+static SDL_Thread* playBotMove(GameState* gameState) {
+    SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", gameState);
+    if (thread == NULL) {
+        fprintf(stderr, "Failed to create thread: %s\n", SDL_GetError());
+        exit(EXIT_FAILURE);
+    }
+    return thread;
 }
 
 static inline void playTurn(GameState* gameState, Move playerMove) {
     playMoveOnBoard(gameState, playerMove);
-    computeGameEnd(gameState);
     if (gameState->result != GAME_IS_NOT_DONE) return;
 
-    playBotMove(gameState);
-    computeGameEnd(gameState);
+    SDL_Thread* thread = playBotMove(gameState);
+    SDL_DetachThread(thread);
 }
 
 static void resetGame(GameState* gameState) {
     // If we are not already at the beginning go back to the beginning
-    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &gameState->currentPosition)) {
-        printf("Error when resetting the game\n");
-        exit(EXIT_FAILURE);
-    }
+    ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
+        gameState->currentPosition :
+        gameState->undoStates.previousStates[0];
+    memcpy(&gameState->currentPosition, &startingPosition, sizeof(startingPosition));
     gameState->undoStates.previousStateIndex = 0;
     gameState->result = GAME_IS_NOT_DONE;
     gameState->blackRemainingTime = STARTING_TIME_MS;
@@ -181,7 +217,8 @@ void clickedSwitchColorButton(SDL_Event event, App app) {
         app.state->gameState.playerColor = app.state->gameState.playerColor == WHITE ? BLACK : WHITE;
         resetGame(&app.state->gameState);
         if (app.state->gameState.currentPosition.colorToGo != app.state->gameState.playerColor) {
-            playBotMove(&app.state->gameState);
+            SDL_Thread* thread = playBotMove(&app.state->gameState);
+            SDL_DetachThread(thread);
         }
         break;
     default: // Only do something for mouse button down
@@ -194,7 +231,8 @@ void clickedRestartButton(SDL_Event event, App app) {
     case SDL_MOUSEBUTTONDOWN:
         resetGame(&app.state->gameState);
         if (app.state->gameState.currentPosition.colorToGo != app.state->gameState.playerColor) {
-            playBotMove(&app.state->gameState);
+            SDL_Thread* thread = playBotMove(&app.state->gameState);
+            SDL_DetachThread(thread);
         }
         break;
     default: // Only do something for mouse button down
@@ -282,14 +320,18 @@ static void chessBoardMouseButtonUp(App app) {
 }
 
 static void chessBoardMouseButtonDown(GameState* gameState, DraggingState* draggingState) {
-    if (gameState->result != GAME_IS_NOT_DONE) { return; } // Game is done
+    // Game is done or it is not players turn to go
+    if (gameState->result != GAME_IS_NOT_DONE ||
+        gameState->playerColor != gameState->currentPosition.colorToGo) {
+        return;
+    }
 
     int mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
 
     int square = squareFromxy(mouseX, mouseY, gameState->playerColor == BLACK);
 
-    if (Board_pieceAtIndex(gameState->currentPosition.board, square) == NOPIECE) { return; }
+    if (Board_pieceAtIndex(gameState->currentPosition.board, square) == NOPIECE) return;
 
     draggingState->draggedPiece = Board_pieceAtIndex(gameState->currentPosition.board, square);
     draggingState->from = square;
@@ -334,7 +376,7 @@ void clickedBackButton(SDL_Event event, App app) {
 void clickedCopyFenButton(SDL_Event event, App app) {
     char fen[MAX_FEN_STRING_SIZE];
     int clipboardReturnValue;
-    
+
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
         clipboardReturnValue = 0;

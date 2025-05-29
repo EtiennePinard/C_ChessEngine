@@ -52,4 +52,13 @@ void MoveHandler_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOV
  */
 void MoveHandler_getCaptures(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numCaptures, ChessPosition position);
 
+/**
+ * @brief Corrects the move flag of move if necessary.
+ * 
+ * @param position The position the move will be made in
+ * @param move The move to make in the position
+ * @return Move The move with the correct flags
+ */
+Move MoveHandler_correctMoveFlag(ChessPosition position, Move move);
+
 #endif

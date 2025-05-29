@@ -48,7 +48,9 @@ void UCIEngine_sendCommand(const char* command);
 char* UCIEngine_readResponse(char* data, int capacity);
 
 /**
- * @brief Get the best move according to the engine. 
+ * @brief Get the best move according to the engine. Note that the flags
+ * of the move are not correctly sent so you need to call MoveHandler_correctMoveFlag
+ * with the position the move will be made in.
  * 
  * @param startingPosition The position the game started with
  * @param movesPlayed The moves played in this game
@@ -65,6 +67,8 @@ Move UCIEngine_bestMoveFromTimeControls(ChessPosition startingPosition, Move* mo
 
 /**
  * @brief Get the best move according to the engine with a limited think time.
+ * Note that the flags of the move are not correctly sent so you need to call 
+ * MoveHandler_correctMoveFlag with the position the move will be made in.
  * 
  * @param startingPosition The position the game started with
  * @param movesPlayed The moves played in this game

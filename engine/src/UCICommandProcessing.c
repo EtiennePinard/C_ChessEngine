@@ -104,23 +104,10 @@ static void processDCommand() {
         UCI_sendResponse(BOARD_PREFIX BOARD_PREFIX "%c" BOARD_PREFIX, 'a' + i);
     }
     UCI_sendResponse("\n");
-}
 
-static Move findMatchingMove(Move moveToMatch) {
-    Move moveToMake = NULL_MOVE;
-    Move moves[256];
-    int moveCount;
-    MoveHandler_getValidMoves(moves, &moveCount, ourCurrentPosition);
-    for (int index = 0; index < moveCount; index++) {
-        Move move = moves[index];
-        if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) &&
-            Move_toSquare(move) == Move_toSquare(moveToMatch) &&
-            (Move_flag(moveToMatch) == NOFLAG || Move_flag(move) == Move_flag(moveToMatch))) {
-            moveToMake = move;
-            break;
-        }
-    }
-    return moveToMake;
+    char fen[MAX_FEN_STRING_SIZE];
+    FenString_chessPositionToFenString(ourCurrentPosition, fen);
+    UCI_sendResponse("%s\n", fen);
 }
 
 static void processPlayCommand(Tokens* tokens) {
@@ -131,13 +118,16 @@ static void processPlayCommand(Tokens* tokens) {
     }
     size_t tokenIndex = 1;
     while (tokenIndex < tokens->length) {
-        Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
+        // Note: with this approach, if the move is invalid then we will not notice it.
+        // I think that this is okay, since if the gui sends an invalid move then something 
+        // has went wrong on their part.
+        Move moveToMake = MoveHandler_correctMoveFlag(ourCurrentPosition, string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
 
-        if (moveToMake == NULL_MOVE) {
+        // Checking for this classic way of having a NULL_MOVE
+        if (Move_fromSquare(moveToMake) == Move_toSquare(moveToMake)) {
             UCI_sendResponse("The move `%s` cannot be made from the current position, aborting play command\n", tokens->tokens[tokenIndex]);
             break;
         }
-        RepetitionTable_storeKey(ourCurrentPosition.key);
         MoveHandler_playMove(moveToMake, &ourCurrentPosition, true);
 
         tokenIndex++;

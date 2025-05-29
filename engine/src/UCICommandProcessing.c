@@ -228,6 +228,8 @@ bool timerThreadRunning = false;
 pthread_mutex_t timerThreadMutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void* searchThreadFunction(void* _) {
+    (void) _;
+
     Move bestMove = Bot_think();
 
     char bestMoveStr[6];

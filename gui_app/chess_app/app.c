@@ -91,7 +91,11 @@ void cleanupApp(App app) {
 }
 
 // TODO: Add sounds Note: Upgrade to SDL3 before doing audio
-int main() {
+int main(int argc, char* argv[]) {
+    // Supressing unused parameter warning
+    (void) argc;
+    (void) argv;
+
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };
     App app = { .events = &appEvents, .state = &appState };

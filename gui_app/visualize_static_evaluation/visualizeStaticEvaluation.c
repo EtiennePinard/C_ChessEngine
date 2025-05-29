@@ -2,6 +2,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 
+#define SDL_MAIN_HANDLED
+
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
@@ -37,7 +39,7 @@
 #define BUTTON_COLOR ((SDL_Color) {200, 200, 200, 255})    // gray-ish white
 
 #define FONT_SIZE 24
-#define FONT_PATH ("./assets/font/cmunbl.ttf")
+#define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 
 #define POSITIONS_PATH ("./assets/chessPositions.txt")
 
@@ -197,7 +199,7 @@ static const char* PIECE_NAMES[NB_PIECES] = {
 };
 
 bool initializeApp(App app) {
-    if (!initializeSDlLibraries(SDL_INIT_VIDEO, IMG_INIT_TIF) ||
+    if (!initializeSDlLibraries(SDL_INIT_VIDEO, IMG_INIT_PNG) ||
         !initializeSDLState(&app.state->sdlState,
             WINDOWN_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
             SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
@@ -263,7 +265,11 @@ void cleanupApp(App app) {
 }
 
 // make visualizeEval
-int main() {
+int main(int argc, char *argv[]) {
+    // Supressing unused parameter warning
+    (void) argc;
+    (void) argv;
+
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };
     App app = { .events = &appEvents, .state = &appState };

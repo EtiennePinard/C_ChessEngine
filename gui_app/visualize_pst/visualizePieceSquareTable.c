@@ -1,5 +1,5 @@
 /*
-Chatgpt generated all the SLD specific code, since I was lazy
+Chatgpt generated all the SDL specific code, since I was lazy
 and did not want to read documentation.
 */
 #include <SDL2/SDL.h>
@@ -33,7 +33,7 @@ and did not want to read documentation.
 #define BUTTON_COLOR ((SDL_Color) {200, 200, 200, 255})
 
 #define FONT_SIZE 24
-#define FONT_PATH ("./assets/font/cmunbl.ttf")
+#define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 
 typedef struct {
     SDL_Color color;
@@ -232,7 +232,7 @@ void clickedButton(SDL_Event event, App app) {
 }
 
 bool initializeApp(App app) {
-    if (!initializeSDlLibraries(SDL_INIT_VIDEO, IMG_INIT_TIF) ||
+    if (!initializeSDlLibraries(SDL_INIT_VIDEO, IMG_INIT_PNG) ||
         !initializeSDLState(&app.state->sdlState,
         WINDOWN_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
@@ -279,7 +279,11 @@ void cleanupApp(App app) {
 }
 
 // make visualizePST
-int main() {
+int main(int argc, char *argv[]) {
+    // Supressing unused parameter warning
+    (void) argc;
+    (void) argv;
+
     AppState appState = { 0 };
     AppEvents appEvents = { 0 };
     App app = { .events = &appEvents, .state = &appState };

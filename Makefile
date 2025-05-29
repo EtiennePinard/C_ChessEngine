@@ -24,9 +24,18 @@ RUN_RULES = test perft engine app visualizePST visualizeEval
 RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 
 # LDFLAGS
-app_LDFLAGS = -lm -lSDL2 -lSDL2_ttf -lSDL2_image
-visualizePST_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
-visualizeEval_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+    SDL_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
+else ifeq ($(OS),Windows_NT)
+    SDL_LDFLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -lSDL2_image
+else
+    $(error Unsupported platform)
+endif
+app_LDFLAGS = $(SDL_LDFLAGS) -lm
+visualizePST_LDFLAGS = $(SDL_LDFLAGS)
+visualizeEval_LDFLAGS = $(SDL_LDFLAGS)
 chessEngine_LDFLAGS = -pthread 
 
 # Program arguments
@@ -161,6 +170,8 @@ $(eval $(call build_template,visualizeEval))
 
 # Symlink for the chess pieces images and font assets
 build/assets:
+    # Removing the asset directory because Windows
+	@if [ -e $(ROOT_DIR)/$(ASSET_DST) ]; then rm -rf $(ROOT_DIR)/$(ASSET_DST); fi
     # The -T is to avoid creating recursive symlinks
 	@ln -sfT $(ROOT_DIR)/$(ASSET_SRC) $(ROOT_DIR)/$(ASSET_DST)
 
@@ -196,10 +207,10 @@ help:
 	@echo "make all              - Executes all build rules. This is the default rule"
 	@echo "make clean            - Remove build directory"
 	@echo "make help             - Prints this help message"
-	@echo "--------------------------------------------------------------"
+	@echo "-------------------------------------------------------------------------------------"
 	@echo "Use make perft PARG='<arguments>' to provide arguments to the perft program from make"
 	@echo "Default argument is PARG=test"
-	@echo "--------------------------------------------------------------"
+	@echo "-------------------------------------------------------------------------------------"
 
 
 # Clean everything

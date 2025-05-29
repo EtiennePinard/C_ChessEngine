@@ -1,5 +1,4 @@
-#include <pthread.h>
-#include <unistd.h>
+#include <stdio.h>
 
 #include "../sdl_framework/EventHandler.h"
 
@@ -333,10 +332,12 @@ void clickedBackButton(SDL_Event event, App app) {
 }
 
 void clickedCopyFenButton(SDL_Event event, App app) {
+    char fen[MAX_FEN_STRING_SIZE];
+    int clipboardReturnValue;
+    
     switch (event.type) {
     case SDL_MOUSEBUTTONDOWN:
-        char fen[MAX_FEN_STRING_SIZE];
-        int clipboardReturnValue = 0;
+        clipboardReturnValue = 0;
         if (event.button.button == SDL_BUTTON_LEFT) {
             FenString_chessPositionToFenString(app.state->gameState.currentPosition, fen);
             clipboardReturnValue = SDL_SetClipboardText(fen);

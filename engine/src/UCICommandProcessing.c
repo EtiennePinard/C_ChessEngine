@@ -110,6 +110,23 @@ static void processDCommand() {
     UCI_sendResponse("%s\n", fen);
 }
 
+static Move findMatchingMove(Move moveToMatch) {
+    Move moveToMake = NULL_MOVE;
+    Move moves[256];
+    int moveCount;
+    MoveHandler_getValidMoves(moves, &moveCount, ourCurrentPosition);
+    for (int index = 0; index < moveCount; index++) {
+        Move move = moves[index];
+        if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) &&
+            Move_toSquare(move) == Move_toSquare(moveToMatch) &&
+            (Move_flag(moveToMatch) == NOFLAG || Move_flag(move) == Move_flag(moveToMatch))) {
+            moveToMake = move;
+            break;
+        }
+    }
+    return moveToMake;
+}
+
 static void processPlayCommand(Tokens* tokens) {
     if (tokens->length == 1) {
         // The command is just: play
@@ -118,13 +135,9 @@ static void processPlayCommand(Tokens* tokens) {
     }
     size_t tokenIndex = 1;
     while (tokenIndex < tokens->length) {
-        // Note: with this approach, if the move is invalid then we will not notice it.
-        // I think that this is okay, since if the gui sends an invalid move then something 
-        // has went wrong on their part.
-        Move moveToMake = MoveHandler_correctMoveFlag(ourCurrentPosition, string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
+        Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
 
-        // Checking for this classic way of having a NULL_MOVE
-        if (Move_fromSquare(moveToMake) == Move_toSquare(moveToMake)) {
+        if (moveToMake == NULL_MOVE) {
             UCI_sendResponse("The move `%s` cannot be made from the current position, aborting play command\n", tokens->tokens[tokenIndex]);
             break;
         }

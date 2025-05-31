@@ -27,7 +27,6 @@ void RepetitionTable_storeKey(void) {}
 
 int maximumDepth;
 ChessPosition currentPosition = { 0 };
-ChessPosition posHistory[MAXIMUM_DEPTH] = { 0 };
 
 bool divide = false;
 u32 hashHits = 0;
@@ -54,7 +53,7 @@ u64 perft(u8 depth) {
         return nbOfMoves;
     }
 
-    posHistory[maximumDepth - depth] = currentPosition;
+    ChessPosition previousPos = currentPosition;
 
     for (int moveIndex = 0; moveIndex < nbOfMoves; moveIndex++) {
 
@@ -83,7 +82,7 @@ u64 perft(u8 depth) {
         }
         nodes += moveOutput;
 
-        memcpy(&currentPosition, &posHistory[maximumDepth - depth], sizeof(ChessPosition));
+        currentPosition = previousPos;
     }
 
     return nodes;
@@ -237,10 +236,10 @@ void test() {
                 exitCode++;
             }
 
-            memcpy(&currentPosition, &startingState, sizeof(ChessPosition));
-            PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
+            currentPosition = startingState;
         }
-
+        
+        PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
         printf("\n");
     }
 

@@ -19,12 +19,6 @@
 #define PIPE_READ_INDEX (0)
 #define PIPE_WRITE_INDEX (1)
 
-#define returnOnFail(condition, message) \
-    if (condition) {                     \
-        fprintf(stderr, message);        \
-        return false;                    \
-    }
-
 typedef int FileDescriptor;
 
 typedef struct EngineCommunication {
@@ -35,10 +29,13 @@ typedef struct EngineCommunication {
 
 EngineCommunication engineCommunication;
 
+FILE* logFile = NULL;
+
 void UCIEngine_sendCommand(const char* command) {
-    printf("%s\n", command);
     write(engineCommunication.outPipe, command, strlen(command));
     write(engineCommunication.outPipe, "\n", 1); // End each command with a newline
+    printf("%s\n", command);
+    fprintf(logFile, "%s\n", command);
 }
 
 #define DEFAULT_BUF_SIZE (128)
@@ -65,6 +62,7 @@ char* UCIEngine_readResponse(char* data, int capacity) {
     data_resize(1); // We just need to add one more character
     data[numBytesRead] = '\0';
     printf("%s", data);
+    fprintf(logFile, "%s", data);
     return data;
 }
 
@@ -82,6 +80,27 @@ bool sendUCICommand() {
     free(data);
     return iterationCount < WHILE_LOOP_SAFEGUARD;
 }
+
+bool sendIsReadyCommand() {
+    UCIEngine_sendCommand("isready");
+    int iterationCount = 0;
+    int capacity = DEFAULT_BUF_SIZE;
+    char* data = malloc(sizeof(char) * capacity);
+    while (true) {
+        data = UCIEngine_readResponse(data, DEFAULT_BUF_SIZE);
+        capacity = strlen(data);
+        string_removeUnecessarySpacesAndTabs(data);
+        if (string_compareStrings(data, "readyok\n") || iterationCount >= WHILE_LOOP_SAFEGUARD) break;
+    }
+    free(data);
+    return iterationCount < WHILE_LOOP_SAFEGUARD;
+}
+
+#define returnOnFail(condition, message) \
+    if (condition) {                     \
+        fprintf(stderr, message);        \
+        return false;                    \
+    }                                    \
 
 bool UCIEngine_initialize(const char* enginePath) {
     pid_t pid = 0;
@@ -127,12 +146,18 @@ bool UCIEngine_initialize(const char* enginePath) {
         .enginePid = pid
     };
 
-    return sendUCICommand();
+    logFile = fopen("uci_engine_log.txt", "w");
+    returnOnFail(logFile == NULL, "Log file is NULL\n");
+
+    return sendUCICommand() && sendIsReadyCommand();
 }
 
 void UCIEngine_terminate() {
     // quitting the process by itself with the quit command
     UCIEngine_sendCommand("quit");
+
+    fflush(logFile);
+    fclose(logFile);
     // Terminate the child process
     int status;
     pid_t pid = engineCommunication.enginePid;

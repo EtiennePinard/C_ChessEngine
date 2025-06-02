@@ -36,7 +36,7 @@ void UCIEngine_terminate();
 void UCIEngine_sendCommand(const char* command);
 
 /**
- * @brief Reads a reponse from the bot. Will halt if there was no data sent 
+ * @brief Reads a response from the bot. Will halt if there was no data sent 
  * so be careful when calling it. The data string will be overwritten by the 
  * response. It also needs to be a heap allocated string since the function will
  * be calling realloc on it.

@@ -208,6 +208,10 @@ static void resetGame(GameState* gameState) {
     gameState->whiteRemainingTime = STARTING_TIME_MS;
     gameState->turnStartTick = SDL_GetTicks64();
 
+    // Resetting the engine's internal game
+    // note: ucinewgame does not have a response
+    UCIEngine_sendCommand("ucinewgame");
+
     RepetitionTable_clear();
 }
 

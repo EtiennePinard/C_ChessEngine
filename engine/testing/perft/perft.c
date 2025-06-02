@@ -23,7 +23,6 @@
 void RepetitionTable_storeKey(void) {}
 
 #define TEST_ITERATION 100
-#define MAXIMUM_DEPTH 20
 
 int maximumDepth;
 ChessPosition currentPosition = { 0 };
@@ -49,7 +48,7 @@ u64 perft(u8 depth) {
         return 0;
     }
 
-    if (depth == 1) {
+    if (depth == 1 && (!divide || maximumDepth > 1)) {
         return nbOfMoves;
     }
 
@@ -110,7 +109,7 @@ k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
 */
 
 /**
- * Represents a position to perform a perft test on.
+ * @brief Represents a position to perform a perft test on.
  * The nbTest parameter indicates for how many depths there is a results
  * perftResults returns the expected number of moves for a depth (the indices of said int)
 */
@@ -130,7 +129,7 @@ typedef struct testPosition {
 #define WHT   "\033[37m"
 #define RESET "\033[0m"
 
-#define NUM_TEST_POSITIONS 6
+#define NUM_TEST_POSITIONS (7)
 
 const char* testPassed = GRN ":)" RESET;
 const char* testFailedPrefix = RED ":(" RESET " Test failed (expected ";
@@ -183,6 +182,13 @@ void test() {
       .perftResults = pos6Result
     };
 
+    int pos7Result[6] = { 1, 6, 156, 2588, 59162, 1187831 };
+    TestPosition pos7 = {
+        .fenString = "8/pp3ppk/q3p3/P7/8/2PQ4/1P4PP/7K b - - 0 29",
+        .nbTest = 6,
+        .perftResults = pos7Result
+    };
+
     TestPosition testPositions[NUM_TEST_POSITIONS] = {
       startingPositionTests,
       pos2,
@@ -190,17 +196,8 @@ void test() {
       pos4,
       pos5,
       pos6,
+      pos7
     };
-
-    // This is a little fail-safe so that we don't hit memory issues if we increase the depth of the tests
-    for (size_t index = 0; index < NUM_TEST_POSITIONS; index++) {
-        if (testPositions[index].nbTest > MAXIMUM_DEPTH) {
-            printf("The biggest depth of test %d exceeds the position history limit, %d\n", testPositions[index].nbTest, MAXIMUM_DEPTH);
-            MagicBitBoard_terminate();
-            PerftTranspositionTable_terminate();
-            exit(EXIT_FAILURE);
-        }
-    }
 
     ChessPosition startingState;
     u64 perftResult;
@@ -238,7 +235,7 @@ void test() {
 
             currentPosition = startingState;
         }
-        
+
         PerftTranspositionTable_clear(); // We don't want the perft information from a different test influence the next test
         printf("\n");
     }
@@ -311,11 +308,6 @@ int main(int argc, char* argv[]) {
 
     if (maximumDepth < 0) {
         printf("You did not provide a valid depth for the mode `%s`\n", divide ? "divide" : "time");
-        exit(EXIT_FAILURE);
-    }
-
-    if (maximumDepth > MAXIMUM_DEPTH) {
-        printf("The depth %d exceeds the position history limit, %d\n", maximumDepth, MAXIMUM_DEPTH);
         exit(EXIT_FAILURE);
     }
 

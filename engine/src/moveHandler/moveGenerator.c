@@ -1,11 +1,12 @@
 // This file is heavily inspired by this file from Sebastian Lague
 // https://github.com/SebLague/Chess-Coding-Adventure/blob/Chess-V2-UCI/Chess-Coding-Adventure/src/Core/Move%20Generation/MoveGenerator.cs
-#include <stdbool.h>
 #include <string.h>
 #include <assert.h>
-#include "MoveGenerator.h"
-#include "../magicBitBoard/MagicBitBoard.h"
+
 #include "../utils/Math.h"
+#include "../magicBitBoard/MagicBitBoard.h"
+
+#include "MoveGenerator.h"
 
 // NOTE: All of these global variables are there so that we don't have to pass around so many variables to functions
 
@@ -272,9 +273,6 @@ void generateCastle() {
     }
 }
 
-#include "../../testing/LogChessStructs.h"
-#include <stdlib.h>
-
 void generateKingMoves() {
     if (attackedSquares[friendlyKingIndex]) { inCheck = true; checkBitBoard = (u64)0; }
 
@@ -308,7 +306,9 @@ void generateKingMoves() {
 
         // potentialPawn < 0 can happen if friendlyKingIndex < 8, i = 1, delta = -1
         // potentialPawn >= 64 can happen if friendlyKingIndex >= 55, i = 1, delta = 1
-        if (potentialPawn < 0 || potentialPawn >= 64) {
+        // diff can be -7 or 7, if friendlyKingIndex = 15, i = 1, delta = 1
+        int diff = file(potentialPawn) - file(friendlyKingIndex);
+        if (potentialPawn < 0 || potentialPawn >= 64 || (diff != -1 && diff != 1)) {
             continue;
         }
 
@@ -610,8 +610,7 @@ void generateSupportingPiecesMoves() {
 // TODO: Make the caller give us a fixed size of memory (arenas?) which we can then use to store our global variables
 /*
 We are not computing end of games in this function!!!!
-They are not needed for perft and so I did not write a function to compute just yet
-These function will probably in the board.c file
+You need to handle those cases yourself
 */
 void MoveHandler_getValidMoves(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES], int* numMoves, ChessPosition position) {
     assert(result != NULL);

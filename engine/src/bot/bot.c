@@ -167,7 +167,7 @@ end_depth_search:
 
 Move Bot_think() {
     char* pvString = calloc(7 * sizeof(char), MAXIMUM_DEPTH);
-    char evalTypeString[11];
+    char evalTypeString[12];
 
     Move principalVariations[MAXIMUM_DEPTH] = { 0 };
     Move tempPV[MAXIMUM_DEPTH] = { 0 };
@@ -207,6 +207,9 @@ Move Bot_think() {
             // We need to do the negative of negamax because a good score for our opponent is a bad score for us
             int score = -alpha_beta_negamax(BOT_MINUS_INFINITY, BOT_INFINITY, currentDepth - 1, tempPV, &evalType);
 
+            currentPosition = startingPosition;
+            RepetitionTable_pop();
+
             // Check endSearch before using the calculated score because it could be 0 
             // if endSearch is triggered when we were searching
             if (endSearch) goto stop_search;
@@ -218,14 +221,13 @@ Move Bot_think() {
                 principalVariations[0] = rootMove;
                 // It is mate
                 isMate = abs(bestEvalFromCurrentSearch) >= BOT_INFINITY - MAX_MATE_DEPTH;
-                if (isMate) numPlies = bestEvalFromCurrentSearch < 0 ? BOT_MINUS_INFINITY - bestEvalFromCurrentSearch : BOT_INFINITY - bestEvalFromCurrentSearch;
+                if (isMate) numPlies = bestEvalFromCurrentSearch < 0 ? BOT_INFINITY + bestEvalFromCurrentSearch : BOT_INFINITY - bestEvalFromCurrentSearch;
                 else numPlies = currentDepth - 1;
+                // printf("isMate: %d, score: %d, numPlies: %d\n", isMate, score, numPlies);
 
                 memcpy(&principalVariations[1], tempPV, numPlies * sizeof(Move));
             }
 
-            currentPosition = startingPosition;
-            RepetitionTable_pop();
         }
 
         int infoScore;
@@ -255,12 +257,12 @@ Move Bot_think() {
 
         switch (bestEvalType) {
         case EXACT: evalTypeString[0] = '\0'; break;
-        case LOWER_BOUND: strcpy(evalTypeString, "lowerbound"); break;
-        case UPPER_BOUND: strcpy(evalTypeString, "upperbound"); break;
+        case LOWER_BOUND: strcpy(evalTypeString, " lowerbound"); break;
+        case UPPER_BOUND: strcpy(evalTypeString, " upperbound"); break;
         }
 
         UCI_sendResponse(
-            "info depth %d nodes %u tbhits %u score %s %d %s pv %s\n",
+            "info depth %d nodes %u tbhits %u score%s %d %s pv %s\n",
             currentDepth,
             totalNodes,
             transpositionTableHits,

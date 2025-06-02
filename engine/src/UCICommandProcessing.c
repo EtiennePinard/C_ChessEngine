@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include "state/EngineState.h"
 #include "state/Move.h"
@@ -107,7 +108,8 @@ static void processDCommand() {
 
     char fen[MAX_FEN_STRING_SIZE];
     FenString_chessPositionToFenString(ourCurrentPosition, fen);
-    UCI_sendResponse("%s\n", fen);
+    UCI_sendResponse("Fen: %s\n", fen);
+    UCI_sendResponse("Zobrist hash: 0x%" PRIx64 "\n", ourCurrentPosition.key);
 }
 
 static Move findMatchingMove(Move moveToMatch) {

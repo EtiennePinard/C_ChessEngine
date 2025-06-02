@@ -31,6 +31,17 @@
      _a < _b ? _a : _b; })
 
 /**
+ * @brief Returns the sign of an integer or 0 if it is 0.
+ * 
+ * @param x The integer to get the sign of
+ * @return int The sign of the integer or 0 is if it 0.
+ * @see https://stackoverflow.com/a/14612943
+ */
+static inline int sign(int x) { 
+    return (x > 0) - (x < 0);
+}
+
+/**
  * @brief Computes the number of trailing zeroes that a number contains in binary
  * 
  * Examples: 

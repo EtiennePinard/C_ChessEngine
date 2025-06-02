@@ -6,8 +6,9 @@
 #include "../state/Move.h"
 #include "../state/ChessPosition.h"
 
-// Move from square 0 to square 0 with NOFLAG
-#define BOT_ERROR NULL_MOVE
+// The biggest depth the iterative deepening framework will go to
+#define MAXIMUM_DEPTH (128)
+#define MAX_MATE_DEPTH (2 * MAXIMUM_DEPTH)
 
 // Scores used for mates
 #define BOT_INFINITY (2000000)

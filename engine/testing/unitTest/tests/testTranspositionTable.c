@@ -16,15 +16,20 @@ bool test_TranspositionTable_init() {
     return true;
 }
 
-bool test_TranspositionTable_getMoveFromKey() {
+bool test_TranspositionTable_getPvLineFromKey() {
     ZobristKey key = 123456789; // Garbage key
-    Move move = TranspositionTable_getMoveFromKey(key);
-    Move expected = NULL_MOVE; // Assuming no move is stored initially
+    TranspositionTable_getPvLineFromKey(key, NULL);
+    // We expect no segfault
 
-    if (expected != move) {
-        printf("test_TranspositionTable_getMoveFromKey failed with test case: TranspositionTable_getMoveFromKey(%" PRIu64 ")\n", key);
-        printf("\tExpected: %d\n", expected);
-        printf("\tActual: %d\n", move);
+    Move expected[2] = { Move_makeMove(E2, E4, DOUBLE_PAWN_PUSH), Move_makeMove(E7, E5, DOUBLE_PAWN_PUSH) };
+    TranspositionTable_recordEntry(key, 0, EXACT, 0, 0, expected, 2);
+    Move actual[2];
+    TranspositionTable_getPvLineFromKey(key, actual);
+
+    if (expected[0] != actual[0] || expected[1] != actual[1]) {
+        printf("test_TranspositionTable_getMoveFromKey failed with test case: TranspositionTable_getPvLineFromKey(%" PRIu64 ")\n", key);
+        printf("\tExpected: {%d, %d}\n", expected[0], expected[1]);
+        printf("\tActual: {%d, %d}\n", actual[0], actual[1]);
         return false;
     }
     return true;
@@ -35,7 +40,9 @@ bool test_TranspositionTable_getEvaluationFromKey() {
     int depth = 4;
     int alpha = -100;
     int beta = 100;
-    int actual = TranspositionTable_getEvaluationFromKey(key, depth, alpha, beta);
+    int plyFromRoot = 1;
+    EntryType type;
+    int actual = TranspositionTable_getEvaluationFromKey(key, depth, alpha, beta, plyFromRoot, &type);
     int expected = LOOKUP_FAILED; // Assuming no evaluation is stored initially
 
     if (expected != actual) {
@@ -51,24 +58,24 @@ bool test_TranspositionTable_recordEntry() {
     ZobristKey key = 111111111;
     u8 depth = 5;
     EntryType type = EXACT;
-    Move move = 42;
     int evaluation = 20;
+    int plyFromRoot = 0;
 
-    TranspositionTable_recordEntry(key, depth, type, move, evaluation);
-    int retrievedEvaluation = TranspositionTable_getEvaluationFromKey(key, depth, -100, 100);
+    EntryType actualType;
+    TranspositionTable_recordEntry(key, depth, type, evaluation, 0, NULL, 0);
+    int retrievedEvaluation = TranspositionTable_getEvaluationFromKey(key, depth, -100, 100, plyFromRoot, &actualType);
     
     if (retrievedEvaluation != evaluation) {
-        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%" PRIu64 ", %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
+        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%" PRIu64 ", %d, %d, %d, %d)\n", key, depth, type, evaluation, plyFromRoot);
         printf("\tExpected: %d\n", evaluation);
         printf("\tActual: %d\n", retrievedEvaluation);
         return false;
     }
 
-    Move retrievedMove = TranspositionTable_getMoveFromKey(key);
-    if (retrievedMove != move) {
-        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%" PRIu64 ", %d, %d, %d, %d)\n", key, depth, type, move, evaluation);
-        printf("\tExpected Move: %d\n", move);
-        printf("\tActual Move: %d\n", retrievedMove);
+    if (actualType != type) {
+        printf("test_TranspositionTable_recordEntry failed with test case: TranspositionTable_recordEntry(%" PRIu64 ", %d, %d, %d, %d)\n", key, depth, type, evaluation, plyFromRoot);
+        printf("\tExpected: %d\n", type);
+        printf("\tActual: %d\n", actualType);
         return false;
     }
 
@@ -77,7 +84,7 @@ bool test_TranspositionTable_recordEntry() {
 
 bool Test_TranspositionTable() {
     if (!test_TranspositionTable_init()) return false;
-    if (!test_TranspositionTable_getMoveFromKey()) return false;
+    if (!test_TranspositionTable_getPvLineFromKey()) return false;
     if (!test_TranspositionTable_getEvaluationFromKey()) return false;
     if (!test_TranspositionTable_recordEntry()) return false;
     

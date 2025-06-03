@@ -14,7 +14,7 @@
 
 #include "AppState.h"
 #include "Events.h"
-#include "UCIEngineCommunication.h"
+#include "uciEngineCommunication/UCIEngineCommunication.h"
 
 static const char* PIECE_NAMES[NB_PIECES] = {
     "./assets/png/white_pawn.png", "./assets/png/white_knight.png", "./assets/png/white_bishop.png", "./assets/png/white_rook.png", "./assets/png/white_queen.png", "./assets/png/white_king.png",

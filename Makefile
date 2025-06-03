@@ -115,7 +115,7 @@ app_SRC = \
     gui_app/chess_app/events.c \
     gui_app/chess_app/render.c \
     gui_app/chess_app/overlay.c \
-    gui_app/chess_app/uciEngineCommunication.c \
+    gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \
 	$(sdlFramework_SRC)
 
 visualizePST_SRC = $(sdlFramework_SRC) gui_app/visualize_pst/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c

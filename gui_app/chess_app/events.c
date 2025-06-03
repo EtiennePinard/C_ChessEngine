@@ -10,7 +10,7 @@
 #include "../../engine/src/utils/Math.h"
 #include "../../engine/src/utils/FenString.h"
 
-#include "UCIEngineCommunication.h"
+#include "uciEngineCommunication/UCIEngineCommunication.h"
 #include "Overlay.h"
 #include "Events.h"
 

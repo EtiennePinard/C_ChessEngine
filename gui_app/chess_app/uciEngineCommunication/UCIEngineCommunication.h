@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 
-#include "AppState.h"
+#include "../AppState.h"
 
-#include "../../engine/src/state/ChessPosition.h"
-#include "../../engine/src/state/Move.h"
+#include "../../../engine/src/state/ChessPosition.h"
+#include "../../../engine/src/state/Move.h"
 
 /**
  * @brief Initializes the communication with the engine

@@ -1,69 +1,54 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/wait.h>
-#include <sys/prctl.h>
 #include <signal.h>
 #include <assert.h>
 #include <string.h>
 
-#include "../../engine/src/utils/CharBuffer.h"
-#include "../../engine/src/utils/FenString.h"
-#include "../../engine/src/utils/Math.h"
-#include "../../engine/src/moveHandler/MoveGenerator.h"
+#include "../../../engine/src/utils/CharBuffer.h"
+#include "../../../engine/src/utils/FenString.h"
+#include "../../../engine/src/utils/Math.h"
+#include "../../../engine/src/moveHandler/MoveGenerator.h"
 
 #include "UCIEngineCommunication.h"
 
+// Including .c files because we are already inside a .c file with a .h header so it doesn't matter
+#ifdef __linux__
+#include "uciEngineCommunication_posix.c"
+#elif _WIN32
+#include "uciEngineCommunication_windows.c"
+#endif
+
 #define WHILE_LOOP_SAFEGUARD (1000)
-
-#define PIPE_READ_INDEX (0)
-#define PIPE_WRITE_INDEX (1)
-
-typedef int FileDescriptor;
-
-typedef struct EngineCommunication {
-    FileDescriptor outPipe;
-    FileDescriptor inPipe;
-    pid_t enginePid;
-} EngineCommunication;
-
-EngineCommunication engineCommunication;
 
 FILE* logFile = NULL;
 
 void UCIEngine_sendCommand(const char* command) {
-    write(engineCommunication.outPipe, command, strlen(command));
-    write(engineCommunication.outPipe, "\n", 1); // End each command with a newline
+#ifdef __linux__
+    UCIEngine_sendCommand_posix(command);
+#elif _WIN32
+    UCIEngine_sendCommand_windows(command);
+#else
+    assert(false && "Invalid architecture, this program only supports POSIX or windows");
+#endif
     printf("%s\n", command);
     fprintf(logFile, "%s\n", command);
 }
 
 #define DEFAULT_BUF_SIZE (128)
 
-#define data_resize(size) \
-    if (numBytesRead >= capacity) { \
-        capacity += size; \
-        data = realloc(data, capacity * sizeof(char)); \
-        assert(data != NULL && "Buy more ram lol at " __FILE__); \
-    } \
-
 char* UCIEngine_readResponse(char* data, int capacity) {
-    assert(data != NULL && "Data is NULL at " __FILE__);
-    int numBytesRead = 0;
-    if (capacity == 0) data_resize(DEFAULT_BUF_SIZE);
-
-    while (read(engineCommunication.inPipe, data + numBytesRead, 1) == 1) {
-        if (data[numBytesRead] == '\n') break;
-        numBytesRead++;
-        data_resize(DEFAULT_BUF_SIZE);
-    }
-    // Setting the next character to be 0
-    numBytesRead++;
-    data_resize(1); // We just need to add one more character
-    data[numBytesRead] = '\0';
+    char* returnValue;
+#ifdef __linux__
+    returnValue = UCIEngine_readResponse_posix(data, capacity);
+#elif _WIN32
+    returnValue = UCIEngine_readResponse_windows(data, capacity);
+#else
+    assert(false && "Invalid architecture, this program only supports POSIX or windows");
+#endif
     printf("%s", data);
     fprintf(logFile, "%s", data);
-    return data;
+    return returnValue;
 }
 
 bool sendUCICommand() {
@@ -96,73 +81,37 @@ bool sendIsReadyCommand() {
     return iterationCount < WHILE_LOOP_SAFEGUARD;
 }
 
-#define returnOnFail(condition, message) \
-    if (condition) {                     \
-        fprintf(stderr, message);        \
-        return false;                    \
-    }                                    \
-
 bool UCIEngine_initialize(const char* enginePath) {
-    pid_t pid = 0;
-    FileDescriptor inpipefd[2];
-    FileDescriptor outpipefd[2];
-
-    // Create pipes for communication
-    returnOnFail(pipe(inpipefd), "Input pipe failed\n");
-    returnOnFail(pipe(outpipefd), "Output pipe failed\n");
-
-    pid = fork();
-    returnOnFail(pid == -1, "Fork failed\n");
-
-    if (pid == 0) {
-        // Child process: set up to run the UCI engine
-        dup2(outpipefd[PIPE_READ_INDEX], STDIN_FILENO);  // Read from parent's outpipefd
-        dup2(inpipefd[PIPE_WRITE_INDEX], STDOUT_FILENO); // Write to parent's inpipefd
-        dup2(inpipefd[PIPE_WRITE_INDEX], STDERR_FILENO); // Redirect stderr as well
-
-        // Ensure the child receives SIGTERM if the parent dies
-        prctl(PR_SET_PDEATHSIG, SIGTERM);
-
-        // Close unused pipe ends in the child process
-        close(outpipefd[PIPE_WRITE_INDEX]);
-        close(inpipefd[PIPE_READ_INDEX]);
-
-        // Launch the engine
-        if (execl(enginePath, enginePath, (char*)NULL) == -1) {
-            perror("execl failed");
-        }
-
-        // exit the child process when execl returns
-        exit(EXIT_FAILURE);
+    bool init;
+#ifdef __linux__
+    init = UCIEngine_initialize_posix(enginePath);
+#elif _WIN32
+    init = UCIEngine_initialize_windows(enginePath);
+#else
+    assert(false && "Invalid architecture, this program only supports POSIX or windows");
+#endif
+    logFile = fopen("uci_engine_log.txt", "w");
+    if (logFile == NULL) {
+        fprintf(stderr, "Log file is NULL\n");
+        return false;
     }
 
-    // Parent process
-    close(outpipefd[PIPE_READ_INDEX]);
-    close(inpipefd[PIPE_WRITE_INDEX]);
-
-    engineCommunication = (EngineCommunication){
-        .inPipe = inpipefd[PIPE_READ_INDEX],
-        .outPipe = outpipefd[PIPE_WRITE_INDEX],
-        .enginePid = pid
-    };
-
-    logFile = fopen("uci_engine_log.txt", "w");
-    returnOnFail(logFile == NULL, "Log file is NULL\n");
-
-    return sendUCICommand() && sendIsReadyCommand();
+    return init && sendUCICommand() && sendIsReadyCommand();
 }
 
 void UCIEngine_terminate() {
     // quitting the process by itself with the quit command
     UCIEngine_sendCommand("quit");
+#ifdef __linux__
+    UCIEngine_terminate_posix();
+#elif _WIN32
+    UCIEngine_terminate_windows();
+#else
+    assert(false && "Invalid architecture, this program only supports POSIX or windows");
+#endif
 
     fflush(logFile);
     fclose(logFile);
-    // Terminate the child process
-    int status;
-    pid_t pid = engineCommunication.enginePid;
-    kill(pid, SIGKILL);
-    waitpid(pid, &status, 0); // Wait for the child process to terminate
 }
 
 #define POSITION_LENGTH (8)

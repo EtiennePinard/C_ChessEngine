@@ -87,27 +87,6 @@ u64 perft(u8 depth) {
     return nodes;
 }
 
-/* Testing all the double pawn push case
-
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 (Normal double pawn push) (ans: 20)
-2r4k/8/8/8/3p4/8/2P5/2K5 w - - 0 1 (Pawn is pinned but still can double pawn push) (ans: 6)
-7k/8/8/8/3p4/8/r1P1K3/8 w - - 0 1 (Pawn is pinned and cannot double pawn push) (ans: 7)
-7k/8/8/4b3/8/8/3P4/K7 w - - 0 1 (King is in check and pawn can double push to get out of check) (ans: 3)
-
-*/
-
-/* Testing all the en-passant case
-
-k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1 (Normal en-passant)
-r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1 (King is in check but en-passant is possible)
-r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1 (king is in check and en-passant will remove the check)
-k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1 (Pawn is pinned but en-passant is possible)
-k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1 (Pawn is en-passant pinned)
-8/8/3p4/KPp4r/1R2PpPk/8/8/ b - e3 0 1 (Pawn looks like it is en-passant pinned but it isn't) (ans: 16)
-8/8/8/KPpP3r/1R3p1k/8/6P1/ w - c6 1 3 (Two pawns look en-passant pinned but both can do en-passant) (ans: 17)
-
-*/
-
 /**
  * @brief Represents a position to perform a perft test on.
  * The nbTest parameter indicates for how many depths there is a results
@@ -129,7 +108,7 @@ typedef struct testPosition {
 #define WHT   "\033[37m"
 #define RESET "\033[0m"
 
-#define NUM_TEST_POSITIONS (7)
+#define NUM_TEST_POSITIONS (17)
 
 const char* testPassed = GRN ":)" RESET;
 const char* testFailedPrefix = RED ":(" RESET " Test failed (expected ";
@@ -189,6 +168,76 @@ void test() {
         .perftResults = pos7Result
     };
 
+    int pos8Result[7] = { 1, 3, 42, 219, 2680, 16769, 213505 };
+    TestPosition pos8 = {
+        .fenString = "7k/8/8/4b3/8/8/3P4/K7 w - - 0 1",
+        .nbTest = 7,
+        .perftResults = pos8Result
+    };
+
+    int pos9Result[7] = { 1, 6, 95, 564, 9330, 56825, 977910 };
+    TestPosition pos9 = {
+        .fenString = "2r4k/8/8/8/3p4/8/2P5/2K5 w - - 0 1",
+        .nbTest = 7,
+        .perftResults = pos9Result
+    };
+
+    int pos10Result[7] = { 1, 7, 90, 595, 9958, 68200, 1194348 };
+    TestPosition pos10 = {
+        .fenString = "7k/8/8/8/3p4/8/r1P1K3/8 w - - 0 1",
+        .nbTest = 7,
+        .perftResults = pos10Result
+    };
+
+    int pos11Result[7] = { 1, 7, 113, 625, 9930, 57267, 899530 };
+    TestPosition pos11 = {
+        .fenString = "k6r/8/8/K1Pp4/8/8/8/8 w - d6 0 1",
+        .nbTest = 7,
+        .perftResults = pos11Result
+    };
+
+    int pos12Result[7] = { 1, 2, 40, 248, 4496, 28197, 514111 };
+    TestPosition pos12 = {
+        .fenString = "r7/7k/8/K1pP4/8/8/8/8 w - c6 0 1",
+        .nbTest = 7,
+        .perftResults = pos12Result
+    };
+
+    int pos13Result[7] = { 1, 1, 34, 83, 3026, 12617, 470572 };
+    TestPosition pos13 = {
+        .fenString = "r3b3/7k/8/2pP4/1K6/8/8/2rb4 w - c6 0 1",
+        .nbTest = 7,
+        .perftResults = pos13Result
+    };
+
+    int pos14Result[8] = { 1, 5, 29, 208, 1809, 12925, 136091, 939821 };
+    TestPosition pos14 = {
+        .fenString = "k7/b7/8/2Pp4/3K4/8/8/8 w - d6 0 1",
+        .nbTest = 8,
+        .perftResults = pos14Result
+    };
+
+    int pos15Result[7] = { 1, 6, 79, 448, 7015, 39768, 634167 };
+    TestPosition pos15 = {
+        .fenString = "k7/8/8/K1Pp3r/8/8/8/8 w - d6 0 1",
+        .nbTest = 7,
+        .perftResults = pos15Result
+    };
+
+    int pos16Result[6] = { 1, 16, 193, 2900, 37622, 588991 };
+    TestPosition pos16 = {
+        .fenString = "8/8/3p4/KPp4r/1R2PpPk/8/8/8 b - e3 0 1",
+        .nbTest = 6,
+        .perftResults = pos16Result
+    };
+
+    int pos17Result[6] = { 1, 17, 181, 2686, 37581, 577002 };
+    TestPosition pos17 = {
+        .fenString = "8/8/8/KPpP3r/1R3p1k/8/6P1/8 w - c6 1 3",
+        .nbTest = 6,
+        .perftResults = pos17Result
+    };
+
     TestPosition testPositions[NUM_TEST_POSITIONS] = {
       startingPositionTests,
       pos2,
@@ -196,7 +245,17 @@ void test() {
       pos4,
       pos5,
       pos6,
-      pos7
+      pos7,
+      pos8,
+      pos9,
+      pos10,
+      pos11,
+      pos12,
+      pos13,
+      pos14,
+      pos15,
+      pos16,
+      pos17
     };
 
     ChessPosition startingState;
@@ -208,7 +267,7 @@ void test() {
         TestPosition testPosition = testPositions[i];
 
         if (!FenString_setChessPositionFromCopiedFenString(testPosition.fenString, &currentPosition)) {
-            printf("ERROR: Unable to set the chess position from the fen string, exiting program\n");
+            printf("ERROR: Unable to set the chess position from the fen string %s, exiting program\n", testPosition.fenString);
             exit(EXIT_FAILURE);
         }
 
@@ -243,6 +302,9 @@ void test() {
     clock_t fullTestEnd = clock();
     double fullTestTimeSpent = (double)(fullTestEnd - fullTestBegin) / CLOCKS_PER_SEC;
     printf("The full test took " CYN "%.0f " RESET "ms" RESET "\n", fullTestTimeSpent * 1000);
+
+    if (exitCode == 0) printf("All test passed! %s\n", testPassed);
+    else printf("%d/%d test failed %s\n", exitCode, NUM_TEST_POSITIONS, testFailedPrefix);
 
     MagicBitBoard_terminate();
     PerftTranspositionTable_terminate();

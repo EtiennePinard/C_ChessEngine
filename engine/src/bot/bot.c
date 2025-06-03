@@ -112,7 +112,7 @@ int alpha_beta_negamax(int alpha, int beta, int depth, Move* pv, EntryType* type
     if (nbOfMoves == 0) {
         *type = EXACT;
         // Adjust the score if we are getting mated
-        if (MoveHandler_isKingInCheck(currentPosition)) bestEval = BOT_MINUS_INFINITY + (currentDepth - depth);
+        if (MoveHandler_isKingInCheck()) bestEval = BOT_MINUS_INFINITY + (currentDepth - depth);
         // If its a draw return 0
         else bestEval = 0;
         goto end_depth_search;
@@ -167,7 +167,7 @@ end_depth_search:
 
 Move Bot_think() {
     char* pvString = calloc(7 * sizeof(char), MAXIMUM_DEPTH);
-    char evalTypeString[12];
+    char evalTypeString[13];
 
     Move principalVariations[MAXIMUM_DEPTH] = { 0 };
     Move tempPV[MAXIMUM_DEPTH] = { 0 };
@@ -256,13 +256,13 @@ Move Bot_think() {
         pvString[charIndex] = '\0';
 
         switch (bestEvalType) {
-        case EXACT: evalTypeString[0] = '\0'; break;
-        case LOWER_BOUND: strcpy(evalTypeString, " lowerbound"); break;
-        case UPPER_BOUND: strcpy(evalTypeString, " upperbound"); break;
+        case EXACT: strcpy(evalTypeString, " "); break;
+        case LOWER_BOUND: strcpy(evalTypeString, " lowerbound "); break;
+        case UPPER_BOUND: strcpy(evalTypeString, " upperbound "); break;
         }
 
         UCI_sendResponse(
-            "info depth %d nodes %u tbhits %u score%s %d %s pv %s\n",
+            "info depth %d nodes %u tbhits %u score %s %d%spv %s\n",
             currentDepth,
             totalNodes,
             transpositionTableHits,

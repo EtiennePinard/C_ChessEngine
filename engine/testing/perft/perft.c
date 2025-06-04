@@ -22,8 +22,6 @@
 // function to compile
 void RepetitionTable_storeKey(void) {}
 
-#define TEST_ITERATION 100
-
 int maximumDepth;
 ChessPosition currentPosition = { 0 };
 

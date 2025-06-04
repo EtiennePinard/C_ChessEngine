@@ -1,6 +1,13 @@
 #ifdef __linux__
+
+#include <assert.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/prctl.h>
+#include <signal.h>
 
 #define PIPE_READ_INDEX (0)
 #define PIPE_WRITE_INDEX (1)
@@ -79,6 +86,8 @@ void UCIEngine_sendCommand_posix(const char* command) {
         data = realloc(data, capacity * sizeof(char));           \
         assert(data != NULL && "Buy more ram lol at " __FILE__); \
     }                                                            \
+
+#define DEFAULT_BUF_SIZE (128)
 
 char* UCIEngine_readResponse_posix(char* data, int capacity) {
     assert(data != NULL && "Data is NULL at " __FILE__);

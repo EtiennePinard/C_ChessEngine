@@ -27,9 +27,9 @@ RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
-    SDL_LDFLAGS = -lSDL2 -lSDL2_ttf -lSDL2_image
+    SDL_LDFLAGS = -lSDL3 -lSDL3_ttf -lSDL3_image
 else ifeq ($(OS),Windows_NT)
-    SDL_LDFLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -lSDL2_image
+    SDL_LDFLAGS = -lmingw32 -lSDL3 -lSDL3_ttf -lSDL3_image
 else
     $(error Unsupported platform)
 endif

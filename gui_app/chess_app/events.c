@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../sdl_framework/EventHandler.h"
 
@@ -149,7 +150,7 @@ static int botMove(void* data) {
         return 1;
     }
 
-    u64 currentTick = SDL_GetTicks64();
+    u64 currentTick = SDL_GetTicks();
     if (gameState->playerColor != WHITE) gameState->whiteRemainingTime -= (currentTick - gameState->turnStartTick);
     else gameState->blackRemainingTime -= (currentTick - gameState->turnStartTick);
     gameState->turnStartTick = currentTick;
@@ -206,7 +207,7 @@ static void resetGame(GameState* gameState) {
     gameState->result = GAME_IS_NOT_DONE;
     gameState->blackRemainingTime = STARTING_TIME_MS;
     gameState->whiteRemainingTime = STARTING_TIME_MS;
-    gameState->turnStartTick = SDL_GetTicks64();
+    gameState->turnStartTick = SDL_GetTicks();
 
     // Resetting the engine's internal game
     // note: ucinewgame does not have a response
@@ -217,7 +218,7 @@ static void resetGame(GameState* gameState) {
 
 void clickedSwitchColorButton(SDL_Event event, App app) {
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
         app.state->gameState.playerColor = app.state->gameState.playerColor == WHITE ? BLACK : WHITE;
         resetGame(&app.state->gameState);
         if (app.state->gameState.currentPosition.colorToGo != app.state->gameState.playerColor) {
@@ -232,7 +233,7 @@ void clickedSwitchColorButton(SDL_Event event, App app) {
 
 void clickedRestartButton(SDL_Event event, App app) {
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
         resetGame(&app.state->gameState);
         if (app.state->gameState.currentPosition.colorToGo != app.state->gameState.playerColor) {
             SDL_Thread* thread = playBotMove(&app.state->gameState);
@@ -245,14 +246,14 @@ void clickedRestartButton(SDL_Event event, App app) {
 }
 
 static bool clickedPromotionOverlay(SDL_Event event, SDL_Rect popupRect, App app) {
-    int mouseX, mouseY;
+    float mouseX, mouseY;
     Move move = 0;
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
         SDL_GetMouseState(&mouseX, &mouseY);
         int squareSize = (WINDOW_WIDTH * 2 / 3) / BOARD_LENGTH;
-        int relativeX = mouseX - popupRect.x;
-        int relativeY = mouseY - popupRect.y;
+        int relativeX = ((int)mouseX) - popupRect.x;
+        int relativeY = ((int)mouseY) - popupRect.y;
 
         int colIndex = relativeX / squareSize; // 0 or 1
         int rowIndex = relativeY / squareSize; // 0 or 1
@@ -281,10 +282,10 @@ static void chessBoardMouseButtonUp(App app) {
     if (app.state->gameState.result != GAME_IS_NOT_DONE || !app.state->draggingState.isDragging) { return; } // We are not dragging anything or the game is done
     app.state->draggingState.isDragging = false; // Always stop dragging when we stop holding click
 
-    int mouseX, mouseY;
+    float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
 
-    Square draggingTo = squareFromxy(mouseX, mouseY, app.state->gameState.playerColor == BLACK);
+    Square draggingTo = squareFromxy((int)mouseX, (int)mouseY, app.state->gameState.playerColor == BLACK);
 
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so
@@ -330,10 +331,10 @@ static void chessBoardMouseButtonDown(GameState* gameState, DraggingState* dragg
         return;
     }
 
-    int mouseX, mouseY;
+    float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
 
-    int square = squareFromxy(mouseX, mouseY, gameState->playerColor == BLACK);
+    int square = squareFromxy((int)mouseX, (int)mouseY, gameState->playerColor == BLACK);
 
     if (Board_pieceAtIndex(gameState->currentPosition.board, square) == NOPIECE) return;
 
@@ -344,10 +345,10 @@ static void chessBoardMouseButtonDown(GameState* gameState, DraggingState* dragg
 
 void clickedChessBoard(SDL_Event event, App app) {
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
         chessBoardMouseButtonDown(&app.state->gameState, &app.state->draggingState);
         break;
-    case SDL_MOUSEBUTTONUP:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
         chessBoardMouseButtonUp(app);
         break;
     default:
@@ -357,7 +358,7 @@ void clickedChessBoard(SDL_Event event, App app) {
 
 void clickedBackButton(SDL_Event event, App app) {
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
         if (app.state->gameState.undoStates.previousStateIndex <= 1) return; // We cannot go back
 
         // Note that the time controls will not be updated because this is just for debugging purposes
@@ -379,24 +380,15 @@ void clickedBackButton(SDL_Event event, App app) {
 
 void clickedCopyFenButton(SDL_Event event, App app) {
     char fen[MAX_FEN_STRING_SIZE];
-    int clipboardReturnValue;
 
     switch (event.type) {
-    case SDL_MOUSEBUTTONDOWN:
-        clipboardReturnValue = 0;
-        if (event.button.button == SDL_BUTTON_LEFT) {
-            FenString_chessPositionToFenString(app.state->gameState.currentPosition, fen);
-            clipboardReturnValue = SDL_SetClipboardText(fen);
-        }
-        else if (event.button.button == SDL_BUTTON_RIGHT) {
-            if (app.state->gameState.undoStates.previousStateIndex > 0) {
-                FenString_chessPositionToFenString(app.state->gameState.undoStates.previousStates[app.state->gameState.undoStates.previousStateIndex - 1], fen);
-                clipboardReturnValue = SDL_SetClipboardText(fen);
-            }
-        }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        if (event.button.button == SDL_BUTTON_LEFT) FenString_chessPositionToFenString(app.state->gameState.currentPosition, fen);
+        else if (event.button.button == SDL_BUTTON_RIGHT && app.state->gameState.undoStates.previousStateIndex > 0) 
+            FenString_chessPositionToFenString(app.state->gameState.undoStates.previousStates[app.state->gameState.undoStates.previousStateIndex - 1], fen);
         // I am adding this print statement so that even if the clipboard does not work we can still copy the fen string
         printf("Fen: %s\n", fen);
-        if (clipboardReturnValue) {
+        if (!SDL_SetClipboardText(fen)) {
             printf("Error setting clipboard: %s\n", SDL_GetError());
             exit(EXIT_FAILURE);
         }

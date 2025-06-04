@@ -1,6 +1,5 @@
 #include <stdio.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_timer.h>
+#include <stdlib.h>
 
 #include "../sdl_framework/AppRunner.h"
 #include "../sdl_framework/AppInit.h"
@@ -22,10 +21,10 @@ static const char* PIECE_NAMES[NB_PIECES] = {
 };
 
 bool initializeApp(App app) {
-    if (!initializeSDlLibraries(SDL_INIT_VIDEO | SDL_INIT_TIMER, IMG_INIT_PNG) ||
+    if (!initializeSDlLibraries(SDL_INIT_VIDEO) ||
         !initializeSDLState(&app.state->sdlState,
-            TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
+            TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
+            NULL,
             FONT_PATH, FONT_SIZE) ||
         !initializeTextures(&app.state->textures) ||
         !initializeClickableArea(app.events, TOTAL_CLICKABLE_AREA) ||
@@ -73,7 +72,7 @@ bool initializeApp(App app) {
 
     // We want to minimize the time that the player lose because of initialization
     // I know it is pretty negligible, but that doesn't mean we can't try
-    app.state->gameState.turnStartTick = SDL_GetTicks64();
+    app.state->gameState.turnStartTick = SDL_GetTicks();
     return true;
 }
 
@@ -92,7 +91,7 @@ void cleanupApp(App app) {
 
 // TODO: Add sounds Note: Upgrade to SDL3 before doing audio
 int main(int argc, char* argv[]) {
-    // Supressing unused parameter warning
+    // Suppressing unused parameter warning
     (void) argc;
     (void) argv;
 

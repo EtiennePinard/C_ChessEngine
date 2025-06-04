@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_timer.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_ttf.h>
 
 #include "../sdl_framework/Render.h"
 #include "../sdl_framework/EventHandler.h"
@@ -36,7 +35,7 @@ typedef enum Side {
 } Side;
 
 static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* timeText, Side side) {
-    SDL_Surface* textSurface = TTF_RenderText_Blended(font, timeText, WHITE_COLOR);
+    SDL_Surface* textSurface = TTF_RenderText_Blended(font, timeText, 0, WHITE_COLOR);
     if (textSurface == NULL) { printf("Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
     if (textTexture == NULL) { printf("Text Texture is NULL\n"); exit(EXIT_FAILURE); }
@@ -54,6 +53,10 @@ static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* time
     else {
         timeControlRect.y = PLACEHOLDER_Y + BUTTON_PADDING;
     }
+    SDL_FRect timeControlFRect = RECT_TO_FRECT(timeControlRect);
+
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &timeControlFRect);
 
     SDL_Rect textRect = {
         .x = timeControlRect.x + (timeControlRect.w - textWidth) / 2,
@@ -61,12 +64,9 @@ static void renderTimeControl(SDL_Renderer* renderer, TTF_Font* font, char* time
         .w = textWidth,
         .h = textHeight
     };
-
-    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    SDL_RenderFillRect(renderer, &timeControlRect);
-
-    SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
-    SDL_FreeSurface(textSurface);
+    SDL_FRect textFRect = RECT_TO_FRECT(textRect);
+    SDL_RenderTexture(renderer, textTexture, NULL, &textFRect);
+    SDL_DestroySurface(textSurface);
     SDL_DestroyTexture(textTexture);
 }
 
@@ -76,7 +76,7 @@ static void renderTimeControls(SDL_Renderer* renderer, TTF_Font* font, GameState
 
     // Logic for game end in here cause I don't use threads for now
     if (gameState->result == GAME_IS_NOT_DONE) {
-        u64 currentTick = SDL_GetTicks64();
+        u64 currentTick = SDL_GetTicks();
         if (gameState->currentPosition.colorToGo == WHITE) {
             if (gameState->whiteRemainingTime <= currentTick - gameState->turnStartTick) {
                 gameState->whiteRemainingTime = 0;
@@ -147,7 +147,7 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
         break;
     }
 
-    SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, WHITE_COLOR, 0);
+    SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, WHITE_COLOR, 0);
     if (textSurface == NULL) { printf("Game result Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
     if (textTexture == NULL) { printf("Game result Text Texture is NULL\n"); exit(EXIT_FAILURE); }
@@ -160,15 +160,17 @@ static SDL_Rect renderGameStateText(SDL_Renderer* renderer, TTF_Font* font, Game
         .w = textWidth,
         .h = textHeight
     };
-    SDL_FreeSurface(textSurface);
-    SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+    SDL_FRect textFRect = RECT_TO_FRECT(textRect);
+
+    SDL_DestroySurface(textSurface);
+    SDL_RenderTexture(renderer, textTexture, NULL, &textFRect);
     SDL_DestroyTexture(textTexture);
 
     return textRect;
 }
 
 static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect textRect, ClickableAreas* clickableAreas) {
-    SDL_Surface* buttonTextSurface = TTF_RenderText_Solid(font, "Restart", BUTTON_TEXT_COLOR);
+    SDL_Surface* buttonTextSurface = TTF_RenderText_Solid(font, "Restart", 0, BUTTON_TEXT_COLOR);
     if (buttonTextSurface == NULL) { printf("Restart Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
     if (buttonTextSurface == NULL) { printf("Restart Text Texture is NULL\n"); exit(EXIT_FAILURE); }
@@ -183,6 +185,11 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
         .y = textRect.y + textRect.h + BUTTON_PADDING,
         .w = buttonWidth,
         .h = buttonHeight };
+    SDL_FRect buttonFRect = RECT_TO_FRECT(buttonRect);
+
+    // Render the button background
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &buttonFRect);
 
     SDL_Rect buttonTextRect = {
         .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
@@ -190,13 +197,9 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
         .w = buttonTextWidth,
         .h = buttonTextHeight
     };
-
-    // Render the button background
-    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    SDL_RenderFillRect(renderer, &buttonRect);
-
-    SDL_FreeSurface(buttonTextSurface);
-    SDL_RenderCopy(renderer, buttonTextTexture, NULL, &buttonTextRect);
+    SDL_FRect buttonTextFRect = RECT_TO_FRECT(buttonTextRect);
+    SDL_DestroySurface(buttonTextSurface);
+    SDL_RenderTexture(renderer, buttonTextTexture, NULL, &buttonTextFRect);
     SDL_DestroyTexture(buttonTextTexture);
 
     ClickableArea area = {
@@ -210,7 +213,7 @@ static SDL_Rect renderRestartButton(SDL_Renderer* renderer, TTF_Font* font, SDL_
 }
 
 static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
-    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Switch", BUTTON_TEXT_COLOR, 0);
+    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Switch", 0, BUTTON_TEXT_COLOR, 0);
     if (buttonTextSurface == NULL) { printf("Switch Text Surface is NULL\n"); exit(EXIT_FAILURE);; }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
     if (buttonTextSurface == NULL) { printf("Switch Text Texture is NULL\n"); exit(EXIT_FAILURE);; }
@@ -225,6 +228,11 @@ static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, 
         .y = restartButtonRect.y,
         .w = buttonWidth,
         .h = buttonHeight };
+    SDL_FRect buttonFRect = RECT_TO_FRECT(buttonRect);
+
+    // Render the button background
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &buttonFRect);
 
     SDL_Rect buttonTextRect = {
         .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
@@ -232,14 +240,9 @@ static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, 
         .w = buttonTextWidth,
         .h = buttonTextHeight
     };
-
-    // Render the button background
-    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    SDL_RenderFillRect(renderer, &buttonRect);
-
-
-    SDL_FreeSurface(buttonTextSurface);
-    SDL_RenderCopy(renderer, buttonTextTexture, NULL, &buttonTextRect);
+    SDL_FRect buttonTextFRect = RECT_TO_FRECT(buttonTextRect);
+    SDL_DestroySurface(buttonTextSurface);
+    SDL_RenderTexture(renderer, buttonTextTexture, NULL, &buttonTextFRect);
     SDL_DestroyTexture(buttonTextTexture);
 
     ClickableArea area = {
@@ -253,7 +256,7 @@ static SDL_Rect renderSwitchColorButton(SDL_Renderer* renderer, TTF_Font* font, 
 }
 
 static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect switchButtonRect, ClickableAreas* clickableAreas) {
-    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Back", BUTTON_TEXT_COLOR, 0);
+    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Back", 0, BUTTON_TEXT_COLOR, 0);
     if (buttonTextSurface == NULL) { printf("Back Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
     if (buttonTextSurface == NULL) { printf("Back Text Texture is NULL\n"); exit(EXIT_FAILURE); }
@@ -268,6 +271,11 @@ static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect sw
         .y = switchButtonRect.y + switchButtonRect.h + BUTTON_PADDING,
         .w = buttonWidth,
         .h = buttonHeight };
+    SDL_FRect buttonFRect = RECT_TO_FRECT(buttonRect);
+
+    // Render the button background
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &buttonFRect);
 
     SDL_Rect buttonTextRect = {
         .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
@@ -275,14 +283,10 @@ static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect sw
         .w = buttonTextWidth,
         .h = buttonTextHeight
     };
+    SDL_FRect buttonTextFRect = RECT_TO_FRECT(buttonTextRect);
 
-    // Render the button background
-    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    SDL_RenderFillRect(renderer, &buttonRect);
-
-
-    SDL_FreeSurface(buttonTextSurface);
-    SDL_RenderCopy(renderer, buttonTextTexture, NULL, &buttonTextRect);
+    SDL_DestroySurface(buttonTextSurface);
+    SDL_RenderTexture(renderer, buttonTextTexture, NULL, &buttonTextFRect);
     SDL_DestroyTexture(buttonTextTexture);
 
     ClickableArea area = {
@@ -295,7 +299,7 @@ static void renderBackButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect sw
 }
 
 static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect restartButtonRect, ClickableAreas* clickableAreas) {
-    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Copy Fen", BUTTON_TEXT_COLOR, 0);
+    SDL_Surface* buttonTextSurface = TTF_RenderText_Blended_Wrapped(font, "Copy Fen", 0, BUTTON_TEXT_COLOR, 0);
     if (buttonTextSurface == NULL) { printf("Copy Fen Text Surface is NULL\n"); exit(EXIT_FAILURE); }
     SDL_Texture* buttonTextTexture = SDL_CreateTextureFromSurface(renderer, buttonTextSurface);
     if (buttonTextSurface == NULL) { printf("Copy Fen Text Texture is NULL\n"); exit(EXIT_FAILURE); }
@@ -311,6 +315,10 @@ static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect
         .w = buttonWidth,
         .h = buttonHeight
     };
+    SDL_FRect buttonFRect = RECT_TO_FRECT(buttonRect);
+    // Render the button background
+    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
+    SDL_RenderFillRect(renderer, &buttonFRect);
 
     SDL_Rect buttonTextRect = {
         .x = buttonRect.x + (buttonRect.w - buttonTextWidth) / 2,
@@ -318,14 +326,9 @@ static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect
         .w = buttonTextWidth,
         .h = buttonTextHeight
     };
-
-    // Render the button background
-    SDL_SetRenderDrawColor(renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    SDL_RenderFillRect(renderer, &buttonRect);
-
-
-    SDL_FreeSurface(buttonTextSurface);
-    SDL_RenderCopy(renderer, buttonTextTexture, NULL, &buttonTextRect);
+    SDL_FRect buttonTextFRect = RECT_TO_FRECT(buttonTextRect);
+    SDL_DestroySurface(buttonTextSurface);
+    SDL_RenderTexture(renderer, buttonTextTexture, NULL, &buttonTextFRect);
     SDL_DestroyTexture(buttonTextTexture);
 
     ClickableArea area = {
@@ -337,10 +340,10 @@ static void renderCopyFenButton(SDL_Renderer* renderer, TTF_Font* font, SDL_Rect
 }
 
 static void renderPlaceholder(SDL_Renderer* renderer, TTF_Font* font, GameState* gameState, ClickableAreas* clickableAreas) {
-    SDL_Rect placeholderRect = PLACEHOLDER_RECT;
+    SDL_FRect placeholderFRect = RECT_TO_FRECT(PLACEHOLDER_RECT);
     // Draw rectangle border
     SDL_SetRenderDrawColor(renderer, BACKGROUND_COLOR.r, BACKGROUND_COLOR.g, BACKGROUND_COLOR.b, BACKGROUND_COLOR.a);
-    SDL_RenderDrawRect(renderer, &placeholderRect);
+    SDL_RenderRect(renderer, &placeholderFRect);
 
     SDL_Rect textRect = renderGameStateText(renderer, font, gameState);
     SDL_Rect restartButtonRect = renderRestartButton(renderer, font, textRect, clickableAreas);
@@ -363,7 +366,8 @@ static void renderDraggedPiece(SDL_Renderer* renderer,
     int indexOffset = Piece_color(draggedPiece) == WHITE ? 9 : 11;
     TextureState chessImageData = chessImages.data[draggedPiece - indexOffset];
     SDL_Rect destRect = { mouseX - squareSize / 2, mouseY - squareSize / 2, squareSize, squareSize };
-    SDL_RenderCopy(renderer, chessImageData.texture, NULL, &destRect);
+    SDL_FRect destFRect = RECT_TO_FRECT(destRect);
+    SDL_RenderTexture(renderer, chessImageData.texture, NULL, &destFRect);
 }
 
 static void renderChessboard(SDL_Renderer* renderer,
@@ -385,17 +389,19 @@ static void renderChessboard(SDL_Renderer* renderer,
 
         SDL_Color color = ((row + col) % 2 == 0) ? SQUARE_COLOR_1 : SQUARE_COLOR_2;
         SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-        SDL_Rect square = { rect.x + col * squareSize, rect.y + row * squareSize, squareSize, squareSize };
-        SDL_RenderFillRect(renderer, &square);
+        SDL_Rect squareRect = { rect.x + col * squareSize, rect.y + row * squareSize, squareSize, squareSize };
+        SDL_FRect squareFRect = RECT_TO_FRECT(squareRect);
+        SDL_RenderFillRect(renderer, &squareFRect);
 
         // Don't render the dragged pieces at their position and at the mouse coordinates
         if (draggingState.isDragging && squareIndex == draggingState.from && gameState->result == GAME_IS_NOT_DONE) { continue; }
 
         Piece piece = Board_pieceAtIndex(gameState->currentPosition.board, squareIndex);
         if (piece != NOPIECE) {
-            SDL_Rect pieceRect = { square.x, square.y, squareSize, squareSize };
+            SDL_Rect pieceRect = { squareRect.x, squareRect.y, squareSize, squareSize };
+            SDL_FRect pieceFRect = RECT_TO_FRECT(pieceRect);
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);
-            SDL_RenderCopy(renderer, chessImages.data[index].texture, NULL, &pieceRect);
+            SDL_RenderTexture(renderer, chessImages.data[index].texture, NULL, &pieceFRect);
         }
     }
 }
@@ -407,9 +413,9 @@ void render(App app) {
     renderChessboard(app.state->sdlState.renderer, app.state->textures, &app.state->gameState, app.state->draggingState);
     if (app.state->draggingState.isDragging) {
         if (app.state->gameState.result == GAME_IS_NOT_DONE) {
-            int mouseX, mouseY;
+            float mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
-            renderDraggedPiece(app.state->sdlState.renderer, app.state->textures, app.state->draggingState, mouseX, mouseY);
+            renderDraggedPiece(app.state->sdlState.renderer, app.state->textures, app.state->draggingState, (int) mouseX, (int) mouseY);
         }
         else {
             // Resetting draggingState

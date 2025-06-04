@@ -1,5 +1,6 @@
-#include "Overlay.h"
 #include "../../engine/src/utils/Math.h"
+
+#include "Overlay.h"
 
 void renderPromotionOverlay(SDL_Renderer* renderer, 
                             Textures chessImages,
@@ -30,11 +31,12 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
     // Render overlay background
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); // Light gray background
     SDL_Rect overlayRect = {overlayX, overlayY, overlayWidth, overlayHeight};
-    SDL_RenderFillRect(renderer, &overlayRect);
+    SDL_FRect overlayFRect = RECT_TO_FRECT(overlayRect);
+    SDL_RenderFillRect(renderer, &overlayFRect);
 
     // Draw borders for better visibility
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
-    SDL_RenderDrawRect(renderer, &overlayRect);
+    SDL_RenderRect(renderer, &overlayFRect);
 
     // Render piece textures
     int nbTexture = 4;
@@ -54,7 +56,8 @@ void renderPromotionOverlay(SDL_Renderer* renderer,
             squareSize,
             squareSize
         };
-        SDL_RenderCopy(renderer, textures[i], NULL, &pieceRect);
+        SDL_FRect pieceFRect = RECT_TO_FRECT(pieceRect);
+        SDL_RenderTexture(renderer, textures[i], NULL, &pieceFRect);
     }
     SDL_RenderPresent(renderer);
 

@@ -1,8 +1,10 @@
-#include "AppCleanup.h"
+#include <stdlib.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_image.h>
+#include <SDL3/SDL_ttf.h>
+
+#include "AppCleanup.h"
 
 void cleanupTextures(Textures textures) {
     if (textures.data == NULL) return;
@@ -27,7 +29,6 @@ void cleanupSDL_State(SDL_State sdlState) {
 
 void quitSDL() {
     TTF_Quit();
-    IMG_Quit();
     SDL_Quit();
 }
 

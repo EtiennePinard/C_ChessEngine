@@ -1,11 +1,17 @@
 #ifndef D5A082FB_118E_4F77_A831_0F85357C54A5
 #define D5A082FB_118E_4F77_A831_0F85357C54A5
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_ttf.h>
 #include <stdbool.h>
 
 #define DEFAULT_TEXTURE_CAPACITY (16)
+
+/**
+ * @brief Useful macro to convert a Rect to a FRect
+ * 
+ */
+#define RECT_TO_FRECT(rect) ((SDL_FRect) { .x = (float) rect.x, .y = (float) rect.y, .w = (float) rect.w, .h = (float) rect.h })
 
 typedef struct SDL_State {
     SDL_Window *window;

@@ -1,4 +1,4 @@
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "EventHandler.h"
 
@@ -10,20 +10,20 @@ static bool pointInRect(int x, int y, SDL_Rect rect) {
 void handlePopup(Popup* popup, App app) {
     // If the popup is active, only register clicks in the popup area
     SDL_Event event;
-    int mouseX, mouseY;
+    float mouseX, mouseY;
     bool isActive = true;
     while (isActive) {
 
         while (SDL_PollEvent(&event)) {
 
             switch (event.type) {
-            case SDL_QUIT:
+            case SDL_EVENT_QUIT:
                 app.events->hasQuitEventHappened = true;
                 break;
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+            case SDL_EVENT_MOUSE_BUTTON_UP:
                 SDL_GetMouseState(&mouseX, &mouseY);
-                if (pointInRect(mouseX, mouseY, popup->rect)) {
+                if (pointInRect((int) mouseX, (int) mouseY, popup->rect)) {
                     isActive = !popup->callback(event, popup->rect, app);
                 }
                 break;
@@ -38,20 +38,20 @@ void handlePopup(Popup* popup, App app) {
 
 void handleEvent(App app) {
     SDL_Event event;
-    int mouseX, mouseY;
+    float mouseX, mouseY;
     while (SDL_PollEvent(&event)) {
 
         switch (event.type) {
-        case SDL_QUIT:
+        case SDL_EVENT_QUIT:
             app.events->hasQuitEventHappened = true;
             break;
-        case SDL_MOUSEBUTTONDOWN:
-        case SDL_MOUSEBUTTONUP:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
             SDL_GetMouseState(&mouseX, &mouseY);
 
             for (size_t index = 0; index < app.events->clickableAreas.capacity; index++) {
                 ClickableArea area = app.events->clickableAreas.data[index];
-                if (area.callback != NULL && pointInRect(mouseX, mouseY, area.rect)) {
+                if (area.callback != NULL && pointInRect((int) mouseX, (int) mouseY, area.rect)) {
                     area.callback(event, app);
                 }
             }

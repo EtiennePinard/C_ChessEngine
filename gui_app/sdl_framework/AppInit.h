@@ -11,12 +11,11 @@
  * @brief Initializes the sdl library, ttf engine and image library of sdl.
  *
  * @param sdlFlags The initialization flags for the sdl library
- * @param imageFlags The initialization flags for the image library
  *
  * @return true If the library were correctly initialized
  * @return false If the library could not be initialized
  */
-bool initializeSDlLibraries(u32 sdlFlags, u32 imageFlags);
+bool initializeSDlLibraries(u32 sdlFlags);
 
 /**
  * @brief Initializes the SDL_state struct. Requires the initializeSDlLibraries
@@ -29,7 +28,7 @@ bool initializeSDlLibraries(u32 sdlFlags, u32 imageFlags);
  * @param windowWidth Window's width
  * @param windowHeight Window's height
  * @param windowFlags Window's initialization flags
- * @param rendererFlags Renderer's initialization flags
+ * @param rendererName The renderer's name or NULL if we want to let SDL decide
  * @param fontPath The path to the font file
  * @param fontSize The size of the font
  * @return true If the sdl state was correctly initialized
@@ -37,7 +36,7 @@ bool initializeSDlLibraries(u32 sdlFlags, u32 imageFlags);
  */
 bool initializeSDLState(SDL_State* sdlState,
     const char* windowTitle, int windowX, int windowY, int windowWidth, int windowHeight, u32 windowFlags,
-    u32 rendererFlags,
+    const char* rendererName,
     const char* fontPath, int fontSize);
 
 /**

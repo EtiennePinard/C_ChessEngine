@@ -154,7 +154,7 @@ all: $(BUILD_RULES)
 # Compile .c to .o into build/
 build/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
 define build_template
 build_$(1): $$($(1)_OBJ)
@@ -194,6 +194,15 @@ visualizePST: build_visualizePST build/assets
 
 visualizeEval: build_visualizeEval build/assets
 	@cd build && ./visualizeEval
+
+
+# Include dependency files if they exist
+-include $(engineTest_OBJ:.o=.d) \
+          $(perft_OBJ:.o=.d) \
+          $(chessEngine_OBJ:.o=.d) \
+          $(app_OBJ:.o=.d) \
+          $(visualizePST_OBJ:.o=.d) \
+          $(visualizeEval_OBJ:.o=.d)
 
 
 # Help rule

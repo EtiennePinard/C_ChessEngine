@@ -36,55 +36,48 @@ void UCIEngine_sendCommand(const char* command) {
 #define DEFAULT_BUF_SIZE (128)
 
 char* UCIEngine_readResponse(char* data, int capacity) {
-    char* returnValue;
 #ifdef __linux__
-    returnValue = UCIEngine_readResponse_posix(data, capacity);
+    data = UCIEngine_readResponse_posix(data, capacity);
 #elif _WIN32
-    returnValue = UCIEngine_readResponse_windows(data, capacity);
+    data = UCIEngine_readResponse_windows(data, capacity);
 #else
     assert(false && "Invalid architecture, this program only supports POSIX or windows");
 #endif
     printf("%s", data);
     fprintf(logFile, "%s", data);
-    return returnValue;
+    return data;
 }
 
 bool sendUCICommand() {
     UCIEngine_sendCommand("uci");
-    int iterationCount = 0;
-    int capacity = DEFAULT_BUF_SIZE;
-    char* data = malloc(sizeof(char) * capacity);
+    char* data = malloc(sizeof(char) * DEFAULT_BUF_SIZE);
     while (true) {
         data = UCIEngine_readResponse(data, DEFAULT_BUF_SIZE);
-        capacity = strlen(data);
         string_removeUnecessarySpacesAndTabs(data);
-        if (string_compareStrings(data, "uciok\n") || iterationCount >= WHILE_LOOP_SAFEGUARD) break;
+        if (string_compareStrings(data, "uciok\n")) break;
     }
     free(data);
-    return iterationCount < WHILE_LOOP_SAFEGUARD;
+    return true;
 }
 
 bool sendIsReadyCommand() {
     UCIEngine_sendCommand("isready");
-    int iterationCount = 0;
-    int capacity = DEFAULT_BUF_SIZE;
-    char* data = malloc(sizeof(char) * capacity);
+    char* data = malloc(sizeof(char) * DEFAULT_BUF_SIZE);
+    
     while (true) {
         data = UCIEngine_readResponse(data, DEFAULT_BUF_SIZE);
-        capacity = strlen(data);
         string_removeUnecessarySpacesAndTabs(data);
-        if (string_compareStrings(data, "readyok\n") || iterationCount >= WHILE_LOOP_SAFEGUARD) break;
+        if (string_compareStrings(data, "readyok\n")) break;
     }
     free(data);
-    return iterationCount < WHILE_LOOP_SAFEGUARD;
+    return true;
 }
 
 bool UCIEngine_initialize(const char* enginePath) {
-    bool init;
 #ifdef __linux__
-    init = UCIEngine_initialize_posix(enginePath);
+    if (!UCIEngine_initialize_posix(enginePath)) return false;
 #elif _WIN32
-    init = UCIEngine_initialize_windows(enginePath);
+    if (!UCIEngine_initialize_windows(enginePath)) return false;
 #else
     assert(false && "Invalid architecture, this program only supports POSIX or windows");
 #endif
@@ -94,7 +87,9 @@ bool UCIEngine_initialize(const char* enginePath) {
         return false;
     }
 
-    return init && sendUCICommand() && sendIsReadyCommand();
+    if (!sendUCICommand()) return false;
+
+    return sendIsReadyCommand();
 }
 
 void UCIEngine_terminate() {

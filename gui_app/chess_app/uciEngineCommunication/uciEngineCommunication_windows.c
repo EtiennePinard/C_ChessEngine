@@ -20,21 +20,29 @@ EngineCommunication engineCommunication;
 
 void UCIEngine_sendCommand_windows(const char* command) {
     DWORD bytesWritten;
-    char buffer[1024];
 
     // Ensure the command ends with a newline
-    snprintf(buffer, sizeof(buffer), "%s\n", command);
+    size_t commandLength = snprintf(NULL, 0, "%s\n", command);
+    char buffer[commandLength + 1];
+    snprintf(buffer, commandLength + 1, "%s\n", command);
+
+    // Note: Do not write the NULL-byte, else ReadFile hangs
+    // This is why we do buffer[commandLength + 1] and not add 1 to commandLength when creating it
 
     BOOL success = WriteFile(
         engineCommunication.hInputWrite,  // Handle to child's stdin
         buffer,                           // Buffer to write
-        (DWORD)strlen(buffer),            // Number of bytes to write
+        (DWORD)commandLength,             // Number of bytes to write
         &bytesWritten,                    // Number of bytes actually written
         NULL                              // No overlapped I/O
     );
 
-    if (!success || bytesWritten != strlen(buffer)) {
+    if (!success) {
         fprintf(stderr, "Failed to write command to engine (error %lu), exiting...\n", GetLastError());
+        exit(EXIT_FAILURE);
+    }
+    if (bytesWritten != commandLength) {
+        fprintf(stderr, "bytesWritten (%lu) != commandLength (%zu), exiting...\n", bytesWritten, commandLength);
         exit(EXIT_FAILURE);
     }
 }
@@ -46,7 +54,6 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
     char ch;
     int length = 0;
 
-    // If data is NULL, allocate an initial buffer
     if (data == NULL || capacity <= 0) {
         capacity = INITIAL_CAPACITY;
         data = (char*)malloc(capacity);
@@ -56,8 +63,8 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
     while (true) {
         BOOL success = ReadFile(
             engineCommunication.hOutputRead,
-            &ch,                     // Read one byte at a time
-            1,
+            &ch,
+            1, // Read one byte at a time
             &bytesRead,
             NULL
         );
@@ -68,7 +75,9 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
             exit(EXIT_FAILURE);
         }
 
-        // Store the character
+        // Skip carriage return cause of Window line-ending
+        if (ch == '\r') continue;
+        
         data[length++] = ch;
 
         // Resize if needed
@@ -79,9 +88,7 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
         }
 
         // Stop on newline
-        if (ch == '\n') {
-            break;
-        }
+        if (ch == '\n') break;
     }
 
     data[length] = '\0'; // Null-terminate
@@ -146,14 +153,14 @@ bool UCIEngine_initialize_windows(const char* enginePath) {
         &piProcInfo
     );
 
-    // Close unneeded pipe ends after process is launched
-    CloseHandle(hChildStdoutWrite);
-    CloseHandle(hChildStdinRead);
-
     if (!success) {
         fprintf(stderr, "CreateProcess failed (error %lu)\n", GetLastError());
         return false;
     }
+
+    // Close unneeded pipe ends after process is launched
+    CloseHandle(hChildStdoutWrite);
+    CloseHandle(hChildStdinRead);
 
     engineCommunication = (EngineCommunication){
         .hInputWrite = hChildStdinWrite,

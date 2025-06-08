@@ -165,7 +165,7 @@ static int botMove(void* data) {
  * it is the caller's responsibility to either wait for the
  * thread or detach it, depending if it needs to use the value
  * of the bot's move immediately. Use SDL_WaitThread(thread, NULL)
- * to wait for the thread or SDL_DetachThread to detach the
+ * to wait for the thread or SDL_DetachThread(thread) to detach the
  * thread.
  *
  * IMPORTANT: The thread will modify the GameState, which means

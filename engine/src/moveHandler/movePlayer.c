@@ -54,7 +54,8 @@ void _updateFiftyMoveRule(Piece pieceToMove, Square to, ChessPosition* state) {
     if (Piece_type(pieceToMove) == PAWN || Board_pieceAtIndex(state->board, to) != NOPIECE) {
         state->turnsForFiftyRule = 0; // A pawn has moved or a capture has happened
     }
-    else {
+    else if (state->colorToGo == WHITE) {
+        // Only recording full moves
         state->turnsForFiftyRule++; // No captures or pawn advance happened
     }
 }

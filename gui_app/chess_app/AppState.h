@@ -12,7 +12,7 @@
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 #define TITLE ("Chess")
 
-#define STARTING_TIME_MS ((TimeControl_MS) (3 * 60 * 1000))
+#define STARTING_TIME_MS ((TimeControl_MS) (99 * 60 * 1000))
 
 #define PLACEHOLDER_X (0)
 #define PLACEHOLDER_Y (0)

@@ -1,9 +1,9 @@
 #ifndef E8619F73_510A_4F85_B1F4_77DA454B0DE5
 #define E8619F73_510A_4F85_B1F4_77DA454B0DE5
 
-#define VERSION ("dev")
+#define ENGINE_VERSION ("dev")
 #define ENGINE_NAME ("Proc nue")
-#define AUTHOR ("Etienne Pinard")
+#define ENGINE_AUTHOR ("Etienne Pinard")
 
 /**
  * @brief The fen string for the initial starting position

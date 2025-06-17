@@ -17,10 +17,6 @@ void cleanupTextures(Textures textures) {
     }
 }
 
-void cleanupClickableAreas(AppEvents* events) {
-    if (events->clickableAreas.data != NULL) free(events->clickableAreas.data);
-}
-
 void cleanupSDL_State(SDL_State sdlState) {
     if (sdlState.font != NULL) TTF_CloseFont(sdlState.font);
     if (sdlState.renderer != NULL) SDL_DestroyRenderer(sdlState.renderer);

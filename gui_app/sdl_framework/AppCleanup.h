@@ -11,13 +11,6 @@
 void cleanupTextures(Textures textures);
 
 /**
- * @brief Frees the memory associated with the clickable ares
- * 
- * @param events The events of the app which includes clickable areas
- */
-void cleanupClickableAreas(AppEvents* events);
-
-/**
  * @brief Properly closes the components in the SDL_State struct
  * 
  * @param sdlState The SDL_State to cleanup
@@ -36,6 +29,6 @@ void quitSDL();
  * 
  * @param app The app struct to free
  */
-void cleanupApp(App app);
+void cleanupApp(App* app);
 
 #endif /* B09ED3F7_CFED_48B6_B6E5_530CF168497E */

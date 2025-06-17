@@ -9,26 +9,29 @@
 #include <sys/prctl.h>
 #include <signal.h>
 
+#include "UCIEngineCommunication.h"
+
 #define PIPE_READ_INDEX (0)
 #define PIPE_WRITE_INDEX (1)
 
 typedef int FileDescriptor;
 
-typedef struct EngineCommunication {
+struct EngineCommunication {
     FileDescriptor outPipe;
     FileDescriptor inPipe;
     pid_t enginePid;
-} EngineCommunication;
-
-EngineCommunication engineCommunication;
+    FILE* logFile;
+};
 
 #define returnOnFail(condition, message) \
     if (condition) {                     \
         fprintf(stderr, message);        \
-        return false;                    \
+        free(engineCommunication);       \
+        return NULL;                     \
     }                                    \
 
-bool UCIEngine_initialize_posix(const char* enginePath) {
+EngineCommunication* UCIEngine_initialize_posix(const char* enginePath, const char* logFilePath) {
+    EngineCommunication* engineCommunication = malloc(sizeof(EngineCommunication));
     pid_t pid = 0;
     FileDescriptor inpipefd[2];
     FileDescriptor outpipefd[2];
@@ -66,18 +69,20 @@ bool UCIEngine_initialize_posix(const char* enginePath) {
     close(outpipefd[PIPE_READ_INDEX]);
     close(inpipefd[PIPE_WRITE_INDEX]);
 
-    engineCommunication = (EngineCommunication){
-        .inPipe = inpipefd[PIPE_READ_INDEX],
-        .outPipe = outpipefd[PIPE_WRITE_INDEX],
-        .enginePid = pid
-    };
+    engineCommunication->inPipe = inpipefd[PIPE_READ_INDEX];
+    engineCommunication->outPipe = outpipefd[PIPE_WRITE_INDEX];
+    engineCommunication->enginePid = pid;
 
-    return true;
+    engineCommunication->logFile = fopen(logFilePath, "w");
+    returnOnFail(engineCommunication->logFile == NULL, "Log file is NULL\n");
+
+    return engineCommunication;
 }
 
-void UCIEngine_sendCommand_posix(const char* command) {
-    write(engineCommunication.outPipe, command, strlen(command));
-    write(engineCommunication.outPipe, "\n", 1); // End each command with a newline
+void UCIEngine_sendCommand_posix(EngineCommunication* engineCommunication, const char* command) {
+    write(engineCommunication->outPipe, command, strlen(command));
+    write(engineCommunication->outPipe, "\n", 1); // End each command with a newline
+    fprintf(engineCommunication->logFile, "%s\n", command);
 }
 
 #define data_resize(size)                                        \
@@ -89,12 +94,12 @@ void UCIEngine_sendCommand_posix(const char* command) {
 
 #define DEFAULT_BUF_SIZE (128)
 
-char* UCIEngine_readResponse_posix(char* data, int capacity) {
+char* UCIEngine_readResponse_posix(EngineCommunication* engineCommunication, char* data, int capacity) {
     assert(data != NULL && "Data is NULL at " __FILE__);
     int numBytesRead = 0;
     if (capacity == 0) data_resize(DEFAULT_BUF_SIZE);
 
-    while (read(engineCommunication.inPipe, data + numBytesRead, 1) == 1) {
+    while (read(engineCommunication->inPipe, data + numBytesRead, 1) == 1) {
         if (data[numBytesRead] == '\n') break;
         numBytesRead++;
         data_resize(DEFAULT_BUF_SIZE);
@@ -103,15 +108,19 @@ char* UCIEngine_readResponse_posix(char* data, int capacity) {
     numBytesRead++;
     data_resize(1); // We just need to add one more character
     data[numBytesRead] = '\0';
+    fprintf(engineCommunication->logFile, "%s", data);
     return data;
 }
 
-void UCIEngine_terminate_posix() {
+void UCIEngine_terminate_posix(EngineCommunication* engineCommunication) {
     // Terminate the child process
     int status;
-    pid_t pid = engineCommunication.enginePid;
+    pid_t pid = engineCommunication->enginePid;
     kill(pid, SIGKILL);
     waitpid(pid, &status, 0); // Wait for the child process to terminate
+    fflush(engineCommunication->logFile);
+    fclose(engineCommunication->logFile);
+    free(engineCommunication);
 }
 
 #endif

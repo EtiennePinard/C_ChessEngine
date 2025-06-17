@@ -98,6 +98,7 @@ sdlFramework_SRC = \
 	gui_app/sdl_framework/appInit.c \
     gui_app/sdl_framework/appRunner.c \
     gui_app/sdl_framework/eventHandler.c \
+    gui_app/sdl_framework/render.c \
     gui_app/sdl_framework/appCleanup.c
 
 app_SRC = \
@@ -112,9 +113,13 @@ app_SRC = \
     engine/src/magicBitBoard/bishop.c \
     engine/src/bot/repetitionTable.c \
     gui_app/chess_app/app.c \
-    gui_app/chess_app/events.c \
-    gui_app/chess_app/render.c \
-    gui_app/chess_app/overlay.c \
+    gui_app/chess_app/events/commonEvents.c \
+    gui_app/chess_app/events/gameEvents.c \
+    gui_app/chess_app/events/mainMenuEvents.c \
+    gui_app/chess_app/render/gameScene.c \
+    gui_app/chess_app/render/mainMenu.c \
+    gui_app/chess_app/render/renderUtils.c \
+    gui_app/chess_app/config.c \
     gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \
 	$(sdlFramework_SRC)
 

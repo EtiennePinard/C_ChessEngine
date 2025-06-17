@@ -8,7 +8,8 @@
  * events in the app were handled.
  * 
  * @param app The state and events of the app
+ * @return If the app should continue or terminate with failure or success
  */
-void render(App app);
+SDL_AppResult render(App* app);
 
 #endif /* A9841FAA_4E77_45B1_BB21_63F917E2166B */

@@ -1,17 +1,19 @@
 #ifndef D5A082FB_118E_4F77_A831_0F85357C54A5
 #define D5A082FB_118E_4F77_A831_0F85357C54A5
 
+#include <stdbool.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_ttf.h>
-#include <stdbool.h>
-
-#define DEFAULT_TEXTURE_CAPACITY (16)
 
 /**
  * @brief Useful macro to convert a Rect to a FRect
  * 
  */
 #define RECT_TO_FRECT(rect) ((SDL_FRect) { .x = (float) rect.x, .y = (float) rect.y, .w = (float) rect.w, .h = (float) rect.h })
+
+typedef struct App App;
+
+typedef int SceneId;
 
 typedef struct SDL_State {
     SDL_Window *window;
@@ -32,46 +34,74 @@ typedef struct Textures {
 } Textures;
 
 #define da_append(da, valueToAppend) if (da->count >= da->capacity) { \
-    da->data = realloc(da->data, sizeof(valueToAppend) * da->capacity * 2); \
+    da->capacity++; \
     da->capacity *= 2; \
+    da->data = realloc(da->data, sizeof(valueToAppend) * da->capacity); \
 } \
 da->data[da->count++] = valueToAppend; \
 
+typedef SDL_AppResult (*RenderFunction)(SDL_Rect, App*);
+typedef SDL_AppResult (*EventCallbackBox)(SDL_Event*, SDL_Rect, App*);
+
+typedef struct RenderBox {
+    SDL_Rect renderRect;
+    RenderFunction renderFunction;
+    EventCallbackBox onMouseButtonDown;
+    EventCallbackBox onMouseButtonUp;
+    EventCallbackBox onMouseEntered;
+    EventCallbackBox onMouseHovered;
+    EventCallbackBox onMouseExited;
+} RenderBox;
+
+typedef struct SceneRender {
+    RenderBox* renderBoxes;
+    size_t numRenderBox;
+
+    SDL_Color renderDrawColor;
+} SceneRender;
+
+typedef struct Scene {
+    SceneId sceneId;
+    SceneRender sceneRender;
+    bool shouldRender;
+    int selectedRenderBoxIndex;
+    void* data;
+} Scene;
+
 /**
- * @brief The AppState struct is declared here
- * but it is defined by the programmer using this
- * framework.
- * 
+ * @brief The design philosophy of this AppState is to be able
+ * to have one scene active and when we switch scene then the next
+ * scene will be initialized. At app startup the first scene is
+ * initialized and then so on and so forth while the user clicks or
+ * inputs key shortcuts.
+ *
  */
-typedef struct AppState AppState;
+typedef struct AppState {
+    SDL_State sdlState;
+    Scene currentScene;
+} AppState;
 
-typedef struct App App;
+typedef SDL_AppResult (*EventCallback)(App*, SDL_Event*);
 
-typedef struct ClickableArea {
-    SDL_Rect rect;
-    void (*callback)(SDL_Event, App);
-} ClickableArea;
-
-typedef struct ClickableAreas {
-    ClickableArea* data;
-    size_t capacity;
-} ClickableAreas;
+typedef struct MouseState {
+    int hoveredIndex; // -1 if not hovering anything
+} MouseState;
 
 typedef struct AppEvents {
-    bool hasQuitEventHappened;
-    ClickableAreas clickableAreas;
+    EventCallback onWindowResize;
+    MouseState mouseState;
+    bool shouldHandleEvents;
+    bool lockSelectedBoxIndex;
 } AppEvents;
 
-typedef struct Popup {
-    SDL_Rect rect;
-    // Returns true if the popup worked, else returns false
-    bool (*callback)(SDL_Event, SDL_Rect, App);
-} Popup;
-
-
+/**
+ * @brief Structs that holds a pointer to the AppEvents and AppState struct
+ * 
+ */
 struct App {
-    AppState* state;
-    AppEvents* events;
+    AppState state;
+    AppEvents events;
+    SDL_AppResult (*runAfterRenderAndEventsFunction)(App*);
 };
 
 #endif /* D5A082FB_118E_4F77_A831_0F85357C54A5 */

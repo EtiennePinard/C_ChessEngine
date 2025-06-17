@@ -234,9 +234,9 @@ void clickedButton(SDL_Event event, App app) {
 bool initializeApp(App app) {
     if (!initializeSDlLibraries(SDL_INIT_VIDEO, IMG_INIT_PNG) ||
         !initializeSDLState(&app.state->sdlState,
-        WINDOWN_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
+        WINDOWN_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, STARTING_WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC,
-        FONT_PATH, FONT_SIZE) || 
+        FONT_PATH, DEFAULT_FONT_SIZE) || 
         !initializeClickableArea(app.events, 1)) {
         return false;
     }
@@ -246,7 +246,7 @@ bool initializeApp(App app) {
     char* text = calloc(21, sizeof(char));
     memcpy(text,  "White Pawn Midgame", 19);
     app.state->button = (Button){
-        .color = BUTTON_COLOR,
+        .color = BUTTON_BG_COLOR,
         .text = text
     };
 

@@ -23,7 +23,7 @@ static void initEngine() {
         exit(EXIT_FAILURE);
     }
 
-    UCI_sendResponse("%s version %s by %s is initialized and ready to go!\n", ENGINE_NAME, VERSION, AUTHOR);
+    UCI_sendResponse("%s version %s by %s is initialized and ready to go!\n", ENGINE_NAME, ENGINE_VERSION, ENGINE_AUTHOR);
 }
 
 static void terminateEngine() {

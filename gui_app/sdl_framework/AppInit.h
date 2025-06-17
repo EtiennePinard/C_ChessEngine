@@ -37,16 +37,17 @@ bool initializeSDlLibraries(u32 sdlFlags);
 bool initializeSDLState(SDL_State* sdlState,
     const char* windowTitle, int windowX, int windowY, int windowWidth, int windowHeight, u32 windowFlags,
     const char* rendererName,
-    const char* fontPath, int fontSize);
+    const char* fontPath, float fontSize);
 
 /**
  * @brief Initializes the textures dynamic array
  *
  * @param textures The textures struct to initialize
+ * @param initialCapacity The initial capacity of the textures
  * @return true If the textures are initialized correctly
  * @return false If the textures were not correctly initialized
  */
-bool initializeTextures(Textures* textures);
+bool initializeTextures(Textures* textures, size_t initialCapacity);
 
 /**
  * @brief Loads images into textures from file paths
@@ -61,22 +62,12 @@ bool initializeTextures(Textures* textures);
 bool loadImageFromFilePath(SDL_State* sdlState, Textures* textures, const char** filePaths, size_t nbImages);
 
 /**
- * @brief Initializes the ClickableAres struct
- * 
- * @param appEvents The events of the app which include clickable areas
- * @param numClickableAreas The starting number of clickable areas in the app
- * @return true If the clickable areas is not NULL after initialization
- * @return false If the clickable areas are NULL after initialization
- */
-bool initializeClickableArea(AppEvents* appEvents, size_t numClickableAreas);
-
-/**
  * @brief First function called when starting the app.
  * 
  * @param app The state and events of the app
  * @return true If everything was correctly initialized
  * @return false If an error occurred
  */
-bool initializeApp(App app);
+bool initializeApp(App* app);
 
 #endif /* BC27FC8A_BD51_4933_9D9F_CD61A2488254 */

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#include "../sdl_framework/AppRunner.h"
 #include "../sdl_framework/AppInit.h"
 #include "../sdl_framework/AppCleanup.h"
 
@@ -11,98 +11,104 @@
 #include "../../engine/src/bot/TranspositionTable.h"
 #include "../../engine/src/utils/FenString.h"
 
-#include "AppState.h"
-#include "Events.h"
 #include "uciEngineCommunication/UCIEngineCommunication.h"
+#include "render/GameScene.h"
+#include "render/MainMenu.h"
+#include "Config.h"
+#include "AppState.h"
 
-static const char* PIECE_NAMES[NB_PIECES] = {
-    "./assets/png/white_pawn.png", "./assets/png/white_knight.png", "./assets/png/white_bishop.png", "./assets/png/white_rook.png", "./assets/png/white_queen.png", "./assets/png/white_king.png",
-    "./assets/png/black_pawn.png", "./assets/png/black_knight.png", "./assets/png/black_bishop.png", "./assets/png/black_rook.png", "./assets/png/black_queen.png", "./assets/png/black_king.png"
-};
-
-bool initializeApp(App app) {
-    if (!initializeSDlLibraries(SDL_INIT_VIDEO) ||
-        !initializeSDLState(&app.state->sdlState,
-            TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0,
-            NULL,
-            FONT_PATH, FONT_SIZE) ||
-        !initializeTextures(&app.state->textures) ||
-        !initializeClickableArea(app.events, TOTAL_CLICKABLE_AREA) ||
-        !loadImageFromFilePath(&app.state->sdlState, &app.state->textures, PIECE_NAMES, NB_PIECES)) {
-        return false;
+SDL_AppResult onWindowResize(App* app, SDL_Event* event) {
+    (void)event;
+    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
+        free(app->state.currentScene.sceneRender.renderBoxes);
+        app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
 
-    // Chessboard position will not change while the app is running, so we can add it once at app startup
-    app.events->clickableAreas.data[CHESSBOARD_INDEX] = (ClickableArea){ .rect = CHESSBOARD_RECT, .callback = &clickedChessBoard };
+    switch (app->state.currentScene.sceneId) {
+    case GAME_SCENE_ID:
+        computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+        break;
+    case MAIN_MENU_SCENE_ID:
+        computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+        break;
+    default: break;
+    }
+    app->state.currentScene.shouldRender = true;
+    return SDL_APP_CONTINUE;
+}
 
-    // We simply need the move generation and repetition table to work for this bot
+SDL_AppResult afterRenderAndEventsFunction(App* app) {
+    // Simply handling the time controls for now
+    if (app->state.currentScene.sceneId != GAME_SCENE_ID) return SDL_APP_CONTINUE;
+
+    // Updating the time controls using SDL_GetTicks
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data; 
+    Player* currentPlayer = data->state.currentPosition.colorToGo == WHITE ? &data->state.white : &data->state.black;
+
+    if (data->state.result == GAME_IS_NOT_DONE) {
+        app->state.currentScene.shouldRender = true;
+        u64 currentTick = SDL_GetTicks();
+        if (currentPlayer->remainingTime <= currentTick - data->state.previousTick) {
+            currentPlayer->remainingTime = 0;
+            data->state.result = data->state.currentPosition.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+        } else {
+            currentPlayer->remainingTime -= (currentTick - data->state.previousTick);
+        }
+        data->state.previousTick = currentTick;
+    }
+
+
+    return SDL_APP_CONTINUE;
+}
+
+bool initializeApp(App* app) {
+    // Initializing the SDL libraries and state needed throughout the entire app
+    printf("Initializing SDL libraries... ");
+    if (!initializeSDlLibraries(SDL_INIT_VIDEO) ||
+        !initializeSDLState(&app->state.sdlState,
+            TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE,
+            NULL,
+            FONT_PATH, DEFAULT_FONT_SIZE)) {
+        return false;
+    }
+    printf("Done!\n");
+
+    printf("Initializing magic bit boards and Zobrist keys... ");
+    // We simply need the move generation and repetition table to work for this app
     if (!MagicBitBoard_init() || !ZobristKey_init()) {
         fprintf(stderr, "Failed to initialize the magic bit boards and/or Zobrist keys\n");
         return false;
     }
+    printf("Done!\n");
 
-    if (!FenString_setChessPositionFromCopiedFenString(INITIAL_FEN, &app.state->gameState.currentPosition)) {
-        fprintf(stderr, "Failed to initialize the initial position\n");
+    printf("Initializing Main Menu Scene... ");
+    MainMenuSceneData* mainMenu = calloc(1, sizeof(MainMenuSceneData));
+    loadMainMenuConfig(mainMenu);
+    mainMenu->timeControl.selectModalVisible = false;
+    mainMenu->timeControl.hovered = (TimeControl){ 0, 0 };
+
+    const char* kingImages[2] = { WHITE_KING, BLACK_KING };
+    if (!initializeTextures(&mainMenu->textures, 2) ||
+        !loadImageFromFilePath(&app->state.sdlState, &mainMenu->textures, kingImages, 2)) {
         return false;
     }
-    
-    if (!UCIEngine_initialize("./chessEngine")) {
-        fprintf(stderr, "Failed to initialize the uci engine\n");
-        return false;
-    }
-    
-    app.state->gameState.playerColor = app.state->gameState.currentPosition.colorToGo;
-    app.state->gameState.whiteRemainingTime = STARTING_TIME_MS;
-    app.state->gameState.blackRemainingTime = STARTING_TIME_MS;
-    app.state->gameState.blackIncrement = 0;
-    app.state->gameState.whiteIncrement = 0;
 
-    app.state->gameState.result = GAME_IS_NOT_DONE;
-    
-    app.state->draggingState.isDragging = false;
-    
-    app.state->gameState.undoStates.previousStateCapacity = 64;
-    app.state->gameState.undoStates.previousStates = malloc(sizeof(ChessPosition) * app.state->gameState.undoStates.previousStateCapacity);
-    app.state->gameState.undoStates.previousStateIndex = 0;
-    
-    app.state->gameState.movesPlayed = malloc(sizeof(Move) * app.state->gameState.undoStates.previousStateCapacity);
-    
-    // We are officially running the app!
-    app.events->hasQuitEventHappened = false;
+    app->state.currentScene.data = mainMenu;
+    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
+    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
 
-    // We want to minimize the time that the player lose because of initialization
-    // I know it is pretty negligible, but that doesn't mean we can't try
-    app.state->gameState.turnStartTick = SDL_GetTicks();
+    app->events.onWindowResize = &onWindowResize;
+    app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
+
+    printf("Done!\n");
+
+    printf("App is initialized!\n");
     return true;
 }
 
-void cleanupApp(App app) {
+void cleanupApp(App* app) {
     MagicBitBoard_terminate();
-    UCIEngine_terminate();
 
-    cleanupTextures(app.state->textures);
-
-    free(app.state->gameState.undoStates.previousStates);
-
-    cleanupClickableAreas(app.events);
-    cleanupSDL_State(app.state->sdlState);
+    cleanupSDL_State(app->state.sdlState);
     quitSDL();
-}
-
-// TODO: Add sounds Note: Upgrade to SDL3 before doing audio
-int main(int argc, char* argv[]) {
-    // Suppressing unused parameter warning
-    (void) argc;
-    (void) argv;
-
-    AppState appState = { 0 };
-    AppEvents appEvents = { 0 };
-    App app = { .events = &appEvents, .state = &appState };
-
-    if (!runApp(app)) {
-        fprintf(stderr, "An error occurred while running the app.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    return 0;
 }

@@ -5,43 +5,39 @@
 
 #include "../../engine/src/state/ChessPosition.h"
 #include "../../engine/src/state/Move.h"
+#include "uciEngineCommunication/UCIEngineCommunication.h"
 
-#define WINDOW_WIDTH 900
-#define WINDOW_HEIGHT 600
-#define FONT_SIZE 24
+#define APP_VERSION "dev"
+#define APP_AUTHOR "Etienne Pinard"
+#define CREDIT_TEXT ("Version " APP_VERSION " by " APP_AUTHOR)
+
+#define WHITE_PAWN ("./assets/png/white_pawn.png")
+#define WHITE_KNIGHT ("./assets/png/white_knight.png")
+#define WHITE_BISHOP ("./assets/png/white_bishop.png")
+#define WHITE_ROOK ("./assets/png/white_rook.png")
+#define WHITE_QUEEN ("./assets/png/white_queen.png") 
+#define WHITE_KING ("./assets/png/white_king.png")
+#define BLACK_PAWN ("./assets/png/black_pawn.png")
+#define BLACK_KNIGHT ("./assets/png/black_knight.png")
+#define BLACK_BISHOP ("./assets/png/black_bishop.png")
+#define BLACK_ROOK ("./assets/png/black_rook.png")
+#define BLACK_QUEEN ("./assets/png/black_queen.png") 
+#define BLACK_KING ("./assets/png/black_king.png")
+
+#define STARTING_WINDOW_WIDTH 800
+#define STARTING_WINDOW_HEIGHT 850
+#define DEFAULT_FONT_SIZE (20.0f)
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 #define TITLE ("Chess")
 
-#define STARTING_TIME_MS ((TimeControl_MS) (99 * 60 * 1000))
+#define DEFAULT_TIME_CONTROL ((TimeControl) { .increment = (TimeControl_MS) (5 * 60 * 1000), .timeLeft = (TimeControl_MS) (0) })
 
-#define PLACEHOLDER_X (0)
-#define PLACEHOLDER_Y (0)
-#define PLACEHOLDER_WIDTH (WINDOW_WIDTH / 3)
-#define PLACEHOLDER_HEIGHT (WINDOW_HEIGHT)
-#define PLACEHOLDER_RECT ((SDL_Rect) { .x = PLACEHOLDER_X, .y = PLACEHOLDER_Y, .w = PLACEHOLDER_WIDTH, .h = PLACEHOLDER_HEIGHT })
-
-#define CHESSBOARD_X (WINDOW_WIDTH / 3)
-#define CHESSBOARD_Y (0)
-#define CHESSBOARD_WIDTH (WINDOW_WIDTH * 2 / 3)
-#define CHESSBOARD_HEIGHT (WINDOW_HEIGHT)
-#define CHESSBOARD_RECT ((SDL_Rect) { .x = CHESSBOARD_X, .y = CHESSBOARD_Y, .w = CHESSBOARD_WIDTH, .h = CHESSBOARD_HEIGHT })
-
-// Constants for clickable areas
-typedef enum ClickableAreaIndex {
-    CHESSBOARD_INDEX,
-    RESTART_BUTTON_INDEX,
-    SWITCH_BUTTON_INDEX,
-    BACK_BUTTON_INDEX,
-    COPY_FEN_BUTTON_INDEX,
-    TOTAL_CLICKABLE_AREA
-} ClickableAreaIndex;
-
-typedef struct DraggingState {
-    bool isDragging;
+typedef struct SelectedPiece {
+    bool isPieceSelected;
     Square from;
-    Square to; // The square that it ended on
-    Piece draggedPiece;
-} DraggingState;
+    Piece selectedPiece;
+    bool isDragged;
+} SelectedPiece;
 
 typedef enum GameResult {
     GAME_IS_NOT_DONE,
@@ -55,35 +51,73 @@ typedef enum GameResult {
     BLACK_WON_ON_TIME
 } GameResult;
 
-typedef u32 TimeControl_MS;
-
 typedef struct UndoGameStates {
     ChessPosition* previousStates;
     int previousStateCapacity;
     int previousStateIndex;
 } UndoGameStates;
 
+typedef struct Player {
+    TimeControl_MS remainingTime;
+    TimeControl_MS increment;
+    
+    struct EngineCommunication* engineCommunication;
+} Player;
+
+typedef struct PromotionSettings {
+    bool renderPromotionOverlay;
+    Square promotionSquareTo;
+    Square promotionSquareFrom;
+    SDL_Rect overlayRect;
+} PromotionSettings;
+
 typedef struct GameState {
     ChessPosition currentPosition;
-    PieceCharacteristics playerColor;
-
-    u64 turnStartTick;
-    TimeControl_MS whiteRemainingTime;
-    TimeControl_MS blackRemainingTime;
-    TimeControl_MS whiteIncrement;
-    TimeControl_MS blackIncrement;
-
+    Player white;
+    Player black;
+    
+    u64 previousTick;
+    
     UndoGameStates undoStates;
     Move* movesPlayed;
-
+    
     GameResult result;
 } GameState;
 
-struct AppState {
-    SDL_State sdlState;
+typedef struct GameSceneData {
     Textures textures;
-    GameState gameState;
-    DraggingState draggingState;
-};
+    GameState state;
+    SelectedPiece selectedPiece;
+    PromotionSettings promotionSettings;
+    bool flipBoard;
+} GameSceneData;
+
+typedef struct TimeControl {
+    TimeControl_MS timeLeft;
+    TimeControl_MS increment;
+} TimeControl;
+
+typedef struct TimeControlSettings {
+    TimeControl hovered;
+    TimeControl selected;
+    bool selectModalVisible;
+} TimeControlSettings;
+
+typedef struct PlayerConfig {
+    bool isEngine;
+    char* enginePath;
+} PlayerConfig;
+
+typedef struct MainMenuSceneData {
+    PlayerConfig white;
+    PlayerConfig black;
+
+    TimeControlSettings timeControl;
+
+    Textures textures;
+} MainMenuSceneData;
+
+#define GAME_SCENE_ID (0)
+#define MAIN_MENU_SCENE_ID (1)
 
 #endif /* E50A5778_B8CC_4205_8BEF_5FD650592497 */

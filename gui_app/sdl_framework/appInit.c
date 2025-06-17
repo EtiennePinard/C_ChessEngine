@@ -23,7 +23,7 @@ bool initializeSDlLibraries(u32 sdlFlags) {
 bool initializeSDLState(SDL_State* sdlState,
     const char* windowTitle, int windowX, int windowY, int windowWidth, int windowHeight, u32 windowFlags,
     const char* rendererName,
-    const char* fontPath, int fontSize) {
+    const char* fontPath, float fontSize) {
     sdlState->window = SDL_CreateWindow(windowTitle, windowWidth, windowHeight, windowFlags);
     SDL_SetWindowPosition(sdlState->window, windowX, windowY);
     if (sdlState->window == NULL) {
@@ -55,16 +55,15 @@ bool initializeSDLState(SDL_State* sdlState,
     return true;
 }
 
-bool initializeTextures(Textures* textures) {
+bool initializeTextures(Textures* textures, size_t initialCapacity) {
     if (textures->data != NULL) return true; // textures is already initialized
 
-    textures->capacity = DEFAULT_TEXTURE_CAPACITY;
+    textures->capacity = initialCapacity;
     textures->data = calloc(textures->capacity, sizeof(TextureState));
     return textures->data != NULL;
 }
 
 bool loadImageFromFilePath(SDL_State* sdlState, Textures* textures, const char** filePaths, size_t nbImages) {
-
     for (size_t index = 0; index < nbImages; index++) {
         SDL_IOStream* ioStream = SDL_IOFromFile(filePaths[index], "rb");
         SDL_Surface* surface = IMG_Load_IO(ioStream, 1);
@@ -90,12 +89,4 @@ bool loadImageFromFilePath(SDL_State* sdlState, Textures* textures, const char**
         da_append(textures, textureState);
     }
     return true;
-}
-
-bool initializeClickableArea(AppEvents* appEvents, size_t numClickableAreas) {
-    if (appEvents->clickableAreas.data != NULL) return true; // clickableAreas is already initialized
-
-    appEvents->clickableAreas.capacity = numClickableAreas;
-    appEvents->clickableAreas.data = malloc(appEvents->clickableAreas.capacity * sizeof(ClickableArea));
-    return appEvents->clickableAreas.data != NULL;
 }

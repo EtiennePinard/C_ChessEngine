@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "CharBuffer.h"
 #include "Constants.h"
 #include "Math.h"
+#include "CharBuffer.h"
 
 #define SPACE_CHAR (' ')
 

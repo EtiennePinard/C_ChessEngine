@@ -33,8 +33,8 @@ void UCI_sendResponse(const char* format, ...) {
 }
 
 static void processUCICommand() {
-    UCI_sendResponse("id name %s %s\n", ENGINE_NAME, VERSION);
-    UCI_sendResponse("id author %s\n", AUTHOR);
+    UCI_sendResponse("id name %s %s\n", ENGINE_NAME, ENGINE_VERSION);
+    UCI_sendResponse("id author %s\n", ENGINE_AUTHOR);
     UCI_sendResponse("\nuciok\n");
 }
 

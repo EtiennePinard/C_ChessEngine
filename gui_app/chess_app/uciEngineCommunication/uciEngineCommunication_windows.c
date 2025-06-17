@@ -10,15 +10,16 @@ If someone who knows how to use the Windows api wants to refactor this code, be 
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef struct EngineCommunication {
+#include "UCIEngineCommunication.h"
+
+struct EngineCommunication {
     HANDLE hInputWrite;   // Parent writes to child's stdin
     HANDLE hOutputRead;   // Parent reads from child's stdout
     HANDLE hProcess;      // Handle to the child process
-} EngineCommunication;
+    FILE* logFile;
+};
 
-EngineCommunication engineCommunication;
-
-void UCIEngine_sendCommand_windows(const char* command) {
+void UCIEngine_sendCommand_windows(EngineCommunication* engineCommunication, const char* command) {
     DWORD bytesWritten;
 
     // Ensure the command ends with a newline
@@ -30,7 +31,7 @@ void UCIEngine_sendCommand_windows(const char* command) {
     // This is why we do buffer[commandLength + 1] and not add 1 to commandLength when creating it
 
     BOOL success = WriteFile(
-        engineCommunication.hInputWrite,  // Handle to child's stdin
+        engineCommunication->hInputWrite,  // Handle to child's stdin
         buffer,                           // Buffer to write
         (DWORD)commandLength,             // Number of bytes to write
         &bytesWritten,                    // Number of bytes actually written
@@ -49,7 +50,7 @@ void UCIEngine_sendCommand_windows(const char* command) {
 
 #define INITIAL_CAPACITY (128)
 
-char* UCIEngine_readResponse_windows(char* data, int capacity) {
+char* UCIEngine_readResponse_windows(EngineCommunication* engineCommunication, char* data, int capacity) {
     DWORD bytesRead;
     char ch;
     int length = 0;
@@ -62,7 +63,7 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
 
     while (true) {
         BOOL success = ReadFile(
-            engineCommunication.hOutputRead,
+            engineCommunication->hOutputRead,
             &ch,
             1, // Read one byte at a time
             &bytesRead,
@@ -77,7 +78,7 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
 
         // Skip carriage return cause of Window line-ending
         if (ch == '\r') continue;
-        
+
         data[length++] = ch;
 
         // Resize if needed
@@ -95,7 +96,15 @@ char* UCIEngine_readResponse_windows(char* data, int capacity) {
     return data;
 }
 
-bool UCIEngine_initialize_windows(const char* enginePath) {
+#define returnOnFail(condition, message) \
+    if (condition) {                     \
+        fprintf(stderr, message);        \
+        free(engineCommunication);       \
+        return NULL;                     \
+    }                                    \
+
+bool UCIEngine_initialize_windows(EngineCommunication* engineCommunication, const char* enginePath, const char* logFilePath) {
+    EngineCommunication* engineCommunication = malloc(sizeof(EngineCommunication));
     HANDLE hChildStdoutRead = NULL;
     HANDLE hChildStdoutWrite = NULL;
     HANDLE hChildStdinRead = NULL;
@@ -107,24 +116,11 @@ bool UCIEngine_initialize_windows(const char* enginePath) {
     };
 
     // Create pipes for stdout
-    if (!CreatePipe(&hChildStdoutRead, &hChildStdoutWrite, &saAttr, 0)) {
-        fprintf(stderr, "Failed to create stdout pipe\n");
-        return false;
-    }
-    if (!SetHandleInformation(hChildStdoutRead, HANDLE_FLAG_INHERIT, 0)) {
-        fprintf(stderr, "Failed to set handle info on stdout read\n");
-        return false;
-    }
-
+    returnOnFail(!CreatePipe(&hChildStdoutRead, &hChildStdoutWrite, &saAttr, 0), "Failed to create stdout pipe\n");
+    returnOnFail(!SetHandleInformation(hChildStdoutRead, HANDLE_FLAG_INHERIT, 0), "Failed to set handle info on stdout read\n");
     // Create pipes for stdin
-    if (!CreatePipe(&hChildStdinRead, &hChildStdinWrite, &saAttr, 0)) {
-        fprintf(stderr, "Failed to create stdin pipe\n");
-        return false;
-    }
-    if (!SetHandleInformation(hChildStdinWrite, HANDLE_FLAG_INHERIT, 0)) {
-        fprintf(stderr, "Failed to set handle info on stdin write\n");
-        return false;
-    }
+    returnOnFail(!CreatePipe(&hChildStdinRead, &hChildStdinWrite, &saAttr, 0), "Failed to create stdin pipe\n");
+    returnOnFail(!SetHandleInformation(hChildStdinWrite, HANDLE_FLAG_INHERIT, 0), "Failed to set handle info on stdin write\n");
 
     PROCESS_INFORMATION piProcInfo;
     STARTUPINFOA siStartInfo;
@@ -153,41 +149,43 @@ bool UCIEngine_initialize_windows(const char* enginePath) {
         &piProcInfo
     );
 
-    if (!success) {
-        fprintf(stderr, "CreateProcess failed (error %lu)\n", GetLastError());
-        return false;
-    }
+    returnOnFail(!success, "CreateProcess failed\n");
 
     // Close unneeded pipe ends after process is launched
     CloseHandle(hChildStdoutWrite);
     CloseHandle(hChildStdinRead);
 
-    engineCommunication = (EngineCommunication){
-        .hInputWrite = hChildStdinWrite,
-        .hOutputRead = hChildStdoutRead,
-        .hProcess = piProcInfo.hProcess
-    };
+    engineCommunication->hInputWrite = hChildStdinWrite;
+    engineCommunication->hOutputRead = hChildStdoutRead;
+    engineCommunication->hProcess = piProcInfo.hProcess;
 
     // Close thread handle (we don’t need it)
     CloseHandle(piProcInfo.hThread);
 
-    return true;
+    engineCommunication->logFile = fopen(logFilePath, "w");
+    returnOnFail(engineCommunication->logFile == NULL, "Log file is NULL\n");
+
+    return engineCommunication;
 }
 
-void UCIEngine_terminate_windows() {
+void UCIEngine_terminate_windows(EngineCommunication* engineCommunication) {
     // Wait for the engine process to exit (with timeout just in case)
-    DWORD result = WaitForSingleObject(engineCommunication.hProcess, 3000); // wait up to 3 seconds
+    DWORD result = WaitForSingleObject(engineCommunication->hProcess, 3000); // wait up to 3 seconds
 
     if (result == WAIT_TIMEOUT) {
         // Engine did not exit in time; forcefully terminate it
-        TerminateProcess(engineCommunication.hProcess, 0);
-        WaitForSingleObject(engineCommunication.hProcess, INFINITE);
+        TerminateProcess(engineCommunication->hProcess, 0);
+        WaitForSingleObject(engineCommunication->hProcess, INFINITE);
     }
 
     // Clean up handles
-    CloseHandle(engineCommunication.hInputWrite);
-    CloseHandle(engineCommunication.hOutputRead);
-    CloseHandle(engineCommunication.hProcess);
+    CloseHandle(engineCommunication->hInputWrite);
+    CloseHandle(engineCommunication->hOutputRead);
+    CloseHandle(engineCommunication->hProcess);
+    
+    fflush(engineCommunication->logFile);
+    fclose(engineCommunication->logFile);
+    free(engineCommunication);
 }
 
 #endif

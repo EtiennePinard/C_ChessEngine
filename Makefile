@@ -28,8 +28,12 @@ RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 
 # Flags for compiling SDL
 SDL_FLAGS = -I${SDL_INCLUDE_PATH} -I${SDL_TTF_INCLUDE_PATH} -I${SDL_IMAGE_INCLUDE_PATH} -L${SDL_LIBRARY_PATH} -L${SDL_TTF_LIBRARY_PATH} -L${SDL_IMAGE_LIBRARY_PATH} -lSDL3 -lSDL3_ttf -lSDL3_image
-ifeq ($(OS),Windows_NT)
-    # Note: We do not 
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Linux)
+else ifeq ($(OS),Windows_NT)
+    # Note: We do not use the -mwindows library since we want to see the terminal when using the app
     SDL_FLAGS += -lmingw32 
 endif
 
@@ -197,7 +201,11 @@ perft: build_perft
 engine: build_chessEngine
 	@cd build && ./chessEngine
 
+ifdef OS
 app: build_app build_chessEngine build/assets SDL-dlls-copy
+else
+app: build_app build_chessEngine build/assets
+endif
 	@cd build && ./app
 
 visualizePST: build_visualizePST build/assets SDL-dlls-copy

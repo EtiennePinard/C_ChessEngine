@@ -1,9 +1,6 @@
 #ifndef DDB8F9F1_B4AC_462A_883D_545E82BB7F71
 #define DDB8F9F1_B4AC_462A_883D_545E82BB7F71
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_ttf.h>
-
 #include "../AppState.h"
 
 /**

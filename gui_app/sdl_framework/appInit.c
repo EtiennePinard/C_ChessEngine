@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL3/SDL_image.h>
+#include <SDL3_image/SDL_image.h>
 
 #include "AppInit.h"
 

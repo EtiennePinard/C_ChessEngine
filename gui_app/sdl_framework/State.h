@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <SDL3/SDL.h>
-#include <SDL3/SDL_ttf.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 /**
  * @brief Useful macro to convert a Rect to a FRect

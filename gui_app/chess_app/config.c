@@ -46,6 +46,39 @@ bool parseTimeControl(TimeControl* timecontrol, Tokens tokens) {
     return true;
 }
 
+#define STARTING_BUFFER_SIZE (16)
+#define char_append(element) \
+    if (index == capacity) { \
+        capacity *= 2; \
+        result = realloc(result, capacity); \
+    } \
+    result[index++] = element; \
+
+char* portableSubsetGetLine(FILE* file) {
+    int capacity = STARTING_BUFFER_SIZE;
+    int index = 0;
+    char* result = calloc(capacity, sizeof(char));
+    if (result == NULL) return NULL;
+
+    int ch;
+    while ((ch = fgetc(file)) != EOF) {
+        if (ch == '\n') {
+            break;
+        }
+
+        char_append(ch);
+    }
+
+    // If nothing was read and EOF is reached, return NULL
+    if (index == 0 && ch == EOF) {
+        free(result);
+        return NULL;
+    }
+
+    result[index] = '\0';
+    return result;
+}
+
 /*
 Parses the save file for the game setting. This is what a valid file would look like:
 
@@ -59,13 +92,10 @@ bool loadMainMenuConfigFromFile(FILE* file, MainMenuSceneData* data) {
     if (!file || !data) return result;
 
     char* line = NULL;
-    size_t size = 0;
-    ssize_t read;
     Tokens tokens;
     size_t nbTokens;
 
-    while ((read = getline(&line, &size, file)) != -1) {
-        line[read - 1] = '\0';
+    while ((line = portableSubsetGetLine(file)) != NULL) {
         nbTokens = string_removeUnecessarySpacesAndTabs(line);
         char* tokens_arr[nbTokens];
         tokens.length = nbTokens;
@@ -75,6 +105,7 @@ bool loadMainMenuConfigFromFile(FILE* file, MainMenuSceneData* data) {
         // ignore any empty lines
         if (tokens.length == 0) continue;
 
+        size_t read = strlen(line);
         // Check if the string starts with any of the character, else we ignore the line
         if (string_compareStrings(tokens.tokens[0], "white")) {
             if (!parsePlayer(&data->white, tokens, read)) goto end_of_parsing_file;
@@ -136,10 +167,16 @@ bool writePlayerBlock(FILE* file, const char* label, bool isEngine, const char* 
 }
 
 bool saveMainMenuConfig(const MainMenuSceneData* data) {
-    if (!data) return false;
+    if (!data) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not save config data is NULL\n");
+        return false;
+    }
 
     char* basePath = SDL_GetPrefPath("Etienne", "ChessApp");
-    if (!basePath) return false;
+    if (!basePath) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not save config SDL_GetPrefPath returns NULL\n");
+        return false;
+    }
 
     // Construct the full file path
     size_t length = snprintf(NULL, 0, "%schess.config", basePath) + 1;
@@ -148,7 +185,10 @@ bool saveMainMenuConfig(const MainMenuSceneData* data) {
     SDL_free(basePath);
 
     FILE* file = fopen(configPath, "w");
-    if (!file) return false;
+    if (!file) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not save config since we could not open the config file\n");
+        return false;
+    }
 
     bool success = true;
     if (!writePlayerBlock(file, "white", data->white.isEngine, data->white.enginePath)) success = false;

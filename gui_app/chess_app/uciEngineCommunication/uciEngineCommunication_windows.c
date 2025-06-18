@@ -46,6 +46,8 @@ void UCIEngine_sendCommand_windows(EngineCommunication* engineCommunication, con
         fprintf(stderr, "bytesWritten (%lu) != commandLength (%zu), exiting...\n", bytesWritten, commandLength);
         exit(EXIT_FAILURE);
     }
+
+    fprintf(engineCommunication->logFile, "%s\n", command);
 }
 
 #define INITIAL_CAPACITY (128)
@@ -93,6 +95,7 @@ char* UCIEngine_readResponse_windows(EngineCommunication* engineCommunication, c
     }
 
     data[length] = '\0'; // Null-terminate
+    fprintf(engineCommunication->logFile, "%s", data);
     return data;
 }
 
@@ -103,7 +106,7 @@ char* UCIEngine_readResponse_windows(EngineCommunication* engineCommunication, c
         return NULL;                     \
     }                                    \
 
-bool UCIEngine_initialize_windows(EngineCommunication* engineCommunication, const char* enginePath, const char* logFilePath) {
+EngineCommunication* UCIEngine_initialize_windows(const char* enginePath, const char* logFilePath) {
     EngineCommunication* engineCommunication = malloc(sizeof(EngineCommunication));
     HANDLE hChildStdoutRead = NULL;
     HANDLE hChildStdoutWrite = NULL;

@@ -1,6 +1,9 @@
 # Taken from https://stackoverflow.com/a/23324703
 ROOT_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
+# Load environment variables
+include .env
+
 # Compiler and flags
 CC = gcc
 
@@ -23,19 +26,17 @@ RUN_RULES = test perft engine app visualizePST visualizeEval
 
 RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
 
-# LDFLAGS
-UNAME_S := $(shell uname -s)
-
-ifeq ($(UNAME_S),Linux)
-    SDL_LDFLAGS = -lSDL3 -lSDL3_ttf -lSDL3_image
-else ifeq ($(OS),Windows_NT)
-    SDL_LDFLAGS = -lmingw32 -lSDL3 -lSDL3_ttf -lSDL3_image
-else
-    $(error Unsupported platform)
+# Flags for compiling SDL
+SDL_FLAGS = -I${SDL_INCLUDE_PATH} -I${SDL_TTF_INCLUDE_PATH} -I${SDL_IMAGE_INCLUDE_PATH} -L${SDL_LIBRARY_PATH} -L${SDL_TTF_LIBRARY_PATH} -L${SDL_IMAGE_LIBRARY_PATH} -lSDL3 -lSDL3_ttf -lSDL3_image
+ifeq ($(OS),Windows_NT)
+    # Note: We do not 
+    SDL_FLAGS += -lmingw32 
 endif
-app_LDFLAGS = $(SDL_LDFLAGS) -lm
-visualizePST_LDFLAGS = $(SDL_LDFLAGS)
-visualizeEval_LDFLAGS = $(SDL_LDFLAGS)
+
+# LDFLAGS
+app_LDFLAGS = $(SDL_FLAGS) -lm
+visualizePST_LDFLAGS = $(SDL_FLAGS)
+visualizeEval_LDFLAGS = $(SDL_FLAGS)
 chessEngine_LDFLAGS = -pthread 
 
 # Program arguments
@@ -180,6 +181,11 @@ build/assets:
     # The -T is to avoid creating recursive symlinks
 	@ln -sfT $(ROOT_DIR)/$(ASSET_SRC) $(ROOT_DIR)/$(ASSET_DST)
 
+# Copying the SDL dlls in the build directory
+SDL-dlls-copy:
+	cp "$(SDL_BIN_PATH)/SDL3.dll" build/SDL3.dll
+	cp "$(SDL_TTF_BIN_PATH)/SDL3_ttf.dll" build/SDL3_ttf.dll
+	cp "$(SDL_IMAGE_BIN_PATH)/SDL3_image.dll" build/SDL3_image.dll
 
 # Execution rules
 test: build_engineTest
@@ -191,13 +197,13 @@ perft: build_perft
 engine: build_chessEngine
 	@cd build && ./chessEngine
 
-app: build_app build/assets build_chessEngine
+app: build_app build_chessEngine build/assets SDL-dlls-copy
 	@cd build && ./app
 
-visualizePST: build_visualizePST build/assets
+visualizePST: build_visualizePST build/assets SDL-dlls-copy
 	@cd build && ./visualizePST
 
-visualizeEval: build_visualizeEval build/assets
+visualizeEval: build_visualizeEval build/assets SDL-dlls-copy
 	@cd build && ./visualizeEval
 
 

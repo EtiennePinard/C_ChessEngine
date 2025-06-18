@@ -80,3 +80,6 @@ precomputedMasks/precomputedMaskOutput.txt
 
 # Build folder 
 build/
+
+# Environments variables
+.env

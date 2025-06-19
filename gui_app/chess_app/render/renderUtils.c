@@ -1,10 +1,97 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "../AppStyle.h"
 #include "RenderUtils.h"
 
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, SDL_Color color, SDL_Rect rect) {
+SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
+    if (!renderer || !font || !text) return SDL_APP_FAILURE;
+
+    // Clone the input string to safely tokenize it
+    char* textCopy = strdup(text);
+    if (!textCopy) return SDL_APP_FAILURE;
+
+    int lineHeight = TTF_GetFontLineSkip(font);
+    int numLines = 0;
+
+    // Count lines
+    for (const char* p = text; *p; p++) {
+        if (*p == '\n') numLines++;
+    }
+    numLines++; // at least one line
+
+    // Calculate vertical offset for centering the block
+    int totalTextHeight = numLines * lineHeight;
+    int y = rect.y + (rect.h - totalTextHeight) / 2;
+
+    // Tokenize and render each line
+    char* saveptr = NULL;
+    char* line = strtok_r(textCopy, "\n", &saveptr);
+    while (line) {
+        SDL_Surface* surf = TTF_RenderText_Blended(font, line, 0, color);
+        if (!surf) {
+            free(textCopy);
+            return SDL_APP_FAILURE;
+        }
+
+        SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+        if (!tex) {
+            SDL_DestroySurface(surf);
+            free(textCopy);
+            return SDL_APP_FAILURE;
+        }
+
+        SDL_Rect dst = {
+            .x = rect.x + (rect.w - surf->w) / 2,
+            .y = y,
+            .w = surf->w,
+            .h = surf->h
+        };
+
+        SDL_RenderTexture(renderer, tex, NULL, &RECT_TO_FRECT(dst));
+
+        y += lineHeight;
+
+        SDL_DestroySurface(surf);
+        SDL_DestroyTexture(tex);
+        line = strtok_r(NULL, "\n", &saveptr);
+    }
+
+    free(textCopy);
+    return SDL_APP_CONTINUE;
+}
+
+
+SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
+    SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, color, 0);
+    if (!textSurface) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_RenderText_Blended failed: %s\n", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+    if (!textTexture) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        SDL_DestroySurface(textSurface);
+        return SDL_APP_FAILURE;
+    }
+
+    // Centering the text from the baseline
+    int ascent = TTF_GetFontAscent(font);
+    SDL_Rect textRect = {
+    .x = rect.x + (rect.w - textSurface->w) / 2,
+    .y = rect.y + (rect.h - ascent) / 2,
+    .w = textSurface->w,
+    .h = textSurface->h
+    };
+    SDL_RenderTexture(renderer, textTexture, NULL, &RECT_TO_FRECT(textRect));
+    SDL_DestroySurface(textSurface);
+    SDL_DestroyTexture(textTexture);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_Rect rect) {
     if (!renderer || !baseFont || !textString) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter at " __FILE__);
         return SDL_APP_FAILURE;
@@ -26,7 +113,11 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
     }
 
     int textW = 0, textH = 0;
-    if (!TTF_GetStringSize(tempFont, textString, 0, &textW, &textH) || textW == 0 || textH == 0) {
+    bool sizeSuccess = false;
+    if (isTextMultiLine) sizeSuccess = TTF_GetStringSizeWrapped(tempFont, textString, 0, 0, &textW, &textH);
+    else sizeSuccess = TTF_GetStringSize(tempFont, textString, 0, &textW, &textH);
+
+    if (!sizeSuccess || textW == 0 || textH == 0) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_GetTextSize failed: %s\n", SDL_GetError());
         goto end;
     }
@@ -46,32 +137,16 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
     }
 
     // Drawing the text centered
-    SDL_Surface* textSurface = TTF_RenderText_Blended(tempFont, textString, 0, color);
-    if (!textSurface) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_RenderText_Blended failed: %s\n", SDL_GetError());
-        goto end;
+    SDL_AppResult result;
+    if (isTextMultiLine) {
+        result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
+    } else {
+        result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect);
     }
-    SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (!textTexture) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
-        goto end;
-    }
-
-    // Centering the text from the baseline
-    int ascent = TTF_GetFontAscent(tempFont);
-    SDL_Rect textRect = {
-    .x = rect.x + (rect.w - textSurface->w) / 2,
-    .y = rect.y + (rect.h - ascent) / 2,
-    .w = textSurface->w,
-    .h = textSurface->h
-    };
-    SDL_RenderTexture(renderer, textTexture, NULL, &RECT_TO_FRECT(textRect));
-    SDL_DestroySurface(textSurface);
-    SDL_DestroyTexture(textTexture);
 
 end:
     TTF_CloseFont(tempFont);
-    return SDL_APP_CONTINUE;
+    return result;
 }
 
 
@@ -119,9 +194,9 @@ SDL_AppResult renderButton(SDL_Rect rect, App* app, int hoverIndex, const char* 
     }
 
     // Render button text
-    return renderTextCenteredToFit(renderer, font, text, textColor, rect);
+    return renderTextCenteredToFit(renderer, font, text, false, textColor, rect);
 }
 
 SDL_AppResult renderCredits(SDL_Rect rect, App* app) {
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, CREDIT_COLOR, rect);
+    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect);
 }

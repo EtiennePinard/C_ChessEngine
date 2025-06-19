@@ -117,14 +117,14 @@ SDL_AppResult renderBlackClock(SDL_Rect blackClockRect, App* app) {
     char buffer[16];
 
     if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.black.timeControl.timeLeft, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, blackClockRect);
+    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, false, WHITE_COLOR, blackClockRect);
 }
 
 SDL_AppResult renderWhiteClock(SDL_Rect whiteClockRect, App* app) {
     char buffer[16];
 
     if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.timeControl.timeLeft, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, whiteClockRect);
+    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, false, WHITE_COLOR, whiteClockRect);
 }
 
 SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
@@ -187,18 +187,15 @@ SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (!data->promotionSettings.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
-    // Chessboard dimensions
     int squareSize = boardRect.w / BOARD_LENGTH;
     SDL_Rect overlayRect = calculatePromotionRect(data, boardRect);
     data->promotionSettings.overlayRect = overlayRect;
 
-    // Render overlay background
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); // Light gray background
+    SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
     SDL_RenderFillRect(renderer, &RECT_TO_FRECT(overlayRect));
 
-    // Draw borders for better visibility
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
+    SDL_SetRenderDrawColor(renderer, BLACK_COLOR.r, BLACK_COLOR.g, BLACK_COLOR.b, BLACK_COLOR.a);
     SDL_RenderRect(renderer, &RECT_TO_FRECT(overlayRect));
 
     // Render piece textures
@@ -255,14 +252,56 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
     if (!data->state.gameEndedSettings.renderOverlay) return SDL_APP_CONTINUE;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); // Light gray background
+    SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
     SDL_RenderFillRect(renderer, &RECT_TO_FRECT(overlayRect));
 
-    // Draw borders for better visibility
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
+    SDL_SetRenderDrawColor(renderer, BLACK_COLOR.r, BLACK_COLOR.g, BLACK_COLOR.b, BLACK_COLOR.a);
     SDL_RenderRect(renderer, &RECT_TO_FRECT(overlayRect));
 
-    return SDL_APP_CONTINUE;
+    char text[31];
+
+    switch (data->state.gameEndedSettings.result) {
+    case GAME_IS_NOT_DONE:
+        memcpy(text, "Game is on!", 12);
+        break;
+    case THREE_MOVE_REPETITION:
+        memcpy(text, "Draw by\n repetition", 20);
+        break;
+    case STALEMATE:
+        memcpy(text, "Stalemate", 10);
+        break;
+    case INSUFFICIENT_MATERIAL:
+        memcpy(text, "Draw by\ninsufficient material", 30);
+        break;
+    case FIFTY_MOVE_RULE:
+        memcpy(text, "Draw by\nfifty move rule", 24);
+        break;
+    case WHITE_WON_CHECKMATE:
+        memcpy(text, "White won\nby checkmate", 23);
+        break;
+    case BLACK_WON_CHECKMATE:
+        memcpy(text, "Black won\nby checkmate", 23);
+        break;
+    case WHITE_WON_ON_TIME:
+        memcpy(text, "White won\non time", 18);
+        break;
+    case BLACK_WON_ON_TIME:
+        memcpy(text, "Black won\non time", 18);
+        break;
+    default:
+        memcpy(text, "Error on switch", 16);
+        break;
+    }
+
+    const int overlayPadding = overlayRect.w / 16;
+    SDL_Rect textRect = (SDL_Rect){
+        overlayRect.x + overlayPadding,
+        overlayRect.y + overlayPadding,
+        overlayRect.w - 2 * overlayPadding,
+        overlayRect.h - 2 * overlayPadding
+    };
+
+    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, true, BLACK_COLOR, textRect);
 }
 
 #define BOARD_SIZE_PERCENT (0.8f)

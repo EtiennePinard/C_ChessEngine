@@ -67,7 +67,7 @@ SDL_AppResult renderTimeControlLabel(SDL_Rect rect, App* app) {
         return SDL_APP_FAILURE;
     }
     TTF_SetFontStyle(tempFont, TTF_STYLE_BOLD);
-    SDL_AppResult result = renderTextCenteredToFit(app->state.sdlState.renderer, tempFont, "Time Control", BUTTON_TEXT_COLOR, rect);
+    SDL_AppResult result = renderTextCenteredToFit(app->state.sdlState.renderer, tempFont, "Time Control", false, BUTTON_TEXT_COLOR, rect);
     TTF_CloseFont(tempFont);
     return result;
 }
@@ -147,6 +147,7 @@ SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
                 renderer,
                 font,
                 buffer,
+                false,
                 textColor,
                 optionRect
             );

@@ -87,7 +87,7 @@ bool initializeApp(App* app) {
     mainMenu->timeControlSettings.selectModalVisible = false;
     mainMenu->timeControlSettings.hovered = (TimeControl){ 0, 0 };
 
-    const char* kingImages[2] = { WHITE_KING, BLACK_KING };
+    const char* kingImages[2] = { WHITE_KING_IMG_PATH, BLACK_KING_IMG_PATH };
     if (!initializeTextures(&mainMenu->textures, 2) ||
         !loadImageFromFilePath(&app->state.sdlState, &mainMenu->textures, kingImages, 2)) {
         return false;

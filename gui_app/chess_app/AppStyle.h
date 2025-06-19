@@ -15,6 +15,8 @@
 #define PROMOTION_HIGHLIGHT_COLOR ((SDL_Color) { 80, 80, 120, 128 })
 #define CLICKED_SQUARE_COLOR PROMOTION_HIGHLIGHT_COLOR // ((SDL_Color) {180, 169, 20, 255}) // Dark Yellow
 
+#define OVERLAY_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray background
+
 #define BUTTON_BORDER_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray
 #define BUTTON_BG_COLOR ((SDL_Color) {0, 102, 204, 255})      // Dark blue
 #define BUTTON_HIGHLIGHT_COLOR ((SDL_Color){ 80, 80, 120, 255 })  // Bright gray

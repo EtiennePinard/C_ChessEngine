@@ -208,6 +208,12 @@ static SDL_Thread* playBotMove(GameState* gameState) {
 //     }
 // }
 
+void clickedWhenGameIsDone(App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    data->state.gameEndedSettings.renderOverlay = false;
+    app->state.currentScene.shouldRender = true;
+}
+
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRect, App* app) {
     (void)boardRect;
 
@@ -224,11 +230,11 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
     }
 
     SDL_Rect overlayRect = data->promotionSettings.overlayRect;
-    
+
     SDL_Point mousePoint = { (int)event->button.x, (int)event->button.y };
     // If we are not in the promotion overlay simply continue the app
     if (!SDL_PointInRect(&mousePoint, &overlayRect)) return SDL_APP_CONTINUE;
-    
+
     Move move = NULL_MOVE;
     int squareSize = (STARTING_WINDOW_WIDTH * 2 / 3) / BOARD_LENGTH;
     int relativeX = ((int)event->button.x) - overlayRect.x;
@@ -262,10 +268,10 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
         SDL_DetachThread(thread);
     }
     data->promotionSettings.renderPromotionOverlay = false;
-    
+
     app->state.currentScene.selectedRenderBoxIndex = CHESSBOARD;
     app->events.lockSelectedBoxIndex = false;
-    
+
     app->state.currentScene.shouldRender = true;
     return SDL_APP_CONTINUE;
 }
@@ -315,7 +321,10 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // The game is done
+    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) {
+        clickedWhenGameIsDone(app);
+        return SDL_APP_CONTINUE;
+    }
 
     Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
 
@@ -351,7 +360,10 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // Game is done
+    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) {
+        clickedWhenGameIsDone(app);
+        return SDL_APP_CONTINUE;
+    }
 
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);

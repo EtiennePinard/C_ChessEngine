@@ -11,24 +11,24 @@
 #define APP_AUTHOR "Etienne Pinard"
 #define CREDIT_TEXT ("Version " APP_VERSION " by " APP_AUTHOR)
 
-#define WHITE_PAWN ("./assets/png/white_pawn.png")
-#define WHITE_KNIGHT ("./assets/png/white_knight.png")
-#define WHITE_BISHOP ("./assets/png/white_bishop.png")
-#define WHITE_ROOK ("./assets/png/white_rook.png")
-#define WHITE_QUEEN ("./assets/png/white_queen.png") 
-#define WHITE_KING ("./assets/png/white_king.png")
-#define BLACK_PAWN ("./assets/png/black_pawn.png")
-#define BLACK_KNIGHT ("./assets/png/black_knight.png")
-#define BLACK_BISHOP ("./assets/png/black_bishop.png")
-#define BLACK_ROOK ("./assets/png/black_rook.png")
-#define BLACK_QUEEN ("./assets/png/black_queen.png") 
-#define BLACK_KING ("./assets/png/black_king.png")
-
 #define STARTING_WINDOW_WIDTH 800
 #define STARTING_WINDOW_HEIGHT 850
 #define DEFAULT_FONT_SIZE (20.0f)
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
 #define TITLE ("Chess")
+
+#define WHITE_PAWN_IMG_PATH ("./assets/png/white_pawn.png")
+#define WHITE_KNIGHT_IMG_PATH ("./assets/png/white_knight.png")
+#define WHITE_BISHOP_IMG_PATH ("./assets/png/white_bishop.png")
+#define WHITE_ROOK_IMG_PATH ("./assets/png/white_rook.png")
+#define WHITE_QUEEN_IMG_PATH ("./assets/png/white_queen.png") 
+#define WHITE_KING_IMG_PATH ("./assets/png/white_king.png")
+#define BLACK_PAWN_IMG_PATH ("./assets/png/black_pawn.png")
+#define BLACK_KNIGHT_IMG_PATH ("./assets/png/black_knight.png")
+#define BLACK_BISHOP_IMG_PATH ("./assets/png/black_bishop.png")
+#define BLACK_ROOK_IMG_PATH ("./assets/png/black_rook.png")
+#define BLACK_QUEEN_IMG_PATH ("./assets/png/black_queen.png") 
+#define BLACK_KING_IMG_PATH ("./assets/png/black_king.png")
 
 #define DEFAULT_TIME_CONTROL ((TimeControl) { .increment = (TimeControl_MS) (5 * 60 * 1000), .timeLeft = (TimeControl_MS) (0) })
 

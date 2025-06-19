@@ -9,11 +9,12 @@
  * @param renderer The renderer to draw the text to
  * @param font The font to use for drawing the text
  * @param text The text to draw
+ * @param isTextMultiLine If the text is a multi-line string
  * @param color The color of the text
  * @param rect The rectangle to fit the text into
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect);
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_Rect rect);
 
 /**
  * @brief Formats the time in the min:sec format and writes it to a buffer

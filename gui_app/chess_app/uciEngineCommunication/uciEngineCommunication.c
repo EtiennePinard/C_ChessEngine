@@ -78,7 +78,7 @@ EngineCommunication* UCIEngine_initialize(const char *enginePath, const char* lo
 #endif
     if (!engineCommunication) return NULL;
 
-    if (!sendUCICommand(engineCommunication) || sendIsReadyCommand(engineCommunication)) {
+    if (!sendUCICommand(engineCommunication) || !sendIsReadyCommand(engineCommunication)) {
         free(engineCommunication);
         return NULL;
     } 

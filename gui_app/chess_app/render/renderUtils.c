@@ -9,7 +9,6 @@
 SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
     if (!renderer || !font || !text) return SDL_APP_FAILURE;
 
-    // Clone the input string to safely tokenize it
     char* textCopy = strdup(text);
     if (!textCopy) return SDL_APP_FAILURE;
 
@@ -22,7 +21,6 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
     }
     numLines++; // at least one line
 
-    // Calculate vertical offset for centering the block
     int totalTextHeight = numLines * lineHeight;
     int y = rect.y + (rect.h - totalTextHeight) / 2;
 
@@ -62,7 +60,6 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
     free(textCopy);
     return SDL_APP_CONTINUE;
 }
-
 
 SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
     SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, color, 0);
@@ -149,7 +146,6 @@ end:
     return result;
 }
 
-
 SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
     if (!output || outputSize < 6) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 6 at " __FILE__);
@@ -175,7 +171,7 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
     u32 secondsTL = totalSeconds % 60;
     totalSeconds = timeControl.increment / 1000;
     u32 secondsIN = totalSeconds % 60;
-    // Format the string as "m:ss | s"
+    // Format the string as "m:ss + s"
     snprintf(output, outputSize, "%u:%02u + %u", minutesTL, secondsTL, secondsIN);
     return SDL_APP_CONTINUE;
 }

@@ -96,6 +96,7 @@ bool loadMainMenuConfigFromFile(FILE* file, GameSettings* data) {
     size_t nbTokens;
 
     while ((line = portableSubsetGetLine(file)) != NULL) {
+        size_t read = strlen(line);
         nbTokens = string_removeUnecessarySpacesAndTabs(line);
         char* tokens_arr[nbTokens];
         tokens.length = nbTokens;
@@ -105,7 +106,6 @@ bool loadMainMenuConfigFromFile(FILE* file, GameSettings* data) {
         // ignore any empty lines
         if (tokens.length == 0) continue;
 
-        size_t read = strlen(line);
         // Check if the string starts with any of the character, else we ignore the line
         if (string_compareStrings(tokens.tokens[0], "white")) {
             if (!parsePlayer(&data->white, tokens, read)) goto end_of_parsing_file;
@@ -158,7 +158,12 @@ fallback:
 // Helper function
 bool writePlayerBlock(FILE* file, const char* label, bool isEngine, const char* path) {
     if (isEngine) {
-        if (fprintf(file, "%s true %s\n", label, path) < 0) return false;
+        if (path) {
+            if (fprintf(file, "%s true %s\n", label, path) < 0) return false;
+        }
+        else {
+            if (fprintf(file, "%s true\n", label) < 0) return false;
+        }
     }
     else {
         if (fprintf(file, "%s false\n", label) < 0) return false;

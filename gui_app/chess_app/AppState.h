@@ -66,6 +66,7 @@ typedef struct Player {
     TimeControl timeControl;
     
     struct EngineCommunication* engineCommunication;
+    SDL_AtomicInt isBotThinking;
 } Player;
 
 typedef struct PromotionSettings {
@@ -113,7 +114,6 @@ typedef struct GameSceneData {
 
     GameSettings gameSettings;
 } GameSceneData;
-
 
 typedef struct TimeControlSettings {
     TimeControl hovered;

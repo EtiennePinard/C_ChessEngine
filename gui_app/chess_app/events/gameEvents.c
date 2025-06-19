@@ -111,16 +111,19 @@ static inline void playMoveOnBoard(GameState* gameState, Move move) {
     }
 }
 
-static int botMove(void* data) {
-    GameState* gameState = (GameState*)data;
+static int botMove(void* app_pointer) {
+    App* app = (App*)app_pointer;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    GameState* gameState = &data->state;
+
     ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
         gameState->position :
         gameState->undoStates.previousStates[0];
-    Player currentPlayer = gameState->position.colorToGo == WHITE ? gameState->white : gameState->black;
-    SDL_assert(currentPlayer.engineCommunication != NULL);
+    Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
+    SDL_assert(currentPlayer->engineCommunication != NULL);
 
     Move botMove = UCIEngine_bestMoveTimed(
-        currentPlayer.engineCommunication,
+        currentPlayer->engineCommunication,
         startingPosition,
         gameState->movesPlayed,
         gameState->undoStates.previousStateIndex,
@@ -132,67 +135,60 @@ static int botMove(void* data) {
         // -1 // We don't have movesToGo for now
     );
 
-    botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
-
     if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->gameEndedSettings.result == GAME_IS_NOT_DONE) {
-        printf("ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
         exit(EXIT_FAILURE);
         return 1;
     }
 
+    botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
+    SDL_SetAtomicInt(&currentPlayer->isBotThinking, false);
+    
     playMoveOnBoard(gameState, botMove);
-
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, OTHER_THREAD_RERENDER);
+    
     return 0;
 }
 
-/**
- * @brief Plays a move chosen by the bot. This function takes
- * a long time and so it creates a thread to compute the bot
- * move. The pointer to this thread is returned, which means
- * it is the caller's responsibility to either wait for the
- * thread or detach it, depending if it needs to use the value
- * of the bot's move immediately. Use SDL_WaitThread(thread, NULL)
- * to wait for the thread or SDL_DetachThread(thread) to detach the
- * thread.
- *
- * IMPORTANT: The thread will modify the GameState, which means
- * that if you don't wait for the thread you cannot modify
- * the gameState will this thread has not finished since
- * it would create race conditions. To check if this
- * thread as finished from the gameState you can check if
- * its the player color to go. If it is the case, then
- * this function has finished executing.
- *
- * @param gameState The state of the game
- * @return SDL_Thread* The bot's thread
- */
-static SDL_Thread* playBotMove(GameState* gameState) {
-    SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", gameState);
+SDL_Thread* playBotMove(App* app) {
+    SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", app);
     if (thread == NULL) {
-        fprintf(stderr, "Failed to create thread: %s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create thread: %s\n", SDL_GetError());
+        return NULL;
     }
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
+    SDL_SetAtomicInt(&currentPlayer->isBotThinking, true);
     return thread;
 }
 
-// static void resetGame(GameState* gameState) {
-//     // If we are not already at the beginning go back to the beginning
-//     ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
-//         gameState->currentPosition :
-//         gameState->undoStates.previousStates[0];
-//     memcpy(&gameState->currentPosition, &startingPosition, sizeof(startingPosition));
-//     gameState->undoStates.previousStateIndex = 0;
-//     gameState->result = GAME_IS_NOT_DONE;
-//     gameState->blackRemainingTime = STARTING_TIME_MS;
-//     gameState->whiteRemainingTime = STARTING_TIME_MS;
-//     gameState->previousTick = SDL_GetTicks();
+SDL_AppResult resetGame(GameSceneData* data) {
+    GameState* gameState = &data->state;
+    // If we are not already at the beginning go back to the beginning
+    ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
+        gameState->position :
+        gameState->undoStates.previousStates[0];
+    memcpy(&gameState->position, &startingPosition, sizeof(startingPosition));
+    gameState->undoStates.previousStateIndex = 0;
+    gameState->gameEndedSettings.result = GAME_IS_NOT_DONE;
+    RepetitionTable_clear();
 
-//     // Resetting the engine's internal game
-//     // note: ucinewgame does not have a response
-//     UCIEngine_sendCommand("ucinewgame");
+    gameState->white.timeControl = data->gameSettings.timeControl;
+    if (data->gameSettings.white.isEngine) UCIEngine_sendCommand(gameState->white.engineCommunication, "ucinewgame");
 
-//     RepetitionTable_clear();
-// }
+    gameState->black.timeControl = data->gameSettings.timeControl;
+    if (data->gameSettings.black.isEngine) UCIEngine_sendCommand(gameState->black.engineCommunication, "ucinewgame");
+
+    gameState->previousTick = SDL_GetTicks();
+
+    return SDL_APP_CONTINUE;
+}
+
+void clickedWhenGameIsDone(App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    data->state.gameEndedSettings.renderOverlay = false;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+}
 
 // void clickedRestartButton(SDL_Event event, App app) {
 //     switch (event.type) {
@@ -207,12 +203,6 @@ static SDL_Thread* playBotMove(GameState* gameState) {
 //         break;
 //     }
 // }
-
-void clickedWhenGameIsDone(App* app) {
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    data->state.gameEndedSettings.renderOverlay = false;
-    app->state.currentScene.shouldRender = true;
-}
 
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRect, App* app) {
     (void)boardRect;
@@ -261,22 +251,16 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
     }
 
     playMoveOnBoard(&data->state, move);
-    // We will be playing a bot move if it is a bot's turn
-    Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
-    if (currentPlayer.engineCommunication != NULL) {
-        SDL_Thread* thread = playBotMove(&data->state);
-        SDL_DetachThread(thread);
-    }
     data->promotionSettings.renderPromotionOverlay = false;
 
     app->state.currentScene.selectedRenderBoxIndex = CHESSBOARD;
     app->events.lockSelectedBoxIndex = false;
 
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 
-void findAndPlayHumanMove(App* app, Square draggingTo) {
+SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     // Finding the valid moves of this position
     // We could cache this value if it really is that slow, but I don't think so
@@ -305,16 +289,11 @@ void findAndPlayHumanMove(App* app, Square draggingTo) {
             }
             else {
                 playMoveOnBoard(&data->state, move);
-                // We will be playing a bot move if it is a bot's turn
-                Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
-                if (currentPlayer.engineCommunication != NULL) {
-                    SDL_Thread* thread = playBotMove(&data->state);
-                    SDL_DetachThread(thread);
-                }
             }
             break;
         }
     }
+    return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app) {
@@ -345,9 +324,10 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     if (draggingTo != data->selectedPiece.from) {
         // We dragged the piece to a square other than its starting square
         // we are not dragging anymore and we find the move the player wants to play
-        findAndPlayHumanMove(app, draggingTo);
+        SDL_AppResult result = findAndPlayHumanMove(app, draggingTo);
+        if (result != SDL_APP_CONTINUE) return result;
         data->selectedPiece.isPieceSelected = false;
-        app->state.currentScene.shouldRender = true;
+        SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     }
     else {
         data->selectedPiece.isDragged = false;
@@ -384,7 +364,8 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
             data->selectedPiece.isDragged = true;
         }
         else {
-            findAndPlayHumanMove(app, draggingTo);
+            SDL_AppResult result = findAndPlayHumanMove(app, draggingTo);
+            if (result != SDL_APP_CONTINUE) return result;
             data->selectedPiece.isPieceSelected = false;
         }
     }
@@ -395,7 +376,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
         data->selectedPiece.isDragged = true;
     }
 
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 

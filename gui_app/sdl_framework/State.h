@@ -60,10 +60,16 @@ typedef struct SceneRender {
     SDL_Color renderDrawColor;
 } SceneRender;
 
+typedef enum RerenderValue {
+    NO_RERENDER = 0,
+    MAIN_THREAD_RERENDER = 1,
+    OTHER_THREAD_RERENDER = 2
+} RerenderValue;
+
 typedef struct Scene {
     SceneId sceneId;
     SceneRender sceneRender;
-    bool shouldRender;
+    SDL_AtomicInt shouldRender;
     int selectedRenderBoxIndex;
     void* data;
 } Scene;

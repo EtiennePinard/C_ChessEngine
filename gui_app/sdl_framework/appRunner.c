@@ -14,7 +14,7 @@ SDL_AppResult SDL_AppInit(void** globalAppObject, int argc, char** argv) {
 
     App* app = calloc(1, sizeof(App));
 
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, true);
     app->events.shouldHandleEvents = true;
     if (!initializeApp(app)) {
         return SDL_APP_FAILURE;

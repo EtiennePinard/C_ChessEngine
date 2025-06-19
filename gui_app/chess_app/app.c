@@ -14,6 +14,7 @@
 #include "uciEngineCommunication/UCIEngineCommunication.h"
 #include "render/GameScene.h"
 #include "render/MainMenu.h"
+#include "events/GameEvents.h"
 #include "Config.h"
 #include "AppState.h"
 
@@ -33,7 +34,7 @@ SDL_AppResult onWindowResize(App* app, SDL_Event* event) {
         break;
     default: break;
     }
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 
@@ -42,21 +43,30 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
     if (app->state.currentScene.sceneId != GAME_SCENE_ID) return SDL_APP_CONTINUE;
 
     // Updating the time controls using SDL_GetTicks
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data; 
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
 
     if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
-        app->state.currentScene.shouldRender = true;
+        SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         u64 currentTick = SDL_GetTicks();
         if (currentPlayer->timeControl.timeLeft <= currentTick - data->state.previousTick) {
             currentPlayer->timeControl.timeLeft = 0;
             data->state.gameEndedSettings.result = data->state.position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
-        } else {
+        }
+        else {
             currentPlayer->timeControl.timeLeft -= (currentTick - data->state.previousTick);
         }
         data->state.previousTick = currentTick;
-    }
 
+        // Playing the bot moves if the current player is a bot
+        // We do this here so that we don't have to deal with it in
+        // very game events which plays a move
+        if (currentPlayer->engineCommunication != NULL && !SDL_GetAtomicInt(&currentPlayer->isBotThinking)) {
+            SDL_Thread* thread = playBotMove(app);
+            if (!thread) return SDL_APP_FAILURE;
+            SDL_DetachThread(thread);
+        }
+    }
 
     return SDL_APP_CONTINUE;
 }

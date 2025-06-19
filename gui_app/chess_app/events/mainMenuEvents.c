@@ -7,6 +7,7 @@
 #include "../render/MainMenu.h"
 #include "../render/GameScene.h"
 #include "../Config.h"
+#include "GameEvents.h"
 #include "MainMenuEvents.h"
 
 SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_Rect rect, App* app) {
@@ -14,7 +15,7 @@ SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_Rect rect, App* a
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
     data->gameSettings.white.isEngine = !data->gameSettings.white.isEngine;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 
@@ -23,7 +24,7 @@ SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_Rect rect, App* a
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
     data->gameSettings.black.isEngine = !data->gameSettings.black.isEngine;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 
@@ -55,7 +56,7 @@ static void onWhiteEnginePathSelected(void* userdata, const char* const* filelis
 
     // Re-enabling events and rendering
     app->events.shouldHandleEvents = true;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     char* enginePath = onEnginePathSelected(filelist);
     if (!enginePath) return;
@@ -72,7 +73,7 @@ static void onBlackEnginePathSelected(void* userdata, const char* const* filelis
 
     // Re-enabling events and rendering
     app->events.shouldHandleEvents = true;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     char* enginePath = onEnginePathSelected(filelist);
     if (!enginePath) return;
@@ -97,7 +98,7 @@ SDL_AppResult clickedDownEnginePath(App* app, PlayerConfig player, SDL_DialogFil
 
     // Disabling events and rendering
     app->events.shouldHandleEvents = false;
-    app->state.currentScene.shouldRender = false;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, NO_RERENDER);
 
     return SDL_APP_CONTINUE;
 }
@@ -124,7 +125,7 @@ SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_Rect rect, App*
 
     app->state.currentScene.selectedRenderBoxIndex = TIME_CONTROL_MODAL;
     app->events.lockSelectedBoxIndex = true;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     return SDL_APP_CONTINUE;
 }
@@ -143,7 +144,7 @@ SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_Rect rect, App* 
 
     app->state.currentScene.selectedRenderBoxIndex = TIME_CONTROL_BUTTON;
     app->events.lockSelectedBoxIndex = false;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     return SDL_APP_CONTINUE;
 }
@@ -174,7 +175,7 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     gameData->state.undoStates.previousStateIndex = 0;
 
     gameData->state.movesPlayed = malloc(sizeof(Move) * gameData->state.undoStates.previousStateCapacity);
-    char* fenString = "k7/6P1/6K1/8/8/8/8/8 w - - 0 1";
+    char* fenString = INITIAL_FEN;
     if (!FenString_setChessPositionFromCopiedFenString(fenString, &gameData->state.position)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the position\n");
         return SDL_APP_FAILURE;
@@ -184,7 +185,8 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     if (mainMenuData->gameSettings.white.isEngine) {
         gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.white.enginePath, "uci_engine_log_white.txt");
         if (!gameData->state.white.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the engine at path `%s`\n", mainMenuData->gameSettings.white.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameSettings.white.enginePath);
+            free(mainMenuData->gameSettings.white.enginePath);
             return SDL_APP_FAILURE;
         }
         free(mainMenuData->gameSettings.white.enginePath);
@@ -197,7 +199,8 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     if (mainMenuData->gameSettings.black.isEngine) {
         gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.black.enginePath, "uci_engine_log_black.txt");
         if (!gameData->state.black.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the engine at path `%s`\n", mainMenuData->gameSettings.black.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameSettings.black.enginePath);
+            free(mainMenuData->gameSettings.black.enginePath);
             return SDL_APP_FAILURE;
         }
         free(mainMenuData->gameSettings.black.enginePath);
@@ -205,6 +208,9 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     else {
         gameData->state.black.engineCommunication = NULL;
     }
+
+    gameData->promotionSettings.renderPromotionOverlay = false;
+    gameData->state.gameEndedSettings.renderOverlay = false;
 
     gameData->gameSettings = mainMenuData->gameSettings;
 
@@ -214,12 +220,13 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     free(mainMenuData);
 
     app->state.currentScene.sceneId = GAME_SCENE_ID;
-    app->state.currentScene.shouldRender = true;
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     app->state.currentScene.data = gameData;
     computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
 
     app->events.mouseState.hoveredIndex = -1;
 
-    gameData->state.previousTick = SDL_GetTicks();
+    resetGame(gameData);
+
     return SDL_APP_CONTINUE;
 }

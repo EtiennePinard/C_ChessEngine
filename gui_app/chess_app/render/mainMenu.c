@@ -28,7 +28,7 @@ SDL_AppResult renderWhitePlayerTypeButton(SDL_Rect rect, App* app) {
 
 SDL_AppResult renderBlackPlayerTypeButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    const char* label = scene->gameSettings.white.isEngine ? "Engine" : "Human";
+    const char* label = scene->gameSettings.black.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, BLACK_PLAYER_TYPE, label);
 }
 
@@ -46,6 +46,7 @@ const char* getFilenameFromPath(const char* path) {
     return lastSlash ? lastSlash + 1 : path;
 }
 
+#include <stdio.h>
 SDL_AppResult renderWhiteEnginePathButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char* label = scene->gameSettings.white.isEngine ? scene->gameSettings.white.enginePath : "Human Player";

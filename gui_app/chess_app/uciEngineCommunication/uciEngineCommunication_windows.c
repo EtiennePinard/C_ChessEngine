@@ -142,8 +142,7 @@ EngineCommunication* UCIEngine_initialize_windows(const char* enginePath, const 
     BOOL success = CreateProcessA(
         NULL,
         commandLine,
-        NULL,
-        NULL,
+        NULL, NULL,
         TRUE,           // Inherit handles
         0,              // Creation flags
         NULL,

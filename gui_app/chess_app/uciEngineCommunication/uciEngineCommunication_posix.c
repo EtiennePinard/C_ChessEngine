@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include <signal.h>
@@ -35,37 +36,59 @@ EngineCommunication* UCIEngine_initialize_posix(const char* enginePath, const ch
     pid_t pid = 0;
     FileDescriptor inpipefd[2];
     FileDescriptor outpipefd[2];
+    FileDescriptor execStatusPipe[2]; // New pipe to detect exec failure
 
-    // Create pipes for communication
     returnOnFail(pipe(inpipefd), "Input pipe failed\n");
     returnOnFail(pipe(outpipefd), "Output pipe failed\n");
+    returnOnFail(pipe(execStatusPipe), "Exec status pipe failed\n");
 
     pid = fork();
     returnOnFail(pid == -1, "Fork failed\n");
 
     if (pid == 0) {
-        // Child process: set up to run the UCI engine
-        dup2(outpipefd[PIPE_READ_INDEX], STDIN_FILENO);  // Read from parent's outpipefd
-        dup2(inpipefd[PIPE_WRITE_INDEX], STDOUT_FILENO); // Write to parent's inpipefd
-        dup2(inpipefd[PIPE_WRITE_INDEX], STDERR_FILENO); // Redirect stderr as well
+        // Child process
+        close(execStatusPipe[0]); // Close read end
 
-        // Ensure the child receives SIGTERM if the parent dies
+        // Set close-on-exec on the write end
+        fcntl(execStatusPipe[1], F_SETFD, FD_CLOEXEC);
+
+        dup2(outpipefd[PIPE_READ_INDEX], STDIN_FILENO);
+        dup2(inpipefd[PIPE_WRITE_INDEX], STDOUT_FILENO);
+        dup2(inpipefd[PIPE_WRITE_INDEX], STDERR_FILENO);
+
         prctl(PR_SET_PDEATHSIG, SIGTERM);
 
-        // Close unused pipe ends in the child process
         close(outpipefd[PIPE_WRITE_INDEX]);
         close(inpipefd[PIPE_READ_INDEX]);
 
-        // Launch the engine
-        if (execl(enginePath, enginePath, (char*)NULL) == -1) {
-            perror("execl failed");
-        }
+        execl(enginePath, enginePath, (char*)NULL);
 
-        // exit the child process when execl returns
+        // If we reach here, execl failed
+        perror("execl failed");
+        write(execStatusPipe[1], "x", 1); // Write a byte to indicate failure
+        close(execStatusPipe[1]);
         exit(EXIT_FAILURE);
     }
 
     // Parent process
+    close(execStatusPipe[1]); // Close write end
+
+    // Check if child reported exec failure
+    char buf;
+    ssize_t n = read(execStatusPipe[0], &buf, 1);
+    close(execStatusPipe[0]);
+
+    if (n > 0) {
+        // Child failed to exec
+        fprintf(stderr, "ERROR: Child process failed to exec the engine\n");
+        close(inpipefd[PIPE_READ_INDEX]);
+        close(outpipefd[PIPE_WRITE_INDEX]);
+        waitpid(pid, NULL, 0); // Reap zombie child
+        free(engineCommunication);
+        return NULL;
+    }
+
+    // Continue as normal
     close(outpipefd[PIPE_READ_INDEX]);
     close(inpipefd[PIPE_WRITE_INDEX]);
 

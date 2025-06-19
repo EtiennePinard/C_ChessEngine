@@ -26,17 +26,17 @@ All insufficient material scenario are:
                 so I'll say it's draw
 */
 static inline bool insufficientMaterialScenario(const GameState* gameState) {
-    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->currentPosition.board);
+    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->position.board);
     int nbPieces = numBitSet_64(piecesBitBoard);
     if (nbPieces > 4) { return false; }
 
     u64 rooksPawnsQueens = piecesBitBoard & (
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(WHITE, QUEEN)) |
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(BLACK, QUEEN)) |
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(WHITE, ROOK)) |
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(BLACK, ROOK)) |
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(WHITE, PAWN)) |
-        Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(BLACK, PAWN))
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, QUEEN)) |
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, QUEEN)) |
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, ROOK)) |
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, ROOK)) |
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, PAWN)) |
+        Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, PAWN))
         );
 
     if (rooksPawnsQueens != (u64)0) {
@@ -49,8 +49,8 @@ static inline bool insufficientMaterialScenario(const GameState* gameState) {
         return true;
     }
 
-    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(WHITE, KNIGHT)));
-    int nbKBlackKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->currentPosition.board, Piece_makePiece(BLACK, KNIGHT)));
+    int nbKWhiteKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, KNIGHT)));
+    int nbKBlackKnights = numBitSet_64(piecesBitBoard & Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, KNIGHT)));
     if (nbKWhiteKnights != nbKBlackKnights) {
         // Handles case of two knights on either side and lone knight and lone bishop
         return true;
@@ -63,32 +63,32 @@ static inline bool insufficientMaterialScenario(const GameState* gameState) {
 static void computeGameEnd(GameState* gameState) {
     // This checking of the currentState is pretty much only useful for 
     // the bot running out of time
-    Player currentPlayer = gameState->currentPosition.colorToGo == WHITE ? gameState->white : gameState->black;
-    if (currentPlayer.remainingTime <= (TimeControl_MS)0) {
-        gameState->result = gameState->currentPosition.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+    Player currentPlayer = gameState->position.colorToGo == WHITE ? gameState->white : gameState->black;
+    if (currentPlayer.timeControl.timeLeft <= (TimeControl_MS)0) {
+        gameState->gameEndedSettings.result = gameState->position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
         return;
     }
 
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMove;
-    MoveHandler_getValidMoves(moves, &numMove, gameState->currentPosition);
+    MoveHandler_getValidMoves(moves, &numMove, gameState->position);
     if (numMove == 0) {
         if (MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck()) {
-            gameState->result = gameState->currentPosition.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
+            gameState->gameEndedSettings.result = gameState->position.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
         }
         else {
-            gameState->result = STALEMATE;
+            gameState->gameEndedSettings.result = STALEMATE;
         }
     }
-    else if (RepetitionTable_isKeyContainedTwiceInTable(gameState->currentPosition.key)) {
-        gameState->result = THREE_MOVE_REPETITION;
+    else if (RepetitionTable_isKeyContainedTwiceInTable(gameState->position.key)) {
+        gameState->gameEndedSettings.result = THREE_MOVE_REPETITION;
     }
-    else if (gameState->currentPosition.turnsForFiftyRule > 50) {
+    else if (gameState->position.turnsForFiftyRule > 50) {
         // TODO: Check this case out
-        gameState->result = FIFTY_MOVE_RULE;
+        gameState->gameEndedSettings.result = FIFTY_MOVE_RULE;
     }
     else if (insufficientMaterialScenario(gameState)) {
-        gameState->result = INSUFFICIENT_MATERIAL;
+        gameState->gameEndedSettings.result = INSUFFICIENT_MATERIAL;
     }
 }
 
@@ -98,22 +98,25 @@ static inline void playMoveOnBoard(GameState* gameState, Move move) {
         gameState->undoStates.previousStates = realloc(gameState->undoStates.previousStates, sizeof(GameState) * gameState->undoStates.previousStateCapacity);
         gameState->movesPlayed = realloc(gameState->movesPlayed, sizeof(Move) * gameState->undoStates.previousStateCapacity);
     }
-    gameState->undoStates.previousStates[gameState->undoStates.previousStateIndex] = gameState->currentPosition;
+    gameState->undoStates.previousStates[gameState->undoStates.previousStateIndex] = gameState->position;
     gameState->movesPlayed[gameState->undoStates.previousStateIndex] = move;
     gameState->undoStates.previousStateIndex++;
 
-    Player* currentPlayer = gameState->currentPosition.colorToGo == WHITE ? &gameState->white : &gameState->black;
-    currentPlayer->remainingTime += currentPlayer->increment;
-    MoveHandler_playMove(move, &gameState->currentPosition, true);
+    Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
+    currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
+    MoveHandler_playMove(move, &gameState->position, true);
     computeGameEnd(gameState);
+    if (gameState->gameEndedSettings.result != GAME_IS_NOT_DONE) {
+        gameState->gameEndedSettings.renderOverlay = true;
+    }
 }
 
 static int botMove(void* data) {
     GameState* gameState = (GameState*)data;
     ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
-        gameState->currentPosition :
+        gameState->position :
         gameState->undoStates.previousStates[0];
-    Player currentPlayer = gameState->currentPosition.colorToGo == WHITE ? gameState->white : gameState->black;
+    Player currentPlayer = gameState->position.colorToGo == WHITE ? gameState->white : gameState->black;
     SDL_assert(currentPlayer.engineCommunication != NULL);
 
     Move botMove = UCIEngine_bestMoveTimed(
@@ -129,9 +132,9 @@ static int botMove(void* data) {
         // -1 // We don't have movesToGo for now
     );
 
-    botMove = MoveHandler_correctMoveFlag(gameState->currentPosition, botMove);
+    botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
 
-    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->result == GAME_IS_NOT_DONE) {
+    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->gameEndedSettings.result == GAME_IS_NOT_DONE) {
         printf("ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
         exit(EXIT_FAILURE);
         return 1;
@@ -212,12 +215,11 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
     // If the overlay is not visible we don't do anything
     if (!data->promotionSettings.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
-    // This if statement is true when we trigger a promotion with two clicks
-    // If so we need to invalidate the first click to the promotion overlay since
-    // this first click is actually the second click of the pawn moving to the promotion square
-    if (data->selectedPiece.isDragged) {
+    // We need this if statement to invalidate the first click to the promotion overlay since
+    // this first click could be the second click of the pawn moving to the promotion square
+    if (data->selectedPiece.isPieceSelected) {
         // We are not holding the mouse button anymore
-        data->selectedPiece.isDragged = false;
+        data->selectedPiece.isPieceSelected = false;
         return SDL_APP_CONTINUE;
     }
 
@@ -254,7 +256,7 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
 
     playMoveOnBoard(&data->state, move);
     // We will be playing a bot move if it is a bot's turn
-    Player currentPlayer = data->state.currentPosition.colorToGo == WHITE ? data->state.white : data->state.black;
+    Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
     if (currentPlayer.engineCommunication != NULL) {
         SDL_Thread* thread = playBotMove(&data->state);
         SDL_DetachThread(thread);
@@ -274,7 +276,7 @@ void findAndPlayHumanMove(App* app, Square draggingTo) {
     // We could cache this value if it really is that slow, but I don't think so
     Move moves[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES];
     int numMoves;
-    MoveHandler_getValidMoves(moves, &numMoves, data->state.currentPosition);
+    MoveHandler_getValidMoves(moves, &numMoves, data->state.position);
 
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];
@@ -298,7 +300,7 @@ void findAndPlayHumanMove(App* app, Square draggingTo) {
             else {
                 playMoveOnBoard(&data->state, move);
                 // We will be playing a bot move if it is a bot's turn
-                Player currentPlayer = data->state.currentPosition.colorToGo == WHITE ? data->state.white : data->state.black;
+                Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
                 if (currentPlayer.engineCommunication != NULL) {
                     SDL_Thread* thread = playBotMove(&data->state);
                     SDL_DetachThread(thread);
@@ -313,14 +315,14 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // The game is done
+    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // The game is done
 
-    Player currentPlayer = data->state.currentPosition.colorToGo == WHITE ? data->state.white : data->state.black;
+    Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
 
     // We are dragging a piece from the opposite color. Also if gameScene.selectedPiece.draggedPiece 
     // is NOPIECE than Piece_color will evaluate to 0 and colorToGo cannot be 0 
     // Furthermore if the currentPlayer is an engine, let the engine think
-    if (data->state.currentPosition.colorToGo != Piece_color(data->selectedPiece.selectedPiece) || currentPlayer.engineCommunication != NULL) {
+    if (data->state.position.colorToGo != Piece_color(data->selectedPiece.selectedPiece) || currentPlayer.engineCommunication != NULL) {
         // Reset the dragging state
         memset(&data->selectedPiece, 0, sizeof(SelectedPiece));
         return SDL_APP_CONTINUE;
@@ -349,7 +351,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // Game is done
+    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE; // Game is done
 
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
@@ -361,8 +363,8 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
 
         // We are already "dragging" a piece
         Square draggingTo = squareFromxy((int)mouseX, (int)mouseY, data->flipBoard, rect);
-        Piece draggingToPiece = Board_pieceAtIndex(data->state.currentPosition.board, draggingTo);
-        Piece draggingFromPiece = Board_pieceAtIndex(data->state.currentPosition.board, data->selectedPiece.from);
+        Piece draggingToPiece = Board_pieceAtIndex(data->state.position.board, draggingTo);
+        Piece draggingFromPiece = Board_pieceAtIndex(data->state.position.board, data->selectedPiece.from);
         if (Piece_color(draggingToPiece) == Piece_color(draggingFromPiece)) {
             // The player does not want to move the piece
             data->selectedPiece.selectedPiece = draggingToPiece;
@@ -375,7 +377,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
         }
     }
     else {
-        data->selectedPiece.selectedPiece = Board_pieceAtIndex(data->state.currentPosition.board, square);
+        data->selectedPiece.selectedPiece = Board_pieceAtIndex(data->state.position.board, square);
         data->selectedPiece.from = square;
         data->selectedPiece.isPieceSelected = true;
         data->selectedPiece.isDragged = true;
@@ -394,10 +396,10 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
 //         ChessPosition previousPos = app.state.gameScene.state.undoStates.previousStates[--app.state.gameScene.state.undoStates.previousStateIndex];
 //         RepetitionTable_pop();
 //         if (previousPos.colorToGo == app.state.gameScene.state.playerColor) {
-//             app.state.gameScene.state.currentPosition = previousPos;
+//             app.state.gameScene.state.position = previousPos;
 //         }
 //         else {
-//             app.state.gameScene.state.currentPosition = app.state.gameScene.state.undoStates.previousStates[--app.state.gameScene.state.undoStates.previousStateIndex];
+//             app.state.gameScene.state.position = app.state.gameScene.state.undoStates.previousStates[--app.state.gameScene.state.undoStates.previousStateIndex];
 //             RepetitionTable_pop();
 //         }
 

@@ -87,7 +87,7 @@ black false
 timeControl 180000 2000
 
 */
-bool loadMainMenuConfigFromFile(FILE* file, MainMenuSceneData* data) {
+bool loadMainMenuConfigFromFile(FILE* file, GameSettings* data) {
     bool result = false;
     if (!file || !data) return result;
 
@@ -114,7 +114,7 @@ bool loadMainMenuConfigFromFile(FILE* file, MainMenuSceneData* data) {
             if (!parsePlayer(&data->black, tokens, read)) goto end_of_parsing_file;
         }
         else if (string_compareStrings(tokens.tokens[0], "timecontrol")) {
-            if (!parseTimeControl(&data->timeControl.selected, tokens)) goto end_of_parsing_file;
+            if (!parseTimeControl(&data->timeControl, tokens)) goto end_of_parsing_file;
         }
     }
 
@@ -124,7 +124,7 @@ end_of_parsing_file:
     return result;
 }
 
-void loadMainMenuConfig(MainMenuSceneData* data) {
+void loadMainMenuConfig(GameSettings* data) {
     char* basePath = SDL_GetPrefPath("Etienne", "ChessApp");
     if (!basePath) goto fallback;
 
@@ -152,7 +152,7 @@ fallback:
     data->black.isEngine = false;
     data->black.enginePath = NULL;
 
-    data->timeControl.selected = DEFAULT_TIME_CONTROL;
+    data->timeControl = DEFAULT_TIME_CONTROL;
 }
 
 // Helper function
@@ -166,7 +166,7 @@ bool writePlayerBlock(FILE* file, const char* label, bool isEngine, const char* 
     return true;
 }
 
-bool saveMainMenuConfig(const MainMenuSceneData* data) {
+bool saveMainMenuConfig(const GameSettings* data) {
     if (!data) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not save config data is NULL\n");
         return false;
@@ -194,8 +194,8 @@ bool saveMainMenuConfig(const MainMenuSceneData* data) {
     if (!writePlayerBlock(file, "white", data->white.isEngine, data->white.enginePath)) success = false;
     else if (!writePlayerBlock(file, "black", data->black.isEngine, data->black.enginePath)) success = false;
     else if (fprintf(file, "timecontrol %u %u\n",
-        data->timeControl.selected.timeLeft,
-        data->timeControl.selected.increment) < 0)
+        data->timeControl.timeLeft,
+        data->timeControl.increment) < 0)
         success = false;
 
     fclose(file);

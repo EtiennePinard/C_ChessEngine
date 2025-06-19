@@ -22,13 +22,13 @@ SDL_AppResult renderBlackKingImage(SDL_Rect rect, App* app) {
 
 SDL_AppResult renderWhitePlayerTypeButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    const char* label = scene->white.isEngine ? "Engine" : "Human";
+    const char* label = scene->gameSettings.white.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, WHITE_PLAYER_TYPE, label);
 }
 
 SDL_AppResult renderBlackPlayerTypeButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    const char* label = scene->black.isEngine ? "Engine" : "Human";
+    const char* label = scene->gameSettings.white.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, BLACK_PLAYER_TYPE, label);
 }
 
@@ -48,14 +48,14 @@ const char* getFilenameFromPath(const char* path) {
 
 SDL_AppResult renderWhiteEnginePathButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    char* label = scene->white.isEngine ? scene->white.enginePath : "Human Player";
+    char* label = scene->gameSettings.white.isEngine ? scene->gameSettings.white.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, WHITE_ENGINE_PATH, getFilenameFromPath(label));
 }
 
 SDL_AppResult renderBlackEnginePathButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    char* label = scene->black.isEngine ? scene->black.enginePath : "Human Player";
+    char* label = scene->gameSettings.black.isEngine ? scene->gameSettings.black.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, BLACK_ENGINE_PATH, getFilenameFromPath(label));
 }
@@ -75,7 +75,7 @@ SDL_AppResult renderTimeControlLabel(SDL_Rect rect, App* app) {
 SDL_AppResult renderTimeControlButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char buffer[11];
-    formatTimeControl(scene->timeControl.selected, buffer, 11);
+    formatTimeControl(scene->gameSettings.timeControl, buffer, 11);
     return renderButton(rect, app, TIME_CONTROL_BUTTON, buffer);
 }
 
@@ -101,8 +101,8 @@ const TimeControl timeControlOptions[NUM_TIME_CONTROL_STYLE][NUM_TIME_CONTROL_OP
 
 SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    if (!scene->timeControl.selectModalVisible) return SDL_APP_CONTINUE;
-    scene->timeControl.hovered = (TimeControl){ 0, 0 };
+    if (!scene->timeControlSettings.selectModalVisible) return SDL_APP_CONTINUE;
+    scene->timeControlSettings.hovered = (TimeControl){ 0, 0 };
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
@@ -139,7 +139,7 @@ SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
                 SDL_PointInRect(&mousePoint, &optionRect)) {
                 SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
                 SDL_RenderFillRect(renderer, &RECT_TO_FRECT(optionRect));
-                scene->timeControl.hovered = timeControl;
+                scene->timeControlSettings.hovered = timeControl;
             }
             char buffer[11];
             formatTimeControl(timeControl, buffer, 11);

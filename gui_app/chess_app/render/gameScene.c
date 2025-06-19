@@ -88,9 +88,9 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         }
 
         // Don't render the dragged pieces at their position and at the mouse coordinates
-        if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->state.result == GAME_IS_NOT_DONE) continue;
+        if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) continue;
 
-        Piece piece = Board_pieceAtIndex(data->state.currentPosition.board, squareIndex);
+        Piece piece = Board_pieceAtIndex(data->state.position.board, squareIndex);
         if (piece != NOPIECE) {
             SDL_Rect pieceRect = { squareRect.x, squareRect.y, squareSize, squareSize };
             SDL_FRect pieceFRect = RECT_TO_FRECT(pieceRect);
@@ -100,7 +100,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     }
 
     if (doRenderDraggedPiece) {
-        if (data->state.result == GAME_IS_NOT_DONE) {
+        if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
             float mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
             renderDraggedPiece(app->state.sdlState.renderer, data, squareSize, (int)mouseX, (int)mouseY, boardRect);
@@ -116,14 +116,14 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
 SDL_AppResult renderBlackClock(SDL_Rect blackClockRect, App* app) {
     char buffer[16];
 
-    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.black.remainingTime, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.black.timeControl.timeLeft, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, blackClockRect);
 }
 
 SDL_AppResult renderWhiteClock(SDL_Rect whiteClockRect, App* app) {
     char buffer[16];
 
-    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.remainingTime, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.timeControl.timeLeft, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, whiteClockRect);
 }
 
@@ -202,7 +202,7 @@ SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
     SDL_RenderRect(renderer, &RECT_TO_FRECT(overlayRect));
 
     // Render piece textures
-    PieceCharacteristics colorToPromote = Piece_color(Board_pieceAtIndex(data->state.currentPosition.board, data->promotionSettings.promotionSquareFrom));
+    PieceCharacteristics colorToPromote = Piece_color(Board_pieceAtIndex(data->state.position.board, data->promotionSettings.promotionSquareFrom));
     int indexOffSet = colorToPromote == WHITE ? 9 : 11;
     SDL_Texture* textures[NB_PROMOTION_TYPE];
     textures[0] = data->textures.data[Piece_makePiece(colorToPromote, QUEEN) - indexOffSet].texture;
@@ -250,12 +250,27 @@ SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    if (!data->state.gameEndedSettings.renderOverlay) return SDL_APP_CONTINUE;
+
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); // Light gray background
+    SDL_RenderFillRect(renderer, &RECT_TO_FRECT(overlayRect));
+
+    // Draw borders for better visibility
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Black border
+    SDL_RenderRect(renderer, &RECT_TO_FRECT(overlayRect));
+
+    return SDL_APP_CONTINUE;
+}
 
 #define BOARD_SIZE_PERCENT (0.8f)
 #define CLOCK_HEIGHT_PERCENT (0.07f)
 #define CLOCK_WIDTH_PERCENT (0.1f)
 #define GAME_BUTTON_HEIGHT_PERCENT CLOCK_HEIGHT_PERCENT
 #define GAME_BUTTON_WIDTH_PERCENT CLOCK_WIDTH_PERCENT
+#define GAME_ENDED_SIZE (0.35f)
 
 void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     SceneRender* sceneRender = &scene->sceneRender;
@@ -287,7 +302,18 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[CHESSBOARD].onMouseButtonDown = &chessBoardMouseButtonDown;
     sceneRender->renderBoxes[CHESSBOARD].onMouseButtonUp = &chessBoardMouseButtonUp;
 
-    const int clockX = boardX + boardSize / 2;
+    // Adding the gameEnded overlay
+    const int gameEndedSize = (int)(GAME_ENDED_SIZE * boardSize);
+    SDL_Rect gameEndedRect = (SDL_Rect){
+        boardX + (boardSize - gameEndedSize) / 2,
+        boardY + (boardSize - gameEndedSize) / 2,
+        gameEndedSize,
+        gameEndedSize
+    };
+    sceneRender->renderBoxes[GAME_ENDED_OVERLAY].renderRect = gameEndedRect;
+    sceneRender->renderBoxes[GAME_ENDED_OVERLAY].renderFunction = &renderGameEndedOverlay;
+
+    const int clockX = boardX + (boardSize - clockWidth) / 2;
     const int blackClockY = data->flipBoard ? boardY + boardSize + padding : padding;
     SDL_Rect blackClockRect = (SDL_Rect){
         clockX,

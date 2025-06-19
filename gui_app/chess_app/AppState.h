@@ -57,9 +57,13 @@ typedef struct UndoGameStates {
     int previousStateIndex;
 } UndoGameStates;
 
-typedef struct Player {
-    TimeControl_MS remainingTime;
+typedef struct TimeControl {
+    TimeControl_MS timeLeft;
     TimeControl_MS increment;
+} TimeControl;
+
+typedef struct Player {
+    TimeControl timeControl;
     
     struct EngineCommunication* engineCommunication;
 } Player;
@@ -71,8 +75,13 @@ typedef struct PromotionSettings {
     SDL_Rect overlayRect;
 } PromotionSettings;
 
+typedef struct GameEndedSettings {
+    bool renderOverlay;
+    GameResult result;
+} GameEndedSettings;
+
 typedef struct GameState {
-    ChessPosition currentPosition;
+    ChessPosition position;
     Player white;
     Player black;
     
@@ -80,9 +89,20 @@ typedef struct GameState {
     
     UndoGameStates undoStates;
     Move* movesPlayed;
-    
-    GameResult result;
+
+    GameEndedSettings gameEndedSettings;
 } GameState;
+
+typedef struct PlayerConfig {
+    bool isEngine;
+    char* enginePath;
+} PlayerConfig;
+
+typedef struct GameSettings {
+    PlayerConfig white;
+    PlayerConfig black;
+    TimeControl timeControl;
+} GameSettings;
 
 typedef struct GameSceneData {
     Textures textures;
@@ -90,29 +110,19 @@ typedef struct GameSceneData {
     SelectedPiece selectedPiece;
     PromotionSettings promotionSettings;
     bool flipBoard;
+
+    GameSettings gameSettings;
 } GameSceneData;
 
-typedef struct TimeControl {
-    TimeControl_MS timeLeft;
-    TimeControl_MS increment;
-} TimeControl;
 
 typedef struct TimeControlSettings {
     TimeControl hovered;
-    TimeControl selected;
     bool selectModalVisible;
 } TimeControlSettings;
 
-typedef struct PlayerConfig {
-    bool isEngine;
-    char* enginePath;
-} PlayerConfig;
-
 typedef struct MainMenuSceneData {
-    PlayerConfig white;
-    PlayerConfig black;
-
-    TimeControlSettings timeControl;
+    GameSettings gameSettings;
+    TimeControlSettings timeControlSettings;
 
     Textures textures;
 } MainMenuSceneData;

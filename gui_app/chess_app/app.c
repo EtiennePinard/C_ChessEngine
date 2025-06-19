@@ -43,16 +43,16 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
 
     // Updating the time controls using SDL_GetTicks
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data; 
-    Player* currentPlayer = data->state.currentPosition.colorToGo == WHITE ? &data->state.white : &data->state.black;
+    Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
 
-    if (data->state.result == GAME_IS_NOT_DONE) {
+    if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
         app->state.currentScene.shouldRender = true;
         u64 currentTick = SDL_GetTicks();
-        if (currentPlayer->remainingTime <= currentTick - data->state.previousTick) {
-            currentPlayer->remainingTime = 0;
-            data->state.result = data->state.currentPosition.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+        if (currentPlayer->timeControl.timeLeft <= currentTick - data->state.previousTick) {
+            currentPlayer->timeControl.timeLeft = 0;
+            data->state.gameEndedSettings.result = data->state.position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
         } else {
-            currentPlayer->remainingTime -= (currentTick - data->state.previousTick);
+            currentPlayer->timeControl.timeLeft -= (currentTick - data->state.previousTick);
         }
         data->state.previousTick = currentTick;
     }
@@ -83,9 +83,9 @@ bool initializeApp(App* app) {
 
     printf("Initializing Main Menu Scene... ");
     MainMenuSceneData* mainMenu = calloc(1, sizeof(MainMenuSceneData));
-    loadMainMenuConfig(mainMenu);
-    mainMenu->timeControl.selectModalVisible = false;
-    mainMenu->timeControl.hovered = (TimeControl){ 0, 0 };
+    loadMainMenuConfig(&mainMenu->gameSettings);
+    mainMenu->timeControlSettings.selectModalVisible = false;
+    mainMenu->timeControlSettings.hovered = (TimeControl){ 0, 0 };
 
     const char* kingImages[2] = { WHITE_KING, BLACK_KING };
     if (!initializeTextures(&mainMenu->textures, 2) ||

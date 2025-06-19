@@ -186,10 +186,8 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
         gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.white.enginePath, "uci_engine_log_white.txt");
         if (!gameData->state.white.engineCommunication) {
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameSettings.white.enginePath);
-            free(mainMenuData->gameSettings.white.enginePath);
             return SDL_APP_FAILURE;
         }
-        free(mainMenuData->gameSettings.white.enginePath);
     }
     else {
         gameData->state.white.engineCommunication = NULL;
@@ -200,10 +198,8 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
         gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.black.enginePath, "uci_engine_log_black.txt");
         if (!gameData->state.black.engineCommunication) {
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameSettings.black.enginePath);
-            free(mainMenuData->gameSettings.black.enginePath);
             return SDL_APP_FAILURE;
         }
-        free(mainMenuData->gameSettings.black.enginePath);
     }
     else {
         gameData->state.black.engineCommunication = NULL;

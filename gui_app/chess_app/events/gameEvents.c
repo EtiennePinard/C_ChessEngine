@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../sdl_framework/EventHandler.h"
+#include "../../sdl_framework/AppCleanup.h"
+#include "../../sdl_framework/AppInit.h"
 
 #include "../../../engine/src/state/Board.h"
 #include "../../../engine/src/state/Move.h"
@@ -13,6 +14,7 @@
 
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
 #include "../render/GameScene.h"
+#include "../render/MainMenu.h"
 #include "GameEvents.h"
 
 /*
@@ -191,8 +193,8 @@ void clickedWhenGameIsDone(App* app) {
 }
 
 SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app) {
-    (void) event;
-    (void) rect;
+    (void)event;
+    (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) clickedWhenGameIsDone(app);
     resetGame(data);
@@ -396,3 +398,40 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
 //         break;
 //     }
 // }
+
+SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
+    (void)event;
+    (void)rect;
+
+    MainMenuSceneData* mainMenuData = calloc(1, sizeof(MainMenuSceneData));
+    GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
+
+    mainMenuData->gameSettings = gameData->gameSettings;
+    mainMenuData->timeControlSettings.selectModalVisible = false;
+    mainMenuData->timeControlSettings.hovered = (TimeControl){ 0, 0 };
+
+    const char* kingImages[2] = { WHITE_KING_IMG_PATH, BLACK_KING_IMG_PATH };
+    if (!initializeTextures(&mainMenuData->textures, 2) ||
+        !loadImageFromFilePath(&app->state.sdlState, &mainMenuData->textures, kingImages, 2)) {
+        return false;
+    }
+
+    if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
+    if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
+
+    free(gameData->state.undoStates.previousStates);
+    free(gameData->state.movesPlayed);
+    cleanupTextures(gameData->textures);
+    free(gameData->textures.data);
+
+    free(gameData);
+
+    app->state.currentScene.data = mainMenuData;
+    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
+    app->state.currentScene.selectedRenderBoxIndex = -1;
+    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+
+    return SDL_APP_CONTINUE;
+}

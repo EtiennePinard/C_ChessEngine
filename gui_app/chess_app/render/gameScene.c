@@ -402,6 +402,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[BACK_BUTTON].renderFunction = &renderBackButton;
     sceneRender->renderBoxes[BACK_BUTTON].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[BACK_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[BACK_BUTTON].onMouseButtonDown = &clickedDownBackButton;
 
     SDL_Rect restartButtonRect = (SDL_Rect){
         boardX,

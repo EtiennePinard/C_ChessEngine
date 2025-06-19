@@ -143,10 +143,10 @@ static int botMove(void* app_pointer) {
 
     botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
     SDL_SetAtomicInt(&currentPlayer->isBotThinking, false);
-    
+
     playMoveOnBoard(gameState, botMove);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, OTHER_THREAD_RERENDER);
-    
+
     return 0;
 }
 
@@ -190,19 +190,14 @@ void clickedWhenGameIsDone(App* app) {
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 }
 
-// void clickedRestartButton(SDL_Event event, App app) {
-//     switch (event.type) {
-//     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-//         resetGame(&app.state.gameScene.state);
-//         if (app.state.gameScene.state.currentPosition.colorToGo != app.state.gameScene.state.playerColor) {
-//             SDL_Thread* thread = playBotMove(&app.state.gameScene.state);
-//             SDL_DetachThread(thread);
-//         }
-//         break;
-//     default: // Only do something for mouse button down
-//         break;
-//     }
-// }
+SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app) {
+    (void) event;
+    (void) rect;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) clickedWhenGameIsDone(app);
+    resetGame(data);
+    return SDL_APP_CONTINUE;
+}
 
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRect, App* app) {
     (void)boardRect;

@@ -8,10 +8,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
 
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app);
 
-void clickedRestartButton(SDL_Event event, App app);
-void clickedSwitchColorButton(SDL_Event event, App app);
-void clickedBackButton(SDL_Event event, App app);
-void clickedCopyFenButton(SDL_Event event, App app);
+SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app);
 
 /**
  * @brief Plays a move chosen by the bot. This function takes

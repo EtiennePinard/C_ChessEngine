@@ -413,6 +413,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[RESTART_BUTTON].renderFunction = &renderRestartButton;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonUp = &clickedDownRestartButton;
 
     // Rectangle for the promotion overlay will be calculated when it is rendered
     // The only information needed to create this rectangle is the size of the board 

@@ -1,44 +1,48 @@
 # Chess Engine
 
-A chess engine written in C with two main functionalities:  
+A UCI chess engine written in C with the following functionalities:  
 - **Perft** routine for move generation and position testing  
+- **UCI Engine** for using this engine in other chess application 
 - **Chess app** for playing against the engine's bot
   
-This project was greatly inspired by [Sabastian Lague's chess video](https://www.youtube.com/watch?v=U4ogK0MIzqk)
+This project was greatly inspired by [Sebastian Lague's chess video](https://www.youtube.com/watch?v=U4ogK0MIzqk)
 
 ## Build Instructions
 
 ### Requirements
-- **CMake** (minimum version 3.x)  
-- **SDL2**, **SDL2_TTF**, and **SDL2_image** (required for the chess app)
+- **GNU Make**  
+- **POSIX** system or Windows with **Git Bash** and **MinGW**
+- **SDL3**, **SDL3_TTF**, and **SDL3_image** (for the chess app)
 
-### How to Build
-You can run the helper build scripts in the repo's root directory. 
+### Chess engine and perft
+To build the chess engine, you can use the `make perft` and `make engine` command 
+to compile and run the perft routine and the UCI engine. 
 
-- **To run the perft functionality**:
+### SDL Chess application
+To compile and run the chess engine you will likely need to use the
+.env file to set the include path, library path and binary path for the
+SDL, SDL_ttf and SDL_image library. The .env includes these environments 
+variables. 
+
 ```bash
-./perft 
-```  
+# Environment variable for compiling the app with SDL3
+SDL_INCLUDE_PATH=
+SDL_LIBRARY_PATH=
+SDL_BIN_PATH=
 
-- **To play chess against the bot**
-```bash
-./app
-``` 
+SDL_TTF_INCLUDE_PATH=
+SDL_TTF_LIBRARY_PATH=
+SDL_TTF_BIN_PATH=
 
-## TODO
+SDL_IMAGE_INCLUDE_PATH=
+SDL_IMAGE_LIBRARY_PATH=
+SDL_IMAGE_BIN_PATH=
+```
 
-### App
-- **Rewind moves**: ability to go back in moves
-- **Sounds** (Upgrade to SDL3 before doing audio)
-- **Evaluation bar**: Eval bar from Stockfish and/or the engine bot
+Note that the BIN_PATH will only be used on Windows where dynamic 
+linking can be quite annoying if the library is not in the same folder
+as the executable. This means that if you are on Windows the Makefile 
+will copy the SDL3.dll, SDL3_ttf.dll, and SDL3_image.dll files to the 
+build directory. 
 
-### Bot
-- **UCI**: Make the bot read commands of the uci protocol from stdin 
-- **Bot comparison**: Program which puts two version of the bot against one another to see if the bot actually gets better
-- **Iterative deepening**: Make the search function search one move ahead, then two move ahead, ..., up until it gets cancelled 
-- **Transposition table**: To not evaluate the same positions over and over
-- **Time control**: Bot needs to take time into account
-- **Move ordering**: In the search function to speed it up
-- **Quiescence Search**: Bot needs to end search on quiet positions, not just at required depth
-- **More endgame knowledge**: Increase the bot's performance in the endgame
-- **Mate in n eval bar**: Bot can give evaluation in mate-in-n 
+You can then run `make app` to compile and run the app.

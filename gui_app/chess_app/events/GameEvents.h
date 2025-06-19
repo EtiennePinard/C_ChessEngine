@@ -43,7 +43,17 @@ SDL_Thread* playBotMove(App* app);
  */
 SDL_AppResult resetGame(GameSceneData* data);
 
-// Note: This will be correct if the point (x, y) is in the chessboard
+
+/**
+ * @brief Calculates the square index of the chessboard from the (x, y) sdl coordinates
+ * Note: This will be correct if the point (x, y) is in the chessboard
+ * 
+ * @param x The x coordinates
+ * @param y The y coordinates
+ * @param flip If the board is currently flipper
+ * @param chessBoardRect The SDL_Rect from which the board is renderer with
+ * @return Square The square index which at the point (x, y) 
+ */
 static inline Square squareFromxy(int x, int y, bool flip, SDL_Rect chessBoardRect) {
     int squareSize = chessBoardRect.w / BOARD_LENGTH;
     int col = (x - chessBoardRect.x) / squareSize;
@@ -52,7 +62,7 @@ static inline Square squareFromxy(int x, int y, bool flip, SDL_Rect chessBoardRe
         col = BOARD_LENGTH - 1 - col;
         row = BOARD_LENGTH - 1 - row;
     }
-    return (Square)row * BOARD_LENGTH + col;
+    return (Square)(row * BOARD_LENGTH + col);
 }
 
 #endif /* AE539C76_7948_4E5B_AFD7_B75D43C5B451 */

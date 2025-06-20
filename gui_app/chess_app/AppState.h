@@ -11,7 +11,7 @@
 #define APP_AUTHOR "Etienne Pinard"
 #define CREDIT_TEXT ("Version " APP_VERSION " by " APP_AUTHOR)
 
-#define STARTING_WINDOW_WIDTH 800
+#define STARTING_WINDOW_WIDTH 900
 #define STARTING_WINDOW_HEIGHT 850
 #define DEFAULT_FONT_SIZE (20.0f)
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")

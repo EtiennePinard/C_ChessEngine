@@ -305,7 +305,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
 
     // We are dragging a piece from the opposite color. Also if gameScene.selectedPiece.draggedPiece 
-    // is NOPIECE than Piece_color will evaluate to 0 and colorToGo cannot be 0 
+    // is NO_PIECE than Piece_color will evaluate to 0 and colorToGo cannot be 0 
     // Furthermore if the currentPlayer is an engine, let the engine think
     if (data->state.position.colorToGo != Piece_color(data->selectedPiece.selectedPiece) || currentPlayer.engineCommunication != NULL) {
         // Reset the dragging state

@@ -84,7 +84,7 @@ void drawChessBoard(AppState* state) {
         SDL_RenderFillRect(state->sdlState.renderer, &square);
 
         Piece piece = Board_pieceAtIndex(state->evaluation.position.board, squareIndex);
-        if (piece != NOPIECE) {
+        if (piece != NO_PIECE) {
             SDL_Rect pieceRect = { square.x, square.y, squareSize, squareSize };
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);
             SDL_RenderCopy(state->sdlState.renderer, state->textures.data[index].texture, NULL, &pieceRect);

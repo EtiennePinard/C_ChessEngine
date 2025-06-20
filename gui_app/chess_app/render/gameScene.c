@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../../../engine/src/utils/Math.h"
+#include "../../../engine/src/utils/AlgebraicNotation.h"
 
 #include "../../sdl_framework/Render.h"
 #include "../../sdl_framework/EventHandler.h"
@@ -16,7 +17,7 @@
 void renderDraggedPiece(SDL_Renderer* renderer, const GameSceneData* scene, int squareSize, int mouseX, int mouseY, SDL_Rect boardRect) {
     Piece draggedPiece = scene->selectedPiece.selectedPiece;
     // This should be always false because we are already checking if isDragging is true
-    if (draggedPiece == NOPIECE) return;
+    if (draggedPiece == NO_PIECE) return;
 
     int indexOffset = Piece_color(draggedPiece) == WHITE ? 9 : 11;
     TextureState chessImageData = scene->textures.data[draggedPiece - indexOffset];
@@ -91,7 +92,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) continue;
 
         Piece piece = Board_pieceAtIndex(data->state.position.board, squareIndex);
-        if (piece != NOPIECE) {
+        if (piece != NO_PIECE) {
             SDL_Rect pieceRect = { squareRect.x, squareRect.y, squareSize, squareSize };
             SDL_FRect pieceFRect = RECT_TO_FRECT(pieceRect);
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);
@@ -129,25 +130,101 @@ SDL_AppResult renderWhiteClock(SDL_Rect whiteClockRect, App* app) {
 
 SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    //    TTF_Font* font = app->state.sdlState.font;
+    TTF_Font* font = app->state.sdlState.font;
 
     SDL_Color borderColor = BUTTON_BORDER_COLOR;
-    // SDL_Color textColor = BUTTON_TEXT_COLOR;
-    // SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
+    SDL_Color textColor = BUTTON_TEXT_COLOR;
     SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
 
-    // semi-transparent dark background
+    // Draw semi-transparent background
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
     SDL_RenderFillRect(renderer, &RECT_TO_FRECT(rect));
 
-    // --- Border ---
+    // Draw border
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &RECT_TO_FRECT(rect));
 
-    // TODO: render move list inside layout->moveListRect
+    GameSceneData* scene = (GameSceneData*)app->state.currentScene.data;
+    GameState* gameState = &scene->state;
+
+    const int padding = rect.w / 16;
+    const int lineHeight = TTF_GetFontLineSkip(font);
+
+    // Define 3 column widths
+    const int column1Width = rect.w / 6; // Move number
+    const int columnWidth = (rect.w - column1Width - 4 * padding) / 2;
+
+    int y = rect.y + padding;
+    int maxY = rect.y + rect.h - lineHeight;
+
+    ChessPosition position;
+    Board board;
+    for (int i = 0; i < gameState->undoStates.previousStateIndex; i += 2) {
+        if (y > maxY) break; // stop if we run out of vertical space
+
+        // --- Move number ---
+        char numberBuffer[8];
+        snprintf(numberBuffer, sizeof(numberBuffer), "%d.", i / 2 + 1);
+
+        SDL_Rect moveNumberRect = {
+            .x = rect.x + padding,
+            .y = y,
+            .w = column1Width,
+            .h = lineHeight
+        };
+
+        SDL_AppResult result = renderTextCenteredToFit(renderer, font, numberBuffer, false, textColor, moveNumberRect);
+        if (result != SDL_APP_CONTINUE) return result;
+
+        // --- White's move ---
+        SDL_Rect whiteMoveRect;
+        if (i < gameState->undoStates.previousStateIndex) {
+            // We need to do this so that we don't accidentally modify the bitboards of the previous position
+            position = gameState->undoStates.previousStates[i];
+            memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
+            position.board = board;
+
+            char whiteMove[16];
+            moveToStandardAlgebraic(gameState->undoStates.previousStates[i], gameState->movesPlayed[i], whiteMove);
+
+            whiteMoveRect = (SDL_Rect){
+                .x = moveNumberRect.x + moveNumberRect.w + padding,
+                .y = y,
+                .w = columnWidth,
+                .h = lineHeight
+            };
+
+            result = renderTextCenteredToFit(renderer, font, whiteMove, false, textColor, whiteMoveRect);
+            if (result != SDL_APP_CONTINUE) return result;
+        }
+
+        // --- Black's move ---
+        if (i + 1 < gameState->undoStates.previousStateIndex) {
+            // We need to do this so that we don't accidentally modify the bitboards of the previous position
+            position = gameState->undoStates.previousStates[i];
+            memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
+            position.board = board;
+
+            char blackMove[16];
+            moveToStandardAlgebraic(gameState->undoStates.previousStates[i + 1], gameState->movesPlayed[i + 1], blackMove);
+
+            SDL_Rect blackMoveRect = {
+                .x = whiteMoveRect.x + whiteMoveRect.w + padding,
+                .y = y,
+                .w = columnWidth,
+                .h = lineHeight
+            };
+
+            result = renderTextCenteredToFit(renderer, font, blackMove, false, textColor, blackMoveRect);
+            if (result != SDL_APP_CONTINUE) return result;
+        }
+
+        y += lineHeight + padding;
+    }
 
     return SDL_APP_CONTINUE;
 }
+
 
 SDL_AppResult renderRestartButton(SDL_Rect rect, App* app) {
     return renderButton(rect, app, RESTART_BUTTON, "Restart");
@@ -265,7 +342,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
         memcpy(text, "Game is on!", 12);
         break;
     case THREE_MOVE_REPETITION:
-        memcpy(text, "Draw by\n repetition", 20);
+        memcpy(text, "Draw by\nrepetition", 20);
         break;
     case STALEMATE:
         memcpy(text, "Stalemate", 10);
@@ -289,8 +366,8 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
         memcpy(text, "Black won\non time", 18);
         break;
     default:
-        memcpy(text, "Error on switch", 16);
-        break;
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on switch for a GameResult value of: %d\n", data->state.gameEndedSettings.result);
+        return SDL_APP_FAILURE;
     }
 
     const int overlayPadding = overlayRect.w / 16;
@@ -304,7 +381,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, true, BLACK_COLOR, textRect);
 }
 
-#define BOARD_SIZE_PERCENT (0.8f)
+#define BOARD_SIZE_PERCENT (0.75f)
 #define CLOCK_HEIGHT_PERCENT (0.07f)
 #define CLOCK_WIDTH_PERCENT (0.1f)
 #define GAME_BUTTON_HEIGHT_PERCENT CLOCK_HEIGHT_PERCENT

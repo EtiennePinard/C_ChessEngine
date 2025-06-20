@@ -135,11 +135,8 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
 
     // Drawing the text centered
     SDL_AppResult result;
-    if (isTextMultiLine) {
-        result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
-    } else {
-        result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect);
-    }
+    if (isTextMultiLine) result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
+    else result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect);
 
 end:
     TTF_CloseFont(tempFont);

@@ -1,6 +1,8 @@
 #ifndef DE8D177D_4200_4E2E_83E9_98FE8033E2EE
 #define DE8D177D_4200_4E2E_83E9_98FE8033E2EE
 
+#include <stdbool.h>
+
 /**
  * @brief Runs all test for the functions in the Board.h file
  * 

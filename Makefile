@@ -58,12 +58,19 @@ engineTest_SRC = \
     engine/testing/unitTest/tests/testMath.c \
     engine/testing/unitTest/tests/testBoard.c \
     engine/testing/unitTest/tests/testTranspositionTable.c \
+    engine/testing/unitTest/tests/testAlgebraicNotation.c \
     engine/testing/logChessStructs.c \
     engine/src/utils/fenString.c \
     engine/src/utils/charBuffer.c \
     engine/src/state/zobristKey.c \
     engine/src/state/board.c \
-    engine/src/bot/transpositionTable.c
+    engine/src/bot/transpositionTable.c \
+    engine/src/utils/algebraicNotation.c \
+    engine/src/moveHandler/moveGenerator.c \
+    engine/src/moveHandler/movePlayer.c \
+    engine/src/magicBitBoard/magicBitBoard.c \
+    engine/src/magicBitBoard/rook.c \
+    engine/src/magicBitBoard/bishop.c
 
 perft_SRC = \
     engine/testing/perft/perft.c \
@@ -111,6 +118,7 @@ app_SRC = \
     engine/src/moveHandler/moveGenerator.c \
     engine/src/utils/fenString.c \
     engine/src/utils/charBuffer.c \
+    engine/src/utils/algebraicNotation.c \
     engine/src/state/board.c \
     engine/src/state/zobristKey.c \
     engine/src/magicBitBoard/magicBitBoard.c \

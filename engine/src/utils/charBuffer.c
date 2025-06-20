@@ -166,7 +166,7 @@ Move string_longAlgebraicToMove(const char* algebraic) {
         return NULL_MOVE;
     }
 
-    Flag flag = NOFLAG;
+    Flag flag = NO_FLAG;
     // Checking for promotion flags
     if (algebraicLength >= 5) {
         switch (algebraic[4]) {

@@ -53,7 +53,7 @@ void ZobristKey_calculateInitialKey(ChessPosition* state) {
 
     for (int square = 0; square < BOARD_SIZE; square++) {
         Piece piece = Board_pieceAtIndex(state->board, square);
-        if (piece != NOPIECE) {
+        if (piece != NO_PIECE) {
             zobristKey ^= zobristRandomNumber.pieces[(int)piece - 9][square];
         }
     }

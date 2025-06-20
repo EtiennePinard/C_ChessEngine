@@ -41,14 +41,14 @@ static bool setBoardArrayFromFenString(const char* fenBoard, Piece board[BOARD_S
 
         switch (fenChar) {
             // Saw this type of trick in https://youtu.be/zGWj7Qo_POY?si=ie9cEXp5p_59KLfU&t=799
-        case '8': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '7': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '6': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '5': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '4': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '3': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '2': board[index++] = NOPIECE; __attribute__((fallthrough));
-        case '1': board[index++] = NOPIECE;
+        case '8': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '7': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '6': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '5': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '4': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '3': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '2': board[index++] = NO_PIECE; __attribute__((fallthrough));
+        case '1': board[index++] = NO_PIECE;
             break;
 
         case 'P':
@@ -199,7 +199,7 @@ int FenString_chessPositionToFenString(ChessPosition position, char fen[MAX_FEN_
             pieceChar -= 32;
         }
 
-        if (piece == NOPIECE) {
+        if (piece == NO_PIECE) {
             emptySquare++;
         }
         else {

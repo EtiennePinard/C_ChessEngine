@@ -513,7 +513,7 @@ bool test_string_longAlgebraicToMove() {
     Move expected;
 
     // We do not expect a flag for double pawn push
-    expected = Move_makeMove(E2, E4, NOFLAG);
+    expected = Move_makeMove(E2, E4, NO_FLAG);
     actual = string_longAlgebraicToMove("e2e4");
 
     if (expected != actual) {
@@ -523,7 +523,7 @@ bool test_string_longAlgebraicToMove() {
         return false;
     }
 
-    expected = Move_makeMove(G1, F3, NOFLAG);
+    expected = Move_makeMove(G1, F3, NO_FLAG);
     actual = string_longAlgebraicToMove("g1f3");
 
     if (expected != actual) {
@@ -554,7 +554,7 @@ bool test_string_longAlgebraicToMove() {
     }
 
     // We do not expect a flag for castling
-    expected = Move_makeMove(E1, G1, NOFLAG);
+    expected = Move_makeMove(E1, G1, NO_FLAG);
     actual = string_longAlgebraicToMove("e1g1");
 
     if (expected != actual) {
@@ -565,7 +565,7 @@ bool test_string_longAlgebraicToMove() {
     }
 
     // We do not expect a flag for castling
-    expected = Move_makeMove(E8, C8, NOFLAG);
+    expected = Move_makeMove(E8, C8, NO_FLAG);
     actual = string_longAlgebraicToMove("e8c8");
 
     if (expected != actual) {
@@ -595,7 +595,7 @@ bool test_string_moveToLongAlgebraic() {
     }
 
     // Test case 2: Move from g1 to f3
-    Move move2 = Move_makeMove(G1, F3, NOFLAG);
+    Move move2 = Move_makeMove(G1, F3, NO_FLAG);
     strcpy(expected, "g1f3");
     string_moveToLongAlgebraic(move2, actual);
 

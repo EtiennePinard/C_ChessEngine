@@ -26,7 +26,7 @@ int scoreMove(Move move, Move importantMove, const Board currentBoard) {
     Piece victim = Board_pieceAtIndex(currentBoard, Move_toSquare(move));
     Piece attacker = Board_pieceAtIndex(currentBoard, Move_fromSquare(move));
 
-    if (victim != NOPIECE) {
+    if (victim != NO_PIECE) {
         // MVV-LVA: capture score based on victim and attacker value
         return BASE_CAPTURE_SCORE + 10 * moveOrderingPieceValue[Piece_type(victim) - 1] - moveOrderingPieceValue[Piece_type(attacker) - 1];
     }

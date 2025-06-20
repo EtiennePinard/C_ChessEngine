@@ -1,6 +1,8 @@
 #ifndef D0CD8048_2FC2_4B78_BAFD_345B2DFFF57F
 #define D0CD8048_2FC2_4B78_BAFD_345B2DFFF57F
 
+#include <stdbool.h>
+
 /**
  * @brief Runs all test for the functions in the Math.h file. 
  * If a test fails the functions will print debug information on the test that failed

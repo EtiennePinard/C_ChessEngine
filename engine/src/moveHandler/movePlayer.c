@@ -51,7 +51,7 @@ void _updateCastlePerm(Piece pieceToMove, Square from, ChessPosition* state) {
 }
 
 void _updateFiftyMoveRule(Piece pieceToMove, Square to, ChessPosition* state) {
-    if (Piece_type(pieceToMove) == PAWN || Board_pieceAtIndex(state->board, to) != NOPIECE) {
+    if (Piece_type(pieceToMove) == PAWN || Board_pieceAtIndex(state->board, to) != NO_PIECE) {
         state->turnsForFiftyRule = 0; // A pawn has moved or a capture has happened
     }
     else if (state->colorToGo == WHITE) {
@@ -84,7 +84,7 @@ void MoveHandler_playMove(Move move, ChessPosition* position, bool storePosition
     newZobristKey ^= zobristRandomNumber.pieces[(int)pieceToMove - 9][from]; // Removing piece to move
 
     Piece capturePiece = Board_pieceAtIndex(position->board, to);
-    if (capturePiece != NOPIECE) { // A piece has been captured!
+    if (capturePiece != NO_PIECE) { // A piece has been captured!
         Board_togglePieceAtIndex(&position->board, to, capturePiece);
         newZobristKey ^= zobristRandomNumber.pieces[(int)capturePiece - 9][to]; // Removing captured piece
     }
@@ -105,7 +105,7 @@ void MoveHandler_playMove(Move move, ChessPosition* position, bool storePosition
     Piece piece;
     int enPassantPawnIndex;
     switch (flag) {
-    case NOFLAG:
+    case NO_FLAG:
         // To be able to detect invalid flags
         break;
     case EN_PASSANT:

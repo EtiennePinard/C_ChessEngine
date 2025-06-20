@@ -121,7 +121,7 @@ static Move findMatchingMove(Move moveToMatch) {
         Move move = moves[index];
         if (Move_fromSquare(move) == Move_fromSquare(moveToMatch) &&
             Move_toSquare(move) == Move_toSquare(moveToMatch) &&
-            (Move_flag(moveToMatch) == NOFLAG || Move_flag(move) == Move_flag(moveToMatch))) {
+            (Move_flag(moveToMatch) == NO_FLAG || Move_flag(move) == Move_flag(moveToMatch))) {
             moveToMake = move;
             break;
         }

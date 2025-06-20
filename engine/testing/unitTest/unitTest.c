@@ -42,6 +42,7 @@ generated tests.
 #include "tests/TestMath.h"
 #include "tests/testBoard.h"
 #include "tests/TestTranspositionTable.h"
+#include "tests/TestAlgebraicNotation.h"
 
 typedef bool (*TestFunction)(void);
 
@@ -64,7 +65,8 @@ Test tests[] = {
     { Test_FenString, "Fen String" },
     { Test_Math, "Math" },
     { Test_Board, "Board" },
-    { Test_TranspositionTable, "Transposition Table"}
+    { Test_TranspositionTable, "Transposition Table"},
+    { Test_AlgebraicNotation, "Move to algebraic notation" }
 };
 
 int main(void) {

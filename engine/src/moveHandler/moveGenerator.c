@@ -166,9 +166,9 @@ bool isKingIndexLegal(int targetSquare) {
 // I am aware and I do not like the 6 deep indentation in this function. Will refactor later (lol)
 void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharacteristics dangerousSlidingPiece) {
     // Note that we are guaranteed to not be at a square where adding the increment would give an invalid square in the direction
-    Piece firstPiece = NOPIECE;
+    Piece firstPiece = NO_PIECE;
     int firstPieceIndex;
-    Piece secondPiece = NOPIECE;
+    Piece secondPiece = NO_PIECE;
 
     u64 toggle = (u64)1;
     u64 rayMask = (u64)0;
@@ -187,8 +187,8 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
 
         rayMask ^= toggle << currentIndex;
 
-        if (firstPiece == NOPIECE) {
-            if (Board_pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+        if (firstPiece == NO_PIECE) {
+            if (Board_pieceAtIndex(currentState.board, currentIndex) != NO_PIECE) {
                 firstPiece = Board_pieceAtIndex(currentState.board, currentIndex);
                 firstPieceIndex = currentIndex;
 
@@ -202,9 +202,9 @@ void handlePinAndCheckForDirection(int increment, u64 directionMask, PieceCharac
                 }
             }
         }
-        else if (secondPiece == NOPIECE) {
+        else if (secondPiece == NO_PIECE) {
 
-            if (Board_pieceAtIndex(currentState.board, currentIndex) != NOPIECE) {
+            if (Board_pieceAtIndex(currentState.board, currentIndex) != NO_PIECE) {
                 secondPiece = Board_pieceAtIndex(currentState.board, currentIndex);
 
                 if (secondPiece == Piece_makePiece(opponentColor, dangerousSlidingPiece) || secondPiece == Piece_makePiece(opponentColor, QUEEN)) {
@@ -252,8 +252,8 @@ void generateCastle() {
         if (Board_pieceAtIndex(currentState.board, rookIndex) == Piece_makePiece(currentState.colorToGo, ROOK) &&
             !attackedSquares[friendlyKingIndex + 1] &&
             !attackedSquares[friendlyKingIndex + 2] &&
-            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 1) == NOPIECE &&
-            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 2) == NOPIECE) {
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 1) == NO_PIECE &&
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex + 2) == NO_PIECE) {
             // Castling is valid
             appendMove(friendlyKingIndex, friendlyKingIndex + 2, KING_SIDE_CASTLING);
         }
@@ -264,9 +264,9 @@ void generateCastle() {
             !attackedSquares[friendlyKingIndex - 1] &&
             !attackedSquares[friendlyKingIndex - 2] &&
             // The rook can pass trough an attacked square, which means that we don't need to check for the third square
-            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 1) == NOPIECE &&
-            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 2) == NOPIECE &&
-            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 3) == NOPIECE) {
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 1) == NO_PIECE &&
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 2) == NO_PIECE &&
+            Board_pieceAtIndex(currentState.board, friendlyKingIndex - 3) == NO_PIECE) {
             // Castling is valid
             appendMove(friendlyKingIndex, friendlyKingIndex - 2, QUEEN_SIDE_CASTLING);
         }
@@ -281,7 +281,7 @@ void generateKingMoves() {
     while (bitboard) {
         int targetSquare = trailingZeros_64(bitboard);
         if (isKingIndexLegal(targetSquare)) {
-            appendMove(friendlyKingIndex, targetSquare, NOFLAG);
+            appendMove(friendlyKingIndex, targetSquare, NO_FLAG);
         }
         bitboard &= bitboard - 1;
     }
@@ -379,7 +379,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     // Checking that there is not any piece between the pawn trying to do en-passant and king
     indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment; // I do a minus cause I want to go in the opposite direction
     while (indexToCheckIfNoPieceIsBetweenKingAndPawn != friendlyKingIndex) {
-        if (Board_pieceAtIndex(currentState.board, indexToCheckIfNoPieceIsBetweenKingAndPawn) == NOPIECE) {
+        if (Board_pieceAtIndex(currentState.board, indexToCheckIfNoPieceIsBetweenKingAndPawn) == NO_PIECE) {
             indexToCheckIfNoPieceIsBetweenKingAndPawn -= increment;
         }
         else {
@@ -391,7 +391,7 @@ u64 checkEnPassantPinned(int from, u64 bitBoard) {
     do {
         indexToSearchForThreateningPiece += increment;
         threateningPiece = Board_pieceAtIndex(currentState.board, indexToSearchForThreateningPiece);
-    } while (threateningPiece == NOPIECE && rank(indexToSearchForThreateningPiece) == enPassantRank);
+    } while (threateningPiece == NO_PIECE && rank(indexToSearchForThreateningPiece) == enPassantRank);
 
     if (threateningPiece == Piece_makePiece(opponentColor, ROOK) ||
         threateningPiece == Piece_makePiece(opponentColor, QUEEN)) {
@@ -430,8 +430,8 @@ void generateEnPassant(int from) {
 
 void generatePawnDoublePush(int from, int increment) {
     int toSquareFromDoublePush = from + 2 * increment;
-    if (Board_pieceAtIndex(currentState.board, from + increment) != NOPIECE ||
-        Board_pieceAtIndex(currentState.board, toSquareFromDoublePush) != NOPIECE) {
+    if (Board_pieceAtIndex(currentState.board, from + increment) != NO_PIECE ||
+        Board_pieceAtIndex(currentState.board, toSquareFromDoublePush) != NO_PIECE) {
         return;
     }
 
@@ -462,7 +462,7 @@ void appendLegalMovesFromPseudoLegalMovesBitBoard(int from, u64 pseudoLegalMoves
         // Extract the position of the least significant bit
         int to = trailingZeros_64(pseudoLegalMoves);
 
-        appendMove(from, to, NOFLAG);
+        appendMove(from, to, NO_FLAG);
 
         // Clearing the least significant bit to get the position of the next bit
         pseudoLegalMoves &= pseudoLegalMoves - 1;
@@ -539,7 +539,7 @@ void pawnMoves(int from) {
     // Only making capture moves if we actually capture a piece
     pseudoLegalMoves &= opponentBitBoard;
 
-    if (Board_pieceAtIndex(currentState.board, forwardIndex) == NOPIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
+    if (Board_pieceAtIndex(currentState.board, forwardIndex) == NO_PIECE) { pseudoLegalMoves ^= toggle << forwardIndex; }
 
     // enPassantTargetSquare is 0 when there is no pawn that has double pushed
     if (pawnCanEnPassant && currentState.enPassantTargetSquare) {
@@ -567,7 +567,7 @@ void pawnMoves(int from) {
             appendMove(from, to, PROMOTE_TO_BISHOP);
         }
         else {
-            appendMove(from, to, NOFLAG);
+            appendMove(from, to, NO_FLAG);
         }
 
         // Clearing the least significant bit to get the position of the next bit
@@ -641,7 +641,7 @@ void MoveHandler_getCaptures(Move result[POWER_OF_TWO_CLOSEST_TO_MAX_LEGAL_MOVES
 
     for (int index = 0; index < nbAllMoves; index++) {
         Move move = allMoves[index];
-        if (Board_pieceAtIndex(position.board, Move_toSquare(move)) != NOPIECE || Move_flag(move) == EN_PASSANT) {
+        if (Board_pieceAtIndex(position.board, Move_toSquare(move)) != NO_PIECE || Move_flag(move) == EN_PASSANT) {
             result[total++] = move;
         }
     }

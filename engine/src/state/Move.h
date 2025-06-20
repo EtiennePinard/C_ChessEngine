@@ -17,15 +17,15 @@ typedef u16 Move;
  * about move, e.g. that it leads to a promotion or a checkmate.
 */
 typedef enum Flag {
-    NOFLAG, 
+    NO_FLAG, 
     EN_PASSANT, 
     DOUBLE_PAWN_PUSH, 
     KING_SIDE_CASTLING, 
     QUEEN_SIDE_CASTLING, 
-    PROMOTE_TO_QUEEN, 
     PROMOTE_TO_KNIGHT, 
+    PROMOTE_TO_BISHOP,
     PROMOTE_TO_ROOK, 
-    PROMOTE_TO_BISHOP
+    PROMOTE_TO_QUEEN
 } Flag;
 
 #define Move_fromSquare(move) ((Square) (move & 0b111111))

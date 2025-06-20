@@ -72,7 +72,7 @@ void Board_fromArray(Board* result, Piece array[BOARD_SIZE]) {
 
     for (int index = 0; index < BOARD_SIZE; index++) {
         Piece piece = array[index];
-        if (piece != NOPIECE) {
+        if (piece != NO_PIECE) {
             Board_togglePieceAtIndex(result, index, piece);
         }
     }

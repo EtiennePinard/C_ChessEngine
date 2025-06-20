@@ -31,7 +31,7 @@ bool test1(ChessPosition* position) {
     }
 
     for (int index = 16; index < 48; index++) {
-        if (Board_pieceAtIndex(position->board, index) != NOPIECE) { return false; }
+        if (Board_pieceAtIndex(position->board, index) != NO_PIECE) { return false; }
     }
 
     for (int index = 48; index < 56; index++) {
@@ -60,76 +60,76 @@ bool test2(ChessPosition* position) {
     if (position->nbMoves != 1) { return false; }
 
     if (Board_pieceAtIndex(position->board, 0) != Piece_makePiece(BLACK, ROOK)) { return false; }
-    if (Board_pieceAtIndex(position->board, 1) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 2) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 1) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 2) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 3) != Piece_makePiece(BLACK, QUEEN)) { return false; }
     if (Board_pieceAtIndex(position->board, 4) != Piece_makePiece(BLACK, KING)) { return false; }
     if (Board_pieceAtIndex(position->board, 5) != Piece_makePiece(BLACK, BISHOP)) { return false; }
-    if (Board_pieceAtIndex(position->board, 6) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 6) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 7) != Piece_makePiece(BLACK, ROOK)) { return false; }
 
-    if (Board_pieceAtIndex(position->board, 8) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 9) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 10) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 8) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 9) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 10) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 11) != Piece_makePiece(BLACK, BISHOP)) { return false; }
-    if (Board_pieceAtIndex(position->board, 12) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 12) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 13) != Piece_makePiece(BLACK, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 14) != Piece_makePiece(BLACK, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 15) != Piece_makePiece(BLACK, PAWN)) { return false; }
 
     if (Board_pieceAtIndex(position->board, 16) != Piece_makePiece(BLACK, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 17) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 17) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 18) != Piece_makePiece(BLACK, KNIGHT)) { return false; }
-    if (Board_pieceAtIndex(position->board, 19) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 19) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 20) != Piece_makePiece(BLACK, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 21) != Piece_makePiece(BLACK, KNIGHT)) { return false; }
-    if (Board_pieceAtIndex(position->board, 22) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 23) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 22) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 23) != NO_PIECE) { return false; }
 
-    if (Board_pieceAtIndex(position->board, 24) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 25) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 26) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 24) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 25) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 26) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 27) != Piece_makePiece(BLACK, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 28) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 29) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 30) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 31) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 28) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 29) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 30) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 31) != NO_PIECE) { return false; }
 
-    if (Board_pieceAtIndex(position->board, 32) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 32) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 33) != Piece_makePiece(BLACK, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 34) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 34) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 35) != Piece_makePiece(WHITE, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 36) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 37) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 38) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 39) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 36) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 37) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 38) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 39) != NO_PIECE) { return false; }
 
     if (Board_pieceAtIndex(position->board, 40) != Piece_makePiece(WHITE, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 41) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 41) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 42) != Piece_makePiece(WHITE, KNIGHT)) { return false; }
     if (Board_pieceAtIndex(position->board, 43) != Piece_makePiece(WHITE, BISHOP)) { return false; }
     if (Board_pieceAtIndex(position->board, 44) != Piece_makePiece(WHITE, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 45) != Piece_makePiece(WHITE, KNIGHT)) { return false; }
-    if (Board_pieceAtIndex(position->board, 46) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 47) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 46) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 47) != NO_PIECE) { return false; }
 
-    if (Board_pieceAtIndex(position->board, 48) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 48) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 49) != Piece_makePiece(WHITE, PAWN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 50) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 51) != NOPIECE) { return false; }
-    if (Board_pieceAtIndex(position->board, 52) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 50) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 51) != NO_PIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 52) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 53) != Piece_makePiece(WHITE, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 54) != Piece_makePiece(WHITE, PAWN)) { return false; }
     if (Board_pieceAtIndex(position->board, 55) != Piece_makePiece(WHITE, PAWN)) { return false; }
 
     if (Board_pieceAtIndex(position->board, 56) != Piece_makePiece(WHITE, ROOK)) { return false; }
-    if (Board_pieceAtIndex(position->board, 57) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 57) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 58) != Piece_makePiece(WHITE, BISHOP)) { return false; }
     if (Board_pieceAtIndex(position->board, 59) != Piece_makePiece(WHITE, QUEEN)) { return false; }
-    if (Board_pieceAtIndex(position->board, 60) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 60) != NO_PIECE) { return false; }
     if (Board_pieceAtIndex(position->board, 61) != Piece_makePiece(WHITE, ROOK)) { return false; }
     if (Board_pieceAtIndex(position->board, 62) != Piece_makePiece(WHITE, KING)) { return false; }
-    if (Board_pieceAtIndex(position->board, 63) != NOPIECE) { return false; }
+    if (Board_pieceAtIndex(position->board, 63) != NO_PIECE) { return false; }
 
     return true;
 }
@@ -150,7 +150,7 @@ bool test4(ChessPosition* position) {
     if (position->nbMoves != MAX_NB_LEGAL_MOVES_IN_GAME) { return false; }
 
     for (int square = 0; square < 64; square++) {
-        if (Board_pieceAtIndex(position->board, square) != NOPIECE) { return false; }
+        if (Board_pieceAtIndex(position->board, square) != NO_PIECE) { return false; }
     }
 
     return true;
@@ -172,7 +172,7 @@ bool test6(ChessPosition* position) {
     if (position->nbMoves != 1) { return false; }
 
     for (int square = 0; square < 64; square++) {
-        if (Board_pieceAtIndex(position->board, square) != NOPIECE) { return false; }
+        if (Board_pieceAtIndex(position->board, square) != NO_PIECE) { return false; }
     }
 
     return true;

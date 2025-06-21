@@ -14,17 +14,14 @@
 #include "RenderUtils.h"
 #include "GameScene.h"
 
-void renderDraggedPiece(SDL_Renderer* renderer, const GameSceneData* scene, int squareSize, int mouseX, int mouseY, SDL_Rect boardRect) {
-    Piece draggedPiece = scene->selectedPiece.selectedPiece;
+void renderDraggedPiece(SDL_Renderer* renderer, const GameSceneData* data, int squareSize, int mouseX, int mouseY) {
+    Piece selectedPiece = data->selectedPiece.selectedPiece;
     // This should be always false because we are already checking if isDragging is true
-    if (draggedPiece == NO_PIECE) return;
+    SDL_assert(selectedPiece != NO_PIECE);
 
-    int indexOffset = Piece_color(draggedPiece) == WHITE ? 9 : 11;
-    TextureState chessImageData = scene->textures.data[draggedPiece - indexOffset];
-
-    int x = SDL_clamp(mouseX, boardRect.x, boardRect.x + boardRect.w);
-    int y = SDL_clamp(mouseY, boardRect.y, boardRect.y + boardRect.h);
-    SDL_Rect destRect = { x - squareSize / 2, y - squareSize / 2, squareSize, squareSize };
+    int indexOffset = Piece_color(selectedPiece) == WHITE ? 9 : 11;
+    TextureState chessImageData = data->textures.data[selectedPiece - indexOffset];
+    SDL_Rect destRect = { mouseX - squareSize / 2, mouseY - squareSize / 2, squareSize, squareSize };
     SDL_FRect destFRect = RECT_TO_FRECT(destRect);
     SDL_RenderTexture(renderer, chessImageData.texture, NULL, &destFRect);
 }
@@ -34,6 +31,14 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
 
     const int squareSize = boardRect.w / BOARD_LENGTH;
+
+    float mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
+    if (!SDL_PointInRect(&mousePoint, &boardRect)) {
+        // If the mouse is not in the board rect reset selected piece state
+        memset(&data->selectedPiece, 0, sizeof(SelectedPiece));
+    }
 
     bool doRenderDraggedPiece = data->selectedPiece.isPieceSelected && data->selectedPiece.isDragged;
 
@@ -102,9 +107,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
 
     if (doRenderDraggedPiece) {
         if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
-            float mouseX, mouseY;
-            SDL_GetMouseState(&mouseX, &mouseY);
-            renderDraggedPiece(app->state.sdlState.renderer, data, squareSize, (int)mouseX, (int)mouseY, boardRect);
+            renderDraggedPiece(app->state.sdlState.renderer, data, squareSize, (int)mouseX, (int)mouseY);
         }
         else {
             // Resetting selectedPiece
@@ -491,7 +494,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[RESTART_BUTTON].renderFunction = &renderRestartButton;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonUp = &clickedDownRestartButton;
+    sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedDownRestartButton;
 
     // Rectangle for the promotion overlay will be calculated when it is rendered
     // The only information needed to create this rectangle is the size of the board 

@@ -89,9 +89,11 @@ SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* fon
 }
 
 SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_Rect rect) {
+    SDL_AppResult result = SDL_APP_FAILURE;
+
     if (!renderer || !baseFont || !textString) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter at " __FILE__);
-        return SDL_APP_FAILURE;
+        return result;
     }
 
     // Initial guess font size
@@ -101,7 +103,7 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
     TTF_Font* tempFont = TTF_CopyFont(baseFont);
     if (!tempFont) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_CopyFont failed: %s\n", SDL_GetError());
-        return SDL_APP_FAILURE;
+        return result;
     }
 
     if (!TTF_SetFontSize(tempFont, referenceSize)) {
@@ -134,7 +136,6 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
     }
 
     // Drawing the text centered
-    SDL_AppResult result;
     if (isTextMultiLine) result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
     else result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect);
 

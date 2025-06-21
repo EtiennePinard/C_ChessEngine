@@ -3,6 +3,8 @@
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     if (!app->events.shouldHandleEvents) return SDL_APP_CONTINUE;
 
+    MouseState mouseState;
+
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
     SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
@@ -16,7 +18,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         return SDL_APP_SUCCESS;
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        MouseState mouseState = app->events.mouseState;
+        mouseState = app->events.mouseState;
         int foundIndex = -1;
         if (app->events.lockSelectedBoxIndex) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
@@ -35,7 +37,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
                 foundIndex = (int)index;
 
-                if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) appResult = box.onMouseEntered(event, box.renderRect, app);                
+                if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) appResult = box.onMouseEntered(event, box.renderRect, app);
                 // Return early if we have encountered an error
                 if (appResult != SDL_APP_CONTINUE) return appResult;
                 if (box.onMouseHovered) appResult = box.onMouseHovered(event, box.renderRect, app);

@@ -24,23 +24,28 @@ BUILD_RULES = \
 
 RUN_RULES = test perft engine app visualizePST visualizeEval
 
-RULES = $(BUILD_RULES) $(RUN_RULES) build/assets help
-
-# Flags for compiling SDL
-SDL_FLAGS = -I${SDL_INCLUDE_PATH} -I${SDL_TTF_INCLUDE_PATH} -I${SDL_IMAGE_INCLUDE_PATH} -L${SDL_LIBRARY_PATH} -L${SDL_TTF_LIBRARY_PATH} -L${SDL_IMAGE_LIBRARY_PATH} -lSDL3 -lSDL3_ttf -lSDL3_image
+RULES = $(BUILD_RULES) $(RUN_RULES) build/assets SDL-dlls-copy help
 
 UNAME_S := $(shell uname -s)
+
+# INCLUDEFLAGS
+SDL_INCLUDE_FLAGS = -I"${SDL_INCLUDE_PATH}" -I"${SDL_TTF_INCLUDE_PATH}" -I"${SDL_IMAGE_INCLUDE_PATH}"
+app_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
+visualizePST_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
+visualizeEval_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
+
+# LDFLAGS
+SDL_LDFLAGS = -L${SDL_LIBRARY_PATH} -L${SDL_TTF_LIBRARY_PATH} -L${SDL_IMAGE_LIBRARY_PATH} -lSDL3 -lSDL3_ttf -lSDL3_image
 
 ifeq ($(UNAME_S),Linux)
 else ifeq ($(OS),Windows_NT)
     # Note: We do not use the -mwindows library since we want to see the terminal when using the app
-    SDL_FLAGS += -lmingw32 
+    SDL_LDFLAGS += -lmingw32 
 endif
 
-# LDFLAGS
-app_LDFLAGS = $(SDL_FLAGS) -lm
-visualizePST_LDFLAGS = $(SDL_FLAGS)
-visualizeEval_LDFLAGS = $(SDL_FLAGS)
+app_LDFLAGS = $(SDL_LDFLAGS) -lm
+visualizePST_LDFLAGS = $(SDL_LDFLAGS)
+visualizeEval_LDFLAGS = $(SDL_LDFLAGS)
 chessEngine_LDFLAGS = -pthread 
 
 # Program arguments
@@ -170,11 +175,11 @@ visualizeEval_OBJ = $(patsubst %.c,build/%.o,$(visualizeEval_SRC))
 all: $(BUILD_RULES)
 
 # Compile .c to .o into build/
-build/%.o: %.c
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
-
 define build_template
+build/%.o: %.c
+	@mkdir -p $$(dir $$@)
+	$$(CC) $$(CFLAGS) $$($(1)_INCLUDEFLAGS) -MMD -MP -c $$< -o $$@
+
 build_$(1): $$($(1)_OBJ)
 	$$(CC) $$(CFLAGS) $$^ -o build/$(1) $$($(1)_LDFLAGS)
 endef
@@ -237,7 +242,7 @@ help:
 	@echo "make test             - Build and run the engine's unit tests"
 	@echo "make perft            - Build and run perft (PARG=...)"
 	@echo "make engine           - Build and run chess engine (UCI)"
-	@echo "make app              - Build and run SDL2 GUI app" 
+	@echo "make app              - Build and run SDL3 GUI app" 
 	@echo "make visualizePST     - Build and run an app to visualize the piece square table"
 	@echo "make visualizeEval    - Build and run an app to visualize the static evaluation"
 	@echo "make all              - Executes all build rules. This is the default rule"

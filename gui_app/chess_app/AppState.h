@@ -32,12 +32,48 @@
 
 #define DEFAULT_TIME_CONTROL ((TimeControl) { .increment = (TimeControl_MS) (5 * 60 * 1000), .timeLeft = (TimeControl_MS) (0) })
 
-typedef struct SelectedPiece {
-    bool isPieceSelected;
-    Square from;
-    Piece selectedPiece;
-    bool isDragged;
-} SelectedPiece;
+typedef struct TimeControl {
+    TimeControl_MS timeLeft;
+    TimeControl_MS increment;
+} TimeControl;
+
+typedef struct UndoGameState {
+    ChessPosition position;
+    TimeControl playerToGoTimeControl;
+} UndoGameState;
+
+typedef struct UndoGameStates {
+    UndoGameState* data;
+    size_t capacity;
+    size_t count;
+} UndoGameStates;
+
+typedef struct Player {
+    TimeControl timeControl;
+
+    struct EngineCommunication* engineCommunication;
+    SDL_AtomicInt isBotThinking;
+} Player;
+
+typedef struct GameState {
+    ChessPosition position;
+    Player white;
+    Player black;
+
+    u64 previousTick;
+} GameState;
+
+typedef struct Moves {
+    Move* data;
+    size_t capacity;
+    size_t count;
+} Moves;
+
+typedef struct MoveListInfo {
+    Moves movesPlayed;
+
+    size_t moveListScrollY;
+} MoveListInfo;
 
 typedef enum GameResult {
     GAME_IS_NOT_DONE,
@@ -51,68 +87,48 @@ typedef enum GameResult {
     BLACK_WON_ON_TIME
 } GameResult;
 
-typedef struct UndoGameStates {
-    ChessPosition* previousStates;
-    int previousStateCapacity;
-    int previousStateIndex;
-} UndoGameStates;
+typedef struct GameEndedInfo {
+    bool renderOverlay;
+    GameResult result;
+} GameEndedInfo;
 
-typedef struct TimeControl {
-    TimeControl_MS timeLeft;
-    TimeControl_MS increment;
-} TimeControl;
-
-typedef struct Player {
-    TimeControl timeControl;
-    
-    struct EngineCommunication* engineCommunication;
-    SDL_AtomicInt isBotThinking;
-} Player;
-
-typedef struct PromotionSettings {
+typedef struct PromotionInfo {
     bool renderPromotionOverlay;
     Square promotionSquareTo;
     Square promotionSquareFrom;
     SDL_Rect overlayRect;
-} PromotionSettings;
+} PromotionInfo;
 
-typedef struct GameEndedSettings {
-    bool renderOverlay;
-    GameResult result;
-} GameEndedSettings;
-
-typedef struct GameState {
-    ChessPosition position;
-    Player white;
-    Player black;
-    
-    u64 previousTick;
-    
-    UndoGameStates undoStates;
-    Move* movesPlayed;
-
-    GameEndedSettings gameEndedSettings;
-} GameState;
+typedef struct SelectedPieceInfo {
+    bool isPieceSelected;
+    Square from;
+    Piece selectedPiece;
+    bool isDragged;
+} SelectedPieceInfo;
 
 typedef struct PlayerConfig {
     bool isEngine;
     char* enginePath;
 } PlayerConfig;
 
-typedef struct GameSettings {
+typedef struct GameConfig {
     PlayerConfig white;
     PlayerConfig black;
     TimeControl timeControl;
-} GameSettings;
+} GameConfig;
 
 typedef struct GameSceneData {
-    Textures textures;
     GameState state;
-    SelectedPiece selectedPiece;
-    PromotionSettings promotionSettings;
+    
     bool flipBoard;
-
-    GameSettings gameSettings;
+    SelectedPieceInfo selectedPiece;
+    PromotionInfo promotionInfo;
+    MoveListInfo moveListInfo;
+    GameEndedInfo gameEndedInfo;
+    UndoGameStates undoGameStates;
+    
+    GameConfig gameInfo;
+    Textures textures;
 } GameSceneData;
 
 typedef struct TimeControlSettings {
@@ -121,7 +137,7 @@ typedef struct TimeControlSettings {
 } TimeControlSettings;
 
 typedef struct MainMenuSceneData {
-    GameSettings gameSettings;
+    GameConfig gameInfo;
     TimeControlSettings timeControlSettings;
 
     Textures textures;

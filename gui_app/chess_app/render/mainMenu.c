@@ -22,13 +22,13 @@ SDL_AppResult renderBlackKingImage(SDL_Rect rect, App* app) {
 
 SDL_AppResult renderWhitePlayerTypeButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    const char* label = scene->gameSettings.white.isEngine ? "Engine" : "Human";
+    const char* label = scene->gameInfo.white.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, WHITE_PLAYER_TYPE, label);
 }
 
 SDL_AppResult renderBlackPlayerTypeButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    const char* label = scene->gameSettings.black.isEngine ? "Engine" : "Human";
+    const char* label = scene->gameInfo.black.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, BLACK_PLAYER_TYPE, label);
 }
 
@@ -49,14 +49,14 @@ const char* getFilenameFromPath(const char* path) {
 #include <stdio.h>
 SDL_AppResult renderWhiteEnginePathButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    char* label = scene->gameSettings.white.isEngine ? scene->gameSettings.white.enginePath : "Human Player";
+    char* label = scene->gameInfo.white.isEngine ? scene->gameInfo.white.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, WHITE_ENGINE_PATH, getFilenameFromPath(label));
 }
 
 SDL_AppResult renderBlackEnginePathButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    char* label = scene->gameSettings.black.isEngine ? scene->gameSettings.black.enginePath : "Human Player";
+    char* label = scene->gameInfo.black.isEngine ? scene->gameInfo.black.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, BLACK_ENGINE_PATH, getFilenameFromPath(label));
 }
@@ -76,7 +76,7 @@ SDL_AppResult renderTimeControlLabel(SDL_Rect rect, App* app) {
 SDL_AppResult renderTimeControlButton(SDL_Rect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char buffer[11];
-    formatTimeControl(scene->gameSettings.timeControl, buffer, 11);
+    formatTimeControl(scene->gameInfo.timeControl, buffer, 11);
     return renderButton(rect, app, TIME_CONTROL_BUTTON, buffer);
 }
 

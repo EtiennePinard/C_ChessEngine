@@ -46,12 +46,12 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
 
-    if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
+    if (data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
         SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         u64 currentTick = SDL_GetTicks();
         if (currentPlayer->timeControl.timeLeft <= currentTick - data->state.previousTick) {
             currentPlayer->timeControl.timeLeft = 0;
-            data->state.gameEndedSettings.result = data->state.position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+            data->gameEndedInfo.result = data->state.position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
         }
         else {
             currentPlayer->timeControl.timeLeft -= (currentTick - data->state.previousTick);
@@ -93,7 +93,7 @@ bool initializeApp(App* app) {
 
     printf("Initializing Main Menu Scene... ");
     MainMenuSceneData* mainMenu = calloc(1, sizeof(MainMenuSceneData));
-    loadMainMenuConfig(&mainMenu->gameSettings);
+    loadMainMenuConfig(&mainMenu->gameInfo);
     mainMenu->timeControlSettings.selectModalVisible = false;
     mainMenu->timeControlSettings.hovered = (TimeControl){ 0, 0 };
 

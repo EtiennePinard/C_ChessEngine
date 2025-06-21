@@ -62,12 +62,14 @@ static inline bool insufficientMaterialScenario(const GameState* gameState) {
     return false;
 }
 
-static void computeGameEnd(GameState* gameState) {
+static void computeGameEnd(GameSceneData* data) {
+    GameState* gameState = &data->state;
+
     // This checking of the currentState is pretty much only useful for 
     // the bot running out of time
     Player currentPlayer = gameState->position.colorToGo == WHITE ? gameState->white : gameState->black;
     if (currentPlayer.timeControl.timeLeft <= (TimeControl_MS)0) {
-        gameState->gameEndedSettings.result = gameState->position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+        data->gameEndedInfo.result = gameState->position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
         return;
     }
 
@@ -76,40 +78,49 @@ static void computeGameEnd(GameState* gameState) {
     MoveHandler_getValidMoves(moves, &numMove, gameState->position);
     if (numMove == 0) {
         if (MoveHandler_isKingInCheck() || MoveHandler_isKingInDoubleCheck()) {
-            gameState->gameEndedSettings.result = gameState->position.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
+            data->gameEndedInfo.result = gameState->position.colorToGo == WHITE ? BLACK_WON_CHECKMATE : WHITE_WON_CHECKMATE;
         }
         else {
-            gameState->gameEndedSettings.result = STALEMATE;
+            data->gameEndedInfo.result = STALEMATE;
         }
     }
     else if (RepetitionTable_isKeyContainedTwiceInTable(gameState->position.key)) {
-        gameState->gameEndedSettings.result = THREE_MOVE_REPETITION;
+        data->gameEndedInfo.result = THREE_MOVE_REPETITION;
     }
     else if (gameState->position.turnsForFiftyRule > 50) {
         // TODO: Check this case out
-        gameState->gameEndedSettings.result = FIFTY_MOVE_RULE;
+        data->gameEndedInfo.result = FIFTY_MOVE_RULE;
     }
     else if (insufficientMaterialScenario(gameState)) {
-        gameState->gameEndedSettings.result = INSUFFICIENT_MATERIAL;
+        data->gameEndedInfo.result = INSUFFICIENT_MATERIAL;
     }
 }
 
-static inline void playMoveOnBoard(GameState* gameState, Move move) {
-    if (gameState->undoStates.previousStateIndex >= gameState->undoStates.previousStateCapacity) {
-        gameState->undoStates.previousStateCapacity *= 2;
-        gameState->undoStates.previousStates = realloc(gameState->undoStates.previousStates, sizeof(GameState) * gameState->undoStates.previousStateCapacity);
-        gameState->movesPlayed = realloc(gameState->movesPlayed, sizeof(Move) * gameState->undoStates.previousStateCapacity);
-    }
-    gameState->undoStates.previousStates[gameState->undoStates.previousStateIndex] = gameState->position;
-    gameState->movesPlayed[gameState->undoStates.previousStateIndex] = move;
-    gameState->undoStates.previousStateIndex++;
+static inline void playMoveOnBoard(GameSceneData* data, Move move) {
+    GameState* gameState = &data->state;
 
+    Player oppositePlayer = gameState->position.colorToGo == WHITE ? gameState->black : gameState->white;
+    
+    // We append the position to the previous position
+    // The -1 is because the time control for the current position has already
+    // been added and so the count has already been added by one
+    data->undoGameStates.data[data->undoGameStates.count - 1].position = gameState->position;    
+
+    ChessPosition dummyPosition = { 0 };
+    UndoGameState undoState = {
+        .position = dummyPosition,
+        .playerToGoTimeControl = oppositePlayer.timeControl
+    };
+    // We append the timecontrol for the player to go
+    da_append((&data->undoGameStates), undoState);
+    da_append((&data->moveListInfo.movesPlayed), move);
+    
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
     MoveHandler_playMove(move, &gameState->position, true);
-    computeGameEnd(gameState);
-    if (gameState->gameEndedSettings.result != GAME_IS_NOT_DONE) {
-        gameState->gameEndedSettings.renderOverlay = true;
+    computeGameEnd(data);
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
+        data->gameEndedInfo.renderOverlay = true;
     }
 }
 
@@ -118,17 +129,17 @@ static int botMove(void* app_pointer) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     GameState* gameState = &data->state;
 
-    ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
+    ChessPosition startingPosition = (data->undoGameStates.count <= 1) ?
         gameState->position :
-        gameState->undoStates.previousStates[0];
+        data->undoGameStates.data[0].position;
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     SDL_assert(currentPlayer->engineCommunication != NULL);
 
     Move botMove = UCIEngine_bestMoveTimed(
         currentPlayer->engineCommunication,
         startingPosition,
-        gameState->movesPlayed,
-        gameState->undoStates.previousStateIndex,
+        data->moveListInfo.movesPlayed.data,
+        data->moveListInfo.movesPlayed.count,
         200
         // gameState->whiteRemainingTime,
         // gameState->blackRemainingTime,
@@ -137,7 +148,7 @@ static int botMove(void* app_pointer) {
         // -1 // We don't have movesToGo for now
     );
 
-    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && gameState->gameEndedSettings.result == GAME_IS_NOT_DONE) {
+    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
         exit(EXIT_FAILURE);
         return 1;
@@ -146,7 +157,7 @@ static int botMove(void* app_pointer) {
     botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
     SDL_SetAtomicInt(&currentPlayer->isBotThinking, false);
 
-    playMoveOnBoard(gameState, botMove);
+    playMoveOnBoard(data, botMove);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, OTHER_THREAD_RERENDER);
 
     return 0;
@@ -167,19 +178,21 @@ SDL_Thread* playBotMove(App* app) {
 SDL_AppResult resetGame(GameSceneData* data) {
     GameState* gameState = &data->state;
     // If we are not already at the beginning go back to the beginning
-    ChessPosition startingPosition = (gameState->undoStates.previousStateIndex == 0) ?
+    ChessPosition startingPosition = (data->undoGameStates.count <= 1) ?
         gameState->position :
-        gameState->undoStates.previousStates[0];
+        data->undoGameStates.data[0].position;
     memcpy(&gameState->position, &startingPosition, sizeof(startingPosition));
-    gameState->undoStates.previousStateIndex = 0;
-    gameState->gameEndedSettings.result = GAME_IS_NOT_DONE;
+    data->undoGameStates.count = 0;
+    data->moveListInfo.movesPlayed.count = 0;
+    data->moveListInfo.moveListScrollY = 0;
+    data->gameEndedInfo.result = GAME_IS_NOT_DONE;
     RepetitionTable_clear();
 
-    gameState->white.timeControl = data->gameSettings.timeControl;
-    if (data->gameSettings.white.isEngine) UCIEngine_sendCommand(gameState->white.engineCommunication, "ucinewgame");
+    gameState->white.timeControl = data->gameInfo.timeControl;
+    if (data->gameInfo.white.isEngine) UCIEngine_sendCommand(gameState->white.engineCommunication, "ucinewgame");
 
-    gameState->black.timeControl = data->gameSettings.timeControl;
-    if (data->gameSettings.black.isEngine) UCIEngine_sendCommand(gameState->black.engineCommunication, "ucinewgame");
+    gameState->black.timeControl = data->gameInfo.timeControl;
+    if (data->gameInfo.black.isEngine) UCIEngine_sendCommand(gameState->black.engineCommunication, "ucinewgame");
 
     gameState->previousTick = SDL_GetTicks();
 
@@ -188,7 +201,7 @@ SDL_AppResult resetGame(GameSceneData* data) {
 
 void clickedWhenGameIsDone(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    data->state.gameEndedSettings.renderOverlay = false;
+    data->gameEndedInfo.renderOverlay = false;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 }
 
@@ -196,7 +209,7 @@ SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app
     (void)event;
     (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) clickedWhenGameIsDone(app);
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) clickedWhenGameIsDone(app);
     resetGame(data);
     return SDL_APP_CONTINUE;
 }
@@ -206,7 +219,7 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     // If the overlay is not visible we don't do anything
-    if (!data->promotionSettings.renderPromotionOverlay) return SDL_APP_CONTINUE;
+    if (!data->promotionInfo.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
     // We need this if statement to invalidate the first click to the promotion overlay since
     // this first click could be the second click of the pawn moving to the promotion square
@@ -216,7 +229,7 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
         return SDL_APP_CONTINUE;
     }
 
-    SDL_Rect overlayRect = data->promotionSettings.overlayRect;
+    SDL_Rect overlayRect = data->promotionInfo.overlayRect;
 
     SDL_Point mousePoint = { (int)event->button.x, (int)event->button.y };
     // If we are not in the promotion overlay simply continue the app
@@ -232,8 +245,8 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
 
     // Map the row and column to a piece
     int pieceIndex = rowIndex * 2 + colIndex;
-    Square from = data->promotionSettings.promotionSquareFrom;
-    Square to = data->promotionSettings.promotionSquareTo;
+    Square from = data->promotionInfo.promotionSquareFrom;
+    Square to = data->promotionInfo.promotionSquareTo;
     switch (pieceIndex) {
     case 0: move = Move_makeMove(from, to, PROMOTE_TO_QUEEN); break;
     case 1: move = Move_makeMove(from, to, PROMOTE_TO_KNIGHT); break;
@@ -247,8 +260,8 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
         return SDL_APP_FAILURE;
     }
 
-    playMoveOnBoard(&data->state, move);
-    data->promotionSettings.renderPromotionOverlay = false;
+    playMoveOnBoard(data, move);
+    data->promotionInfo.renderPromotionOverlay = false;
 
     app->state.currentScene.selectedRenderBoxIndex = CHESSBOARD;
     app->events.lockSelectedBoxIndex = false;
@@ -276,16 +289,16 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
                 Move_flag(move) == PROMOTE_TO_ROOK ||
                 Move_flag(move) == PROMOTE_TO_BISHOP) {
 
-                data->promotionSettings.renderPromotionOverlay = true;
-                data->promotionSettings.promotionSquareFrom = data->selectedPiece.from;
-                data->promotionSettings.promotionSquareTo = draggingTo;
+                data->promotionInfo.renderPromotionOverlay = true;
+                data->promotionInfo.promotionSquareFrom = data->selectedPiece.from;
+                data->promotionInfo.promotionSquareTo = draggingTo;
 
                 app->state.currentScene.selectedRenderBoxIndex = PROMOTION_OVERLAY;
                 app->events.lockSelectedBoxIndex = true;
                 // The promotion settings will take care of playing the chosen move on the board
             }
             else {
-                playMoveOnBoard(&data->state, move);
+                playMoveOnBoard(data, move);
             }
             break;
         }
@@ -297,7 +310,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) {
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
         clickedWhenGameIsDone(app);
         return SDL_APP_CONTINUE;
     }
@@ -309,7 +322,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     // Furthermore if the currentPlayer is an engine, let the engine think
     if (data->state.position.colorToGo != Piece_color(data->selectedPiece.selectedPiece) || currentPlayer.engineCommunication != NULL) {
         // Reset the dragging state
-        memset(&data->selectedPiece, 0, sizeof(SelectedPiece));
+        memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
         return SDL_APP_CONTINUE;
     }
 
@@ -337,7 +350,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     (void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->state.gameEndedSettings.result != GAME_IS_NOT_DONE) {
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
         clickedWhenGameIsDone(app);
         return SDL_APP_CONTINUE;
     }
@@ -377,28 +390,6 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     return SDL_APP_CONTINUE;
 }
 
-// void clickedRewindButton(SDL_Event event, App app) {
-//     switch (event.type) {
-//     case SDL_EVENT_MOUSE_BUTTON_DOWN:
-//         if (app.state.gameScene.state.undoStates.previousStateIndex <= 1) return; // We cannot go back
-
-//         // Note that the time controls will not be updated because this is just for debugging purposes
-//         ChessPosition previousPos = app.state.gameScene.state.undoStates.previousStates[--app.state.gameScene.state.undoStates.previousStateIndex];
-//         RepetitionTable_pop();
-//         if (previousPos.colorToGo == app.state.gameScene.state.playerColor) {
-//             app.state.gameScene.state.position = previousPos;
-//         }
-//         else {
-//             app.state.gameScene.state.position = app.state.gameScene.state.undoStates.previousStates[--app.state.gameScene.state.undoStates.previousStateIndex];
-//             RepetitionTable_pop();
-//         }
-
-//         break;
-//     default: // Only do something for mouse button down
-//         break;
-//     }
-// }
-
 SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
@@ -406,7 +397,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     MainMenuSceneData* mainMenuData = calloc(1, sizeof(MainMenuSceneData));
     GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
 
-    mainMenuData->gameSettings = gameData->gameSettings;
+    mainMenuData->gameInfo = gameData->gameInfo;
     mainMenuData->timeControlSettings.selectModalVisible = false;
     mainMenuData->timeControlSettings.hovered = (TimeControl){ 0, 0 };
 
@@ -419,8 +410,8 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
     if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
 
-    free(gameData->state.undoStates.previousStates);
-    free(gameData->state.movesPlayed);
+    free(gameData->undoGameStates.data);
+    free(gameData->moveListInfo.movesPlayed.data);
     cleanupTextures(gameData->textures);
     free(gameData->textures.data);
 

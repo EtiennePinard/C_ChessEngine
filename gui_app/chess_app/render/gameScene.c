@@ -37,7 +37,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
     if (!SDL_PointInRect(&mousePoint, &boardRect)) {
         // If the mouse is not in the board rect reset selected piece state
-        memset(&data->selectedPiece, 0, sizeof(SelectedPiece));
+        memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
     }
 
     bool doRenderDraggedPiece = data->selectedPiece.isPieceSelected && data->selectedPiece.isDragged;
@@ -54,8 +54,8 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         SDL_FRect squareFRect = RECT_TO_FRECT(squareRect);
 
         bool previousMoveSquare = false;
-        if (data->state.undoStates.previousStateIndex > 0) {
-            Move previousMove = data->state.movesPlayed[data->state.undoStates.previousStateIndex - 1];
+        if (data->moveListInfo.movesPlayed.count > 0) {
+            Move previousMove = data->moveListInfo.movesPlayed.data[data->moveListInfo.movesPlayed.count - 1];
             previousMoveSquare = (squareIndex == Move_fromSquare(previousMove) || squareIndex == Move_toSquare(previousMove));
         }
 
@@ -94,7 +94,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         }
 
         // Don't render the dragged pieces at their position and at the mouse coordinates
-        if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) continue;
+        if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->gameEndedInfo.result == GAME_IS_NOT_DONE) continue;
 
         Piece piece = Board_pieceAtIndex(data->state.position.board, squareIndex);
         if (piece != NO_PIECE) {
@@ -106,12 +106,12 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     }
 
     if (doRenderDraggedPiece) {
-        if (data->state.gameEndedSettings.result == GAME_IS_NOT_DONE) {
+        if (data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
             renderDraggedPiece(app->state.sdlState.renderer, data, squareSize, (int)mouseX, (int)mouseY);
         }
         else {
             // Resetting selectedPiece
-            memset(&data->selectedPiece, 0, sizeof(SelectedPiece));
+            memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
         }
     }
     return SDL_APP_CONTINUE;
@@ -147,8 +147,7 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &RECT_TO_FRECT(rect));
 
-    GameSceneData* scene = (GameSceneData*)app->state.currentScene.data;
-    GameState* gameState = &scene->state;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
     const int padding = rect.w / 16;
     const int lineHeight = TTF_GetFontLineSkip(font);
@@ -162,12 +161,12 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
     ChessPosition position;
     Board board;
-    for (int i = 0; i < gameState->undoStates.previousStateIndex; i += 2) {
+    for (size_t i = 0; i < data->moveListInfo.movesPlayed.count; i += 2) {
         if (y > maxY) break; // stop if we run out of vertical space
 
         // --- Move number ---
         char numberBuffer[8];
-        snprintf(numberBuffer, sizeof(numberBuffer), "%d.", i / 2 + 1);
+        snprintf(numberBuffer, sizeof(numberBuffer), "%zu.", i / 2 + 1);
 
         SDL_Rect moveNumberRect = {
             .x = rect.x + padding,
@@ -181,14 +180,14 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
         // --- White's move ---
         SDL_Rect whiteMoveRect;
-        if (i < gameState->undoStates.previousStateIndex) {
+        if (i < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
-            position = gameState->undoStates.previousStates[i];
+            position = data->undoGameStates.data[i].position;
             memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
             char whiteMove[16];
-            moveToStandardAlgebraic(gameState->undoStates.previousStates[i], gameState->movesPlayed[i], whiteMove);
+            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[i], whiteMove);
 
             whiteMoveRect = (SDL_Rect){
                 .x = moveNumberRect.x + moveNumberRect.w + padding,
@@ -202,14 +201,14 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
         }
 
         // --- Black's move ---
-        if (i + 1 < gameState->undoStates.previousStateIndex) {
+        if (i + 1 < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
-            position = gameState->undoStates.previousStates[i];
+            position = data->undoGameStates.data[i + 1].position;
             memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
             char blackMove[16];
-            moveToStandardAlgebraic(gameState->undoStates.previousStates[i + 1], gameState->movesPlayed[i + 1], blackMove);
+            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[i + 1], blackMove);
 
             SDL_Rect blackMoveRect = {
                 .x = whiteMoveRect.x + whiteMoveRect.w + padding,
@@ -242,7 +241,7 @@ SDL_Rect calculatePromotionRect(GameSceneData* data, SDL_Rect boardRect) {
     int squareSize = boardRect.w / BOARD_LENGTH;
 
     // Calculate position of the promotion square
-    int promotionSquare = data->promotionSettings.promotionSquareTo;
+    int promotionSquare = data->promotionInfo.promotionSquareTo;
     int promotionFile = file(promotionSquare);
     int promotionRank = rank(promotionSquare);
     if (data->flipBoard) {
@@ -265,11 +264,11 @@ SDL_Rect calculatePromotionRect(GameSceneData* data, SDL_Rect boardRect) {
 
 SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (!data->promotionSettings.renderPromotionOverlay) return SDL_APP_CONTINUE;
+    if (!data->promotionInfo.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
     int squareSize = boardRect.w / BOARD_LENGTH;
     SDL_Rect overlayRect = calculatePromotionRect(data, boardRect);
-    data->promotionSettings.overlayRect = overlayRect;
+    data->promotionInfo.overlayRect = overlayRect;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
@@ -279,7 +278,7 @@ SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
     SDL_RenderRect(renderer, &RECT_TO_FRECT(overlayRect));
 
     // Render piece textures
-    PieceCharacteristics colorToPromote = Piece_color(Board_pieceAtIndex(data->state.position.board, data->promotionSettings.promotionSquareFrom));
+    PieceCharacteristics colorToPromote = Piece_color(Board_pieceAtIndex(data->state.position.board, data->promotionInfo.promotionSquareFrom));
     int indexOffSet = colorToPromote == WHITE ? 9 : 11;
     SDL_Texture* textures[NB_PROMOTION_TYPE];
     textures[0] = data->textures.data[Piece_makePiece(colorToPromote, QUEEN) - indexOffSet].texture;
@@ -329,7 +328,7 @@ SDL_AppResult renderPromotionOverlay(SDL_Rect boardRect, App* app) {
 
 SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (!data->state.gameEndedSettings.renderOverlay) return SDL_APP_CONTINUE;
+    if (!data->gameEndedInfo.renderOverlay) return SDL_APP_CONTINUE;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
@@ -340,7 +339,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
 
     char text[31];
 
-    switch (data->state.gameEndedSettings.result) {
+    switch (data->gameEndedInfo.result) {
     case GAME_IS_NOT_DONE:
         memcpy(text, "Game is on!", 12);
         break;
@@ -369,7 +368,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
         memcpy(text, "Black won\non time", 18);
         break;
     default:
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on switch for a GameResult value of: %d\n", data->state.gameEndedSettings.result);
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on switch for a GameResult value of: %d\n", data->gameEndedInfo.result);
         return SDL_APP_FAILURE;
     }
 

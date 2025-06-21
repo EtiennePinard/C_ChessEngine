@@ -3,7 +3,7 @@
 
 #include "AppState.h"
 
-void loadMainMenuConfig(GameSettings* data);
-bool saveMainMenuConfig(const GameSettings* data);
+void loadMainMenuConfig(GameConfig* data);
+bool saveMainMenuConfig(const GameConfig* data);
 
 #endif /* CFB5E356_A54F_4398_A4F1_8533D1FD2F8D */

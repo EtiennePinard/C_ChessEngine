@@ -43,7 +43,6 @@ SDL_Thread* playBotMove(App* app);
  */
 SDL_AppResult resetGame(GameSceneData* data);
 
-
 /**
  * @brief Calculates the square index of the chessboard from the (x, y) sdl coordinates
  * Note: This will be correct if the point (x, y) is in the chessboard

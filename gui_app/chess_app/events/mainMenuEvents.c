@@ -14,7 +14,7 @@ SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_Rect rect, App* a
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    data->gameSettings.white.isEngine = !data->gameSettings.white.isEngine;
+    data->gameInfo.white.isEngine = !data->gameInfo.white.isEngine;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
@@ -23,7 +23,7 @@ SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_Rect rect, App* a
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    data->gameSettings.black.isEngine = !data->gameSettings.black.isEngine;
+    data->gameInfo.black.isEngine = !data->gameInfo.black.isEngine;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
@@ -61,8 +61,8 @@ static void onWhiteEnginePathSelected(void* userdata, const char* const* filelis
     char* enginePath = onEnginePathSelected(filelist);
     if (!enginePath) return;
 
-    if (data->gameSettings.white.enginePath != NULL) free(data->gameSettings.white.enginePath);
-    data->gameSettings.white.enginePath = enginePath;
+    if (data->gameInfo.white.enginePath != NULL) free(data->gameInfo.white.enginePath);
+    data->gameInfo.white.enginePath = enginePath;
 }
 
 static void onBlackEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
@@ -78,8 +78,8 @@ static void onBlackEnginePathSelected(void* userdata, const char* const* filelis
     char* enginePath = onEnginePathSelected(filelist);
     if (!enginePath) return;
 
-    if (data->gameSettings.black.enginePath != NULL) free(data->gameSettings.black.enginePath);
-    data->gameSettings.black.enginePath = enginePath;
+    if (data->gameInfo.black.enginePath != NULL) free(data->gameInfo.black.enginePath);
+    data->gameInfo.black.enginePath = enginePath;
 }
 
 SDL_AppResult clickedDownEnginePath(App* app, PlayerConfig player, SDL_DialogFileCallback callback) {
@@ -106,13 +106,13 @@ SDL_AppResult clickedDownEnginePath(App* app, PlayerConfig player, SDL_DialogFil
 SDL_AppResult clickedDownWhiteEnginePath(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
-    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameSettings.white, &onWhiteEnginePathSelected);
+    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.white, &onWhiteEnginePathSelected);
 }
 
 SDL_AppResult clickedDownBlackEnginePath(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
-    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameSettings.black, &onBlackEnginePathSelected);
+    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.black, &onBlackEnginePathSelected);
 }
 
 SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_Rect rect, App* app) {
@@ -139,7 +139,7 @@ SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_Rect rect, App* 
     // A timeleft of 0 means no time controls were selected
     if (data->timeControlSettings.hovered.timeLeft == 0) return SDL_APP_CONTINUE;
 
-    data->gameSettings.timeControl = data->timeControlSettings.hovered;
+    data->gameInfo.timeControl = data->timeControlSettings.hovered;
     data->timeControlSettings.selectModalVisible = false;
 
     app->state.currentScene.selectedRenderBoxIndex = TIME_CONTROL_BUTTON;
@@ -153,7 +153,7 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
-    if (!saveMainMenuConfig(&mainMenuData->gameSettings)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
+    if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
 
     GameSceneData* gameData = calloc(1, sizeof(GameSceneData));
     gameData->flipBoard = false; // We don't have an option for that yet
@@ -169,23 +169,19 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
         return SDL_APP_FAILURE;
     }
 
-    gameData->state.gameEndedSettings.result = GAME_IS_NOT_DONE;
-    gameData->state.undoStates.previousStateCapacity = 64;
-    gameData->state.undoStates.previousStates = malloc(sizeof(ChessPosition) * gameData->state.undoStates.previousStateCapacity);
-    gameData->state.undoStates.previousStateIndex = 0;
+    gameData->gameEndedInfo.result = GAME_IS_NOT_DONE;
 
-    gameData->state.movesPlayed = malloc(sizeof(Move) * gameData->state.undoStates.previousStateCapacity);
     char* fenString = INITIAL_FEN;
     if (!FenString_setChessPositionFromCopiedFenString(fenString, &gameData->state.position)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the position\n");
         return SDL_APP_FAILURE;
     }
 
-    gameData->state.white.timeControl = mainMenuData->gameSettings.timeControl;
-    if (mainMenuData->gameSettings.white.isEngine) {
-        gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.white.enginePath, "uci_engine_log_white.txt");
+    gameData->state.white.timeControl = mainMenuData->gameInfo.timeControl;
+    if (mainMenuData->gameInfo.white.isEngine) {
+        gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.white.enginePath, "uci_engine_log_white.txt");
         if (!gameData->state.white.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameSettings.white.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.enginePath);
             return SDL_APP_FAILURE;
         }
     }
@@ -193,11 +189,11 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
         gameData->state.white.engineCommunication = NULL;
     }
 
-    gameData->state.black.timeControl = mainMenuData->gameSettings.timeControl;
-    if (mainMenuData->gameSettings.black.isEngine) {
-        gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameSettings.black.enginePath, "uci_engine_log_black.txt");
+    gameData->state.black.timeControl = mainMenuData->gameInfo.timeControl;
+    if (mainMenuData->gameInfo.black.isEngine) {
+        gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.black.enginePath, "uci_engine_log_black.txt");
         if (!gameData->state.black.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameSettings.black.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.enginePath);
             return SDL_APP_FAILURE;
         }
     }
@@ -205,10 +201,10 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
         gameData->state.black.engineCommunication = NULL;
     }
 
-    gameData->promotionSettings.renderPromotionOverlay = false;
-    gameData->state.gameEndedSettings.renderOverlay = false;
+    gameData->promotionInfo.renderPromotionOverlay = false;
+    gameData->gameEndedInfo.renderOverlay = false;
 
-    gameData->gameSettings = mainMenuData->gameSettings;
+    gameData->gameInfo = mainMenuData->gameInfo;
 
     // We don't need this scene anymore
     cleanupTextures(mainMenuData->textures);
@@ -223,6 +219,14 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     app->events.mouseState.hoveredIndex = -1;
 
     resetGame(gameData);
+
+    ChessPosition dummyPosition = { 0 };
+    UndoGameState undoState = {
+        .position = dummyPosition,
+        .playerToGoTimeControl = gameData->gameInfo.timeControl
+    };
+    // We append the timecontrol for the player to go
+    da_append((&gameData->undoGameStates), undoState);
 
     return SDL_APP_CONTINUE;
 }

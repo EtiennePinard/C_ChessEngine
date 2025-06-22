@@ -24,4 +24,6 @@ typedef enum GameSceneRenderBoxIndex {
  */
 void computeGameSceneRender(SDL_Window* window, Scene* scene);
 
+void terminateGameScene(void* data);
+
 #endif /* B4B2C873_427F_42CE_9217_0E2D736F783C */

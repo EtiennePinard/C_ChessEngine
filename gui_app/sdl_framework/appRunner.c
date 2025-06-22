@@ -17,6 +17,7 @@ SDL_AppResult SDL_AppInit(void** globalAppObject, int argc, char** argv) {
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, true);
     app->events.shouldHandleEvents = true;
     if (!initializeApp(app)) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when initalizing the app\n");
         return SDL_APP_FAILURE;
     }
 
@@ -54,7 +55,7 @@ void SDL_AppQuit(void* globalAppObject, SDL_AppResult result) {
     }
 
     App* app = (App*)globalAppObject;
+    app->state.currentScene.terminateSceneFunction(app->state.currentScene.data);
     cleanupApp(app);
     free(app);
-    // The OS will take care of the rest of the memory
 }

@@ -1,8 +1,13 @@
 #include <stdlib.h>
 
-#include "../AppStyle.h"
+#include "../../sdl_framework/AppCleanup.h"
+
 #include "../events/MainMenuEvents.h"
 #include "../events/CommonEvents.h"
+
+#include "../Config.h"
+#include "../AppStyle.h"
+
 #include "RenderUtils.h"
 #include "MainMenu.h"
 
@@ -330,4 +335,12 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     };
     sceneRender->renderBoxes[MAIN_MENU_CREDITS].renderRect = creditsRect;
     sceneRender->renderBoxes[MAIN_MENU_CREDITS].renderFunction = &renderCredits;
+}
+
+void terminateMainMenuScene(void* data) {
+    MainMenuSceneData* mainMenuData = (MainMenuSceneData*) data;
+    if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
+    cleanupTextures(mainMenuData->textures);
+    free(mainMenuData->textures.data);
+    free(mainMenuData);
 }

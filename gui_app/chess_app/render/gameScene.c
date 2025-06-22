@@ -6,6 +6,7 @@
 
 #include "../../sdl_framework/Render.h"
 #include "../../sdl_framework/EventHandler.h"
+#include "../../sdl_framework/AppCleanup.h"
 
 #include "../events/CommonEvents.h"
 #include "../events/GameEvents.h"
@@ -503,4 +504,17 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[PROMOTION_OVERLAY].renderFunction = &renderPromotionOverlay;
     sceneRender->renderBoxes[PROMOTION_OVERLAY].onMouseHovered = &rerenderScene;
     sceneRender->renderBoxes[PROMOTION_OVERLAY].onMouseButtonDown = &promotionOverlayMouseButtonDown;
+}
+
+void terminateGameScene(void* data) {
+    GameSceneData* gameData = (GameSceneData*) data;
+    if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
+    if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
+
+    free(gameData->undoGameStates.data);
+    free(gameData->moveListInfo.movesPlayed.data);
+    cleanupTextures(gameData->textures);
+    free(gameData->textures.data);
+
+    free(gameData);
 }

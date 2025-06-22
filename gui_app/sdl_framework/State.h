@@ -2,18 +2,15 @@
 #define D5A082FB_118E_4F77_A831_0F85357C54A5
 
 #include <stdbool.h>
-#include <SDL3/SDL.h>
 #include <SDL3_ttf/SDL_ttf.h>
+
+#include "Scene.h"
 
 /**
  * @brief Useful macro to convert a Rect to a FRect
  * 
  */
 #define RECT_TO_FRECT(rect) ((SDL_FRect) { .x = (float) rect.x, .y = (float) rect.y, .w = (float) rect.w, .h = (float) rect.h })
-
-typedef struct App App;
-
-typedef int SceneId;
 
 typedef struct SDL_State {
     SDL_Window *window;
@@ -39,40 +36,6 @@ typedef struct Textures {
     da->data = realloc(da->data, sizeof(valueToAppend) * da->capacity); \
 } \
 da->data[da->count++] = valueToAppend; \
-
-typedef SDL_AppResult (*RenderFunction)(SDL_Rect, App*);
-typedef SDL_AppResult (*EventCallbackBox)(SDL_Event*, SDL_Rect, App*);
-
-typedef struct RenderBox {
-    SDL_Rect renderRect;
-    RenderFunction renderFunction;
-    EventCallbackBox onMouseButtonDown;
-    EventCallbackBox onMouseButtonUp;
-    EventCallbackBox onMouseEntered;
-    EventCallbackBox onMouseHovered;
-    EventCallbackBox onMouseExited;
-} RenderBox;
-
-typedef struct SceneRender {
-    RenderBox* renderBoxes;
-    size_t numRenderBox;
-
-    SDL_Color renderDrawColor;
-} SceneRender;
-
-typedef enum RerenderValue {
-    NO_RERENDER = 0,
-    MAIN_THREAD_RERENDER = 1,
-    OTHER_THREAD_RERENDER = 2
-} RerenderValue;
-
-typedef struct Scene {
-    SceneId sceneId;
-    SceneRender sceneRender;
-    SDL_AtomicInt shouldRender;
-    int selectedRenderBoxIndex;
-    void* data;
-} Scene;
 
 /**
  * @brief The design philosophy of this AppState is to be able
@@ -101,7 +64,7 @@ typedef struct AppEvents {
 } AppEvents;
 
 /**
- * @brief Structs that holds a pointer to the AppEvents and AppState struct
+ * @brief Structs that holds the AppEvents and AppState struct
  * 
  */
 struct App {

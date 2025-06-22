@@ -26,4 +26,6 @@ typedef enum MainMenuRenderBoxIndex {
  */
 void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender);
 
+void terminateMainMenuScene(void* data);
+
 #endif /* DC6832D3_BA2C_425A_A3AA_925718E06AF6 */

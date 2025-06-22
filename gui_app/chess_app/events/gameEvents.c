@@ -100,11 +100,11 @@ static inline void playMoveOnBoard(GameSceneData* data, Move move) {
     GameState* gameState = &data->state;
 
     Player oppositePlayer = gameState->position.colorToGo == WHITE ? gameState->black : gameState->white;
-    
+
     // We append the position to the previous position
     // The -1 is because the time control for the current position has already
     // been added and so the count has already been added by one
-    data->undoGameStates.data[data->undoGameStates.count - 1].position = gameState->position;    
+    data->undoGameStates.data[data->undoGameStates.count - 1].position = gameState->position;
 
     ChessPosition dummyPosition = { 0 };
     UndoGameState undoState = {
@@ -114,7 +114,7 @@ static inline void playMoveOnBoard(GameSceneData* data, Move move) {
     // We append the timecontrol for the player to go
     da_append((&data->undoGameStates), undoState);
     da_append((&data->moveListInfo.movesPlayed), move);
-    
+
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
     MoveHandler_playMove(move, &gameState->position, true);
@@ -135,17 +135,16 @@ static int botMove(void* app_pointer) {
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     SDL_assert(currentPlayer->engineCommunication != NULL);
 
-    Move botMove = UCIEngine_bestMoveTimed(
+    Move botMove = UCIEngine_bestMoveFromTimeControls(
         currentPlayer->engineCommunication,
         startingPosition,
         data->moveListInfo.movesPlayed.data,
         data->moveListInfo.movesPlayed.count,
-        200
-        // gameState->whiteRemainingTime,
-        // gameState->blackRemainingTime,
-        // gameState->whiteIncrement,
-        // gameState->blackIncrement,
-        // -1 // We don't have movesToGo for now
+        gameState->white.timeControl.timeLeft,
+        gameState->white.timeControl.timeLeft,
+        gameState->white.timeControl.increment,
+        gameState->black.timeControl.increment,
+        -1 // We don't have movesToGo for now
     );
 
     if (Move_fromSquare(botMove) == Move_toSquare(botMove) && data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
@@ -394,8 +393,8 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
 
-    MainMenuSceneData* mainMenuData = calloc(1, sizeof(MainMenuSceneData));
     GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
+    MainMenuSceneData* mainMenuData = calloc(1, sizeof(MainMenuSceneData));
 
     mainMenuData->gameInfo = gameData->gameInfo;
     mainMenuData->timeControlSettings.selectModalVisible = false;
@@ -407,22 +406,19 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
         return false;
     }
 
-    if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
-    if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
-
-    free(gameData->undoGameStates.data);
-    free(gameData->moveListInfo.movesPlayed.data);
-    cleanupTextures(gameData->textures);
-    free(gameData->textures.data);
-
-    free(gameData);
-
-    app->state.currentScene.data = mainMenuData;
-    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
     app->state.currentScene.selectedRenderBoxIndex = -1;
-    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+    app->events.mouseState.hoveredIndex = -1;
 
+    // Calling the main menu terminating scene function
+    app->state.currentScene.terminateSceneFunction(gameData);
+
+    // Setting the current scene to the game scene
+    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
+    app->state.currentScene.data = mainMenuData;
+    app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+    
 
     return SDL_APP_CONTINUE;
 }

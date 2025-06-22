@@ -52,6 +52,7 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
         if (currentPlayer->timeControl.timeLeft <= currentTick - data->state.previousTick) {
             currentPlayer->timeControl.timeLeft = 0;
             data->gameEndedInfo.result = data->state.position.colorToGo == WHITE ? BLACK_WON_ON_TIME : WHITE_WON_ON_TIME;
+            data->gameEndedInfo.renderOverlay = true;
         }
         else {
             currentPlayer->timeControl.timeLeft -= (currentTick - data->state.previousTick);
@@ -105,6 +106,7 @@ bool initializeApp(App* app) {
 
     app->state.currentScene.data = mainMenu;
     app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
+    app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
     computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
 
     app->events.onWindowResize = &onWindowResize;

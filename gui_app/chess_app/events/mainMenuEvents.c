@@ -3,10 +3,9 @@
 
 #include "../../../engine/src/utils/FenString.h"
 #include "../../sdl_framework/AppInit.h"
-#include "../../sdl_framework/AppCleanup.h"
+
 #include "../render/MainMenu.h"
 #include "../render/GameScene.h"
-#include "../Config.h"
 #include "GameEvents.h"
 #include "MainMenuEvents.h"
 
@@ -43,8 +42,9 @@ char* onEnginePathSelected(const char* const* filelist) {
 
     // Use the first selected file
     size_t length = strlen(filelist[0]);
-    char* result = malloc(length * sizeof(char));
+    char* result = malloc(length * sizeof(char) + 1);
     strncpy(result, filelist[0], length);
+    result[length] = '\0';
     return result;
 }
 
@@ -153,7 +153,6 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
-    if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
 
     GameSceneData* gameData = calloc(1, sizeof(GameSceneData));
     gameData->flipBoard = false; // We don't have an option for that yet
@@ -206,16 +205,17 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
 
     gameData->gameInfo = mainMenuData->gameInfo;
 
-    // We don't need this scene anymore
-    cleanupTextures(mainMenuData->textures);
-    free(mainMenuData->textures.data);
-    free(mainMenuData);
+    // Calling the main menu terminating scene function
+    app->state.currentScene.terminateSceneFunction(mainMenuData);
 
+    // Setting the current scene to the game scene
     app->state.currentScene.sceneId = GAME_SCENE_ID;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     app->state.currentScene.data = gameData;
+    app->state.currentScene.terminateSceneFunction = &terminateGameScene;
     computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
+    app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
 
     resetGame(gameData);

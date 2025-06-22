@@ -28,11 +28,11 @@ All insufficient material scenario are:
                 so I'll say it's draw
 */
 static inline bool insufficientMaterialScenario(const GameState* gameState) {
-    u64 piecesBitBoard = Board_allPiecesBitBoard(gameState->position.board);
+    BitBoard piecesBitBoard = Board_allPiecesBitBoard(gameState->position.board);
     int nbPieces = numBitSet_64(piecesBitBoard);
     if (nbPieces > 4) { return false; }
 
-    u64 rooksPawnsQueens = piecesBitBoard & (
+    BitBoard rooksPawnsQueens = piecesBitBoard & (
         Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, QUEEN)) |
         Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, QUEEN)) |
         Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(WHITE, ROOK)) |
@@ -41,7 +41,7 @@ static inline bool insufficientMaterialScenario(const GameState* gameState) {
         Board_bitBoardForPiece(gameState->position.board, Piece_makePiece(BLACK, PAWN))
         );
 
-    if (rooksPawnsQueens != (u64)0) {
+    if (rooksPawnsQueens != (BitBoard)0) {
         // There is still pawns, rooks and/or queens on the board
         return false;
     }
@@ -117,6 +117,7 @@ static inline void playMoveOnBoard(GameSceneData* data, Move move) {
 
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
+
     MoveHandler_playMove(move, &gameState->position, true);
     computeGameEnd(data);
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
@@ -148,7 +149,7 @@ static int botMove(void* app_pointer) {
     );
 
     if (Move_fromSquare(botMove) == Move_toSquare(botMove) && data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "ERROR: The engine gave back a NULL_MOVE and the game is not done\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The engine gave back a NULL_MOVE and the game is not done\n");
         exit(EXIT_FAILURE);
         return 1;
     }
@@ -163,14 +164,16 @@ static int botMove(void* app_pointer) {
 }
 
 SDL_Thread* playBotMove(App* app) {
-    SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", app);
-    if (thread == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create thread: %s\n", SDL_GetError());
-        return NULL;
-    }
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
     SDL_SetAtomicInt(&currentPlayer->isBotThinking, true);
+
+    SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", app);
+    if (thread == NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create thread: %s\n", SDL_GetError());
+        SDL_SetAtomicInt(&currentPlayer->isBotThinking, false);
+        return NULL;
+    }
     return thread;
 }
 
@@ -180,11 +183,14 @@ SDL_AppResult resetGame(GameSceneData* data) {
     ChessPosition startingPosition = (data->undoGameStates.count <= 1) ?
         gameState->position :
         data->undoGameStates.data[0].position;
-    memcpy(&gameState->position, &startingPosition, sizeof(startingPosition));
+    gameState->position = startingPosition;
+
     data->undoGameStates.count = 0;
     data->moveListInfo.movesPlayed.count = 0;
+    data->selectedSquare.selectedSquare = (Square)-1;
     data->moveListInfo.moveListScrollY = 0;
     data->gameEndedInfo.result = GAME_IS_NOT_DONE;
+    data->promotionInfo.renderPromotionOverlay = false;
     RepetitionTable_clear();
 
     gameState->white.timeControl = data->gameInfo.timeControl;
@@ -209,8 +215,7 @@ SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app
     (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) clickedWhenGameIsDone(app);
-    resetGame(data);
-    return SDL_APP_CONTINUE;
+    return resetGame(data);
 }
 
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRect, App* app) {
@@ -222,9 +227,9 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
 
     // We need this if statement to invalidate the first click to the promotion overlay since
     // this first click could be the second click of the pawn moving to the promotion square
-    if (data->selectedPiece.isPieceSelected) {
+    if (data->selectedSquare.selectedSquare != (Square)-1) {
         // We are not holding the mouse button anymore
-        data->selectedPiece.isPieceSelected = false;
+        data->selectedSquare.selectedSquare = (Square)-1;
         return SDL_APP_CONTINUE;
     }
 
@@ -260,6 +265,8 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
     }
 
     playMoveOnBoard(data, move);
+    // We played a move so we reset the selected square
+    data->selectedSquare.selectedSquare = (Square)-1;
     data->promotionInfo.renderPromotionOverlay = false;
 
     app->state.currentScene.selectedRenderBoxIndex = CHESSBOARD;
@@ -280,7 +287,7 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
     for (int moveIndex = 0; moveIndex < numMoves; moveIndex++) {
         Move move = moves[moveIndex];
 
-        if (Move_fromSquare(move) == data->selectedPiece.from && Move_toSquare(move) == draggingTo) {
+        if (Move_fromSquare(move) == data->selectedSquare.selectedSquare && Move_toSquare(move) == draggingTo) {
             // This is the move the player wants to play
             // This is true because their is only one move with a particular from and to square (except for promotion)
             if (Move_flag(move) == PROMOTE_TO_QUEEN ||
@@ -289,7 +296,7 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
                 Move_flag(move) == PROMOTE_TO_BISHOP) {
 
                 data->promotionInfo.renderPromotionOverlay = true;
-                data->promotionInfo.promotionSquareFrom = data->selectedPiece.from;
+                data->promotionInfo.promotionSquareFrom = data->selectedSquare.selectedSquare;
                 data->promotionInfo.promotionSquareTo = draggingTo;
 
                 app->state.currentScene.selectedRenderBoxIndex = PROMOTION_OVERLAY;
@@ -298,6 +305,8 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
             }
             else {
                 playMoveOnBoard(data, move);
+                // We played a move so we reset the selected square
+                data->selectedSquare.selectedSquare = (Square)-1;
             }
             break;
         }
@@ -314,39 +323,47 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
         return SDL_APP_CONTINUE;
     }
 
+    if (data->selectedSquare.selectedSquare == (Square)-1) {
+        // The user clicked down outside the board rect and then moved
+        // the mouse inside the board rect and clicked up
+        // In this case we simply return
+        return SDL_APP_CONTINUE;
+    }
+
+    Piece selectedPiece = Board_pieceAtIndex(data->state.position.board, data->selectedSquare.selectedSquare);
+    // If the selected square does not contain a square simply return
+    if (selectedPiece == NO_PIECE) return SDL_APP_CONTINUE;
+
     Player currentPlayer = data->state.position.colorToGo == WHITE ? data->state.white : data->state.black;
 
     // We are dragging a piece from the opposite color. Also if gameScene.selectedPiece.draggedPiece 
     // is NO_PIECE than Piece_color will evaluate to 0 and colorToGo cannot be 0 
     // Furthermore if the currentPlayer is an engine, let the engine think
-    if (data->state.position.colorToGo != Piece_color(data->selectedPiece.selectedPiece) || currentPlayer.engineCommunication != NULL) {
-        // Reset the dragging state
-        memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
+    if (data->state.position.colorToGo != Piece_color(selectedPiece) || currentPlayer.engineCommunication != NULL) {
+        // Reset the selected piece
+        data->selectedSquare.selectedSquare = (Square)-1;
         return SDL_APP_CONTINUE;
     }
 
-    float mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
+    Square draggingTo = squareFromxy((int)event->button.x, (int)event->button.y, data->flipBoard, rect);
+    if (draggingTo == (Square)-1) {
+        // Probablity a floating point error when the mouse is on the edge of the board
+        return SDL_APP_CONTINUE;
+    }
 
-    Square draggingTo = squareFromxy((int)mouseX, (int)mouseY, data->flipBoard, rect);
-
-    if (draggingTo != data->selectedPiece.from) {
+    if (draggingTo != data->selectedSquare.selectedSquare) {
         // We dragged the piece to a square other than its starting square
         // we are not dragging anymore and we find the move the player wants to play
         SDL_AppResult result = findAndPlayHumanMove(app, draggingTo);
         if (result != SDL_APP_CONTINUE) return result;
-        data->selectedPiece.isPieceSelected = false;
         SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    }
-    else {
-        data->selectedPiece.isDragged = false;
     }
 
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app) {
-    (void)event;
+    //(void)event;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
@@ -354,38 +371,30 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
         return SDL_APP_CONTINUE;
     }
 
-    float mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
+    Square square = squareFromxy((int)event->button.x, (int)event->button.y, data->flipBoard, rect);
+    if (square == (Square)-1) {
+        // Probablity a floating point error when the mouse is on the edge of the board
+        return SDL_APP_CONTINUE;
+    }
 
-    int square = squareFromxy((int)mouseX, (int)mouseY, data->flipBoard, rect);
-
-    if (data->selectedPiece.isPieceSelected) {
-        SDL_assert(!data->selectedPiece.isDragged);
-
-        // We are already "dragging" a piece
-        Square draggingTo = squareFromxy((int)mouseX, (int)mouseY, data->flipBoard, rect);
-        Piece draggingToPiece = Board_pieceAtIndex(data->state.position.board, draggingTo);
-        Piece draggingFromPiece = Board_pieceAtIndex(data->state.position.board, data->selectedPiece.from);
-        if (Piece_color(draggingToPiece) == Piece_color(draggingFromPiece)) {
-            // The player does not want to move the piece
-            data->selectedPiece.selectedPiece = draggingToPiece;
-            data->selectedPiece.from = draggingTo;
-            data->selectedPiece.isDragged = true;
-        }
-        else {
-            SDL_AppResult result = findAndPlayHumanMove(app, draggingTo);
-            if (result != SDL_APP_CONTINUE) return result;
-            data->selectedPiece.isPieceSelected = false;
-        }
+    if (data->selectedSquare.selectedSquare == (Square)-1) {
+        data->selectedSquare.selectedSquare = square;
     }
     else {
-        data->selectedPiece.selectedPiece = Board_pieceAtIndex(data->state.position.board, square);
-        data->selectedPiece.from = square;
-        data->selectedPiece.isPieceSelected = true;
-        data->selectedPiece.isDragged = true;
+        Piece selectedPiece = Board_pieceAtIndex(data->state.position.board, data->selectedSquare.selectedSquare);
+        Piece draggingToPiece = Board_pieceAtIndex(data->state.position.board, square);
+        if (selectedPiece == NO_PIECE || Piece_color(draggingToPiece) == Piece_color(selectedPiece)) {
+            // The player does not want to move the piece or selected an empty square
+            data->selectedSquare.selectedSquare = square;
+        }
+        else {
+            SDL_AppResult result = findAndPlayHumanMove(app, square);
+            if (result != SDL_APP_CONTINUE) return result;
+        }
     }
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    printf("Returns with %f\n", event->button.y);
     return SDL_APP_CONTINUE;
 }
 
@@ -418,7 +427,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
-    
+
 
     return SDL_APP_CONTINUE;
 }

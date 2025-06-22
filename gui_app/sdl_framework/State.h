@@ -54,6 +54,8 @@ typedef SDL_AppResult (*EventCallback)(App*, SDL_Event*);
 
 typedef struct MouseState {
     int hoveredIndex; // -1 if not hovering anything
+    bool holdingLeftMouseButton;
+    bool holdingRightMouseButton;
 } MouseState;
 
 typedef struct AppEvents {

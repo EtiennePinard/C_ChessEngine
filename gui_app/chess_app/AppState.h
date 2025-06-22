@@ -99,12 +99,9 @@ typedef struct PromotionInfo {
     SDL_Rect overlayRect;
 } PromotionInfo;
 
-typedef struct SelectedPieceInfo {
-    bool isPieceSelected;
-    Square from;
-    Piece selectedPiece;
-    bool isDragged;
-} SelectedPieceInfo;
+typedef struct SelectedSquareInfo {
+    Square selectedSquare;
+} SelectedSquareInfo;
 
 typedef struct PlayerConfig {
     bool isEngine;
@@ -121,7 +118,7 @@ typedef struct GameSceneData {
     GameState state;
     
     bool flipBoard;
-    SelectedPieceInfo selectedPiece;
+    SelectedSquareInfo selectedSquare;
     PromotionInfo promotionInfo;
     MoveListInfo moveListInfo;
     GameEndedInfo gameEndedInfo;

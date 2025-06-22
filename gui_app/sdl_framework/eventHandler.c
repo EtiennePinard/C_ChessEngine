@@ -57,14 +57,31 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
+        if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+            if (event->button.button == SDL_BUTTON_LEFT) {
+                app->events.mouseState.holdingLeftMouseButton = event->button.down;
+            }
+            else if (event->button.button == SDL_BUTTON_RIGHT) {
+                app->events.mouseState.holdingRightMouseButton = event->button.down;
+            }
+        }
+        else /* MOUSE_BUTTON_UP */ {
+            if (event->button.button == SDL_BUTTON_LEFT) {
+                app->events.mouseState.holdingLeftMouseButton = false;
+            }
+            else if (event->button.button == SDL_BUTTON_RIGHT) {
+                app->events.mouseState.holdingRightMouseButton = false;
+            }
+        }
+
         if (app->events.lockSelectedBoxIndex) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
             if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
-                if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && box.onMouseButtonDown) {
-                    appResult = box.onMouseButtonDown(event, box.renderRect, app);
+                if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                   if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
-                else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && box.onMouseButtonUp) {
-                    appResult = box.onMouseButtonUp(event, box.renderRect, app);
+                else {
+                    if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
                 }
             }
             break;
@@ -75,11 +92,11 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
                 // We change the selectedRenderBox on mouse button up and on mouse button down
                 app->state.currentScene.selectedRenderBoxIndex = index;
-                if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && box.onMouseButtonDown) {
-                    appResult = box.onMouseButtonDown(event, box.renderRect, app);
+                if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                   if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
-                else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && box.onMouseButtonUp) {
-                    appResult = box.onMouseButtonUp(event, box.renderRect, app);
+                else {
+                    if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
                 }
             }
             // Return early if we have encountered an error

@@ -15,13 +15,9 @@
 #include "RenderUtils.h"
 #include "GameScene.h"
 
-void renderDraggedPiece(SDL_Renderer* renderer, const GameSceneData* data, int squareSize, int mouseX, int mouseY) {
-    Piece selectedPiece = data->selectedPiece.selectedPiece;
-    // This should be always false because we are already checking if isDragging is true
-    SDL_assert(selectedPiece != NO_PIECE);
-
+void renderDraggedPiece(SDL_Renderer* renderer, const Textures* textures, Piece selectedPiece, int squareSize, int mouseX, int mouseY) {
     int indexOffset = Piece_color(selectedPiece) == WHITE ? 9 : 11;
-    TextureState chessImageData = data->textures.data[selectedPiece - indexOffset];
+    TextureState chessImageData = textures->data[selectedPiece - indexOffset];
     SDL_Rect destRect = { mouseX - squareSize / 2, mouseY - squareSize / 2, squareSize, squareSize };
     SDL_FRect destFRect = RECT_TO_FRECT(destRect);
     SDL_RenderTexture(renderer, chessImageData.texture, NULL, &destFRect);
@@ -38,10 +34,10 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
     if (!SDL_PointInRect(&mousePoint, &boardRect)) {
         // If the mouse is not in the board rect reset selected piece state
-        memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
+        data->selectedSquare.selectedSquare = (Square)-1;
     }
 
-    bool doRenderDraggedPiece = data->selectedPiece.isPieceSelected && data->selectedPiece.isDragged;
+    bool doRenderDraggedPiece = data->selectedSquare.selectedSquare != (Square)-1 && app->events.mouseState.holdingLeftMouseButton;
 
     for (Square squareIndex = 0; squareIndex < BOARD_SIZE; squareIndex++) {
         int row = rank(squareIndex);
@@ -60,7 +56,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
             previousMoveSquare = (squareIndex == Move_fromSquare(previousMove) || squareIndex == Move_toSquare(previousMove));
         }
 
-        bool isSquareSelected = data->selectedPiece.isPieceSelected && squareIndex == data->selectedPiece.from;
+        bool isSquareSelected = squareIndex == data->selectedSquare.selectedSquare;
 
         if (previousMoveSquare) {
             // Change the color of the square if it was part of the previous move
@@ -95,7 +91,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         }
 
         // Don't render the dragged pieces at their position and at the mouse coordinates
-        if (doRenderDraggedPiece && squareIndex == data->selectedPiece.from && data->gameEndedInfo.result == GAME_IS_NOT_DONE) continue;
+        if (doRenderDraggedPiece && isSquareSelected && data->gameEndedInfo.result == GAME_IS_NOT_DONE) continue;
 
         Piece piece = Board_pieceAtIndex(data->state.position.board, squareIndex);
         if (piece != NO_PIECE) {
@@ -108,11 +104,14 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
 
     if (doRenderDraggedPiece) {
         if (data->gameEndedInfo.result == GAME_IS_NOT_DONE) {
-            renderDraggedPiece(app->state.sdlState.renderer, data, squareSize, (int)mouseX, (int)mouseY);
+            Piece selectedPiece = Board_pieceAtIndex(data->state.position.board, data->selectedSquare.selectedSquare);
+            if (selectedPiece != NO_PIECE) {
+                renderDraggedPiece(app->state.sdlState.renderer, &data->textures, selectedPiece, squareSize, (int)mouseX, (int)mouseY);
+            }
         }
         else {
             // Resetting selectedPiece
-            memset(&data->selectedPiece, 0, sizeof(SelectedPieceInfo));
+            data->selectedSquare.selectedSquare = (Square)-1;
         }
     }
     return SDL_APP_CONTINUE;
@@ -507,7 +506,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
 }
 
 void terminateGameScene(void* data) {
-    GameSceneData* gameData = (GameSceneData*) data;
+    GameSceneData* gameData = (GameSceneData*)data;
     if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
     if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
 

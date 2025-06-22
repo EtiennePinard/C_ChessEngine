@@ -61,7 +61,9 @@ static inline Square squareFromxy(int x, int y, bool flip, SDL_Rect chessBoardRe
         col = BOARD_LENGTH - 1 - col;
         row = BOARD_LENGTH - 1 - row;
     }
-    return (Square)(row * BOARD_LENGTH + col);
+    Square square = (Square)(row * BOARD_LENGTH + col);
+    if (square < A8 || square > H1) return (Square)-1;
+    else return square;
 }
 
 #endif /* AE539C76_7948_4E5B_AFD7_B75D43C5B451 */

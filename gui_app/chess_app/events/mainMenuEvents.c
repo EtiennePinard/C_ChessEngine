@@ -149,7 +149,7 @@ SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_Rect rect, App* 
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
@@ -203,6 +203,8 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     gameData->promotionInfo.renderPromotionOverlay = false;
     gameData->gameEndedInfo.renderOverlay = false;
 
+    gameData->selectedSquare.selectedSquare = (Square)-1;
+
     gameData->gameInfo = mainMenuData->gameInfo;
 
     // Calling the main menu terminating scene function
@@ -218,8 +220,7 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
 
-    resetGame(gameData);
-
+    
     ChessPosition dummyPosition = { 0 };
     UndoGameState undoState = {
         .position = dummyPosition,
@@ -227,6 +228,7 @@ SDL_AppResult clickedDownStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     };
     // We append the timecontrol for the player to go
     da_append((&gameData->undoGameStates), undoState);
-
+    
+    resetGame(gameData);
     return SDL_APP_CONTINUE;
 }

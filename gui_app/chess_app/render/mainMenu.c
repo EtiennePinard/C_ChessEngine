@@ -322,7 +322,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[START_GAME].renderFunction = &renderStartGameButton;
     sceneRender->renderBoxes[START_GAME].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[START_GAME].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[START_GAME].onMouseButtonDown = &clickedDownStartGame;
+    sceneRender->renderBoxes[START_GAME].onMouseButtonUp = &clickedUpStartGame;
 
     // --- Credits ---
     const int creditsHeight = (int)(CREDITS_HEIGHT_PERCENT * windowHeight);

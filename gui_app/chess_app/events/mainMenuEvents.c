@@ -219,15 +219,6 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
 
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
-
-    
-    ChessPosition dummyPosition = { 0 };
-    UndoGameState undoState = {
-        .position = dummyPosition,
-        .playerToGoTimeControl = gameData->gameInfo.timeControl
-    };
-    // We append the timecontrol for the player to go
-    da_append((&gameData->undoGameStates), undoState);
     
     resetGame(gameData);
     return SDL_APP_CONTINUE;

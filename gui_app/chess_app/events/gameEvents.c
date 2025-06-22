@@ -185,7 +185,23 @@ SDL_AppResult resetGame(GameSceneData* data) {
         data->undoGameStates.data[0].position;
     gameState->position = startingPosition;
 
-    data->undoGameStates.count = 0;
+    // Resetting the gameState
+    if (data->undoGameStates.count > 0) {
+        // If there is already some elements in the undo states simply return to the first one
+        // which has the correct starting time control for the starting player of the position
+        data->undoGameStates.count = 1;
+    } else {
+        // If no elements are in the undo states then add the first one
+        // with the correct time control
+        ChessPosition dummyPosition = { 0 };
+        UndoGameState undoState = {
+            .position = dummyPosition,
+            .playerToGoTimeControl = data->gameInfo.timeControl
+        };
+        // We append the timecontrol for the player to go
+        da_append((&data->undoGameStates), undoState);
+    }
+
     data->moveListInfo.movesPlayed.count = 0;
     data->selectedSquare.selectedSquare = (Square)-1;
     data->moveListInfo.moveListScrollY = 0;
@@ -347,7 +363,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
 
     Square draggingTo = squareFromxy((int)event->button.x, (int)event->button.y, data->flipBoard, rect);
     if (draggingTo == (Square)-1) {
-        // Probablity a floating point error when the mouse is on the edge of the board
+        // Probably a floating point error when the mouse is on the edge of the board
         return SDL_APP_CONTINUE;
     }
 
@@ -373,7 +389,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
 
     Square square = squareFromxy((int)event->button.x, (int)event->button.y, data->flipBoard, rect);
     if (square == (Square)-1) {
-        // Probablity a floating point error when the mouse is on the edge of the board
+        // Probably a floating point error when the mouse is on the edge of the board
         return SDL_APP_CONTINUE;
     }
 
@@ -394,7 +410,6 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     }
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    printf("Returns with %f\n", event->button.y);
     return SDL_APP_CONTINUE;
 }
 

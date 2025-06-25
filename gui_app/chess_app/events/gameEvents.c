@@ -448,40 +448,6 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult scrollbarHovered(SDL_Event* event, SDL_Rect rect, App* app) {
-    (void)rect;
-
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    
-    // Only move the scrollbar if we are holding the left mouse button
-    if (!app->events.mouseState.holdingLeftMouseButton) {
-        data->moveListInfo.isScrolling = false;
-        return SDL_APP_CONTINUE;
-    }
-
-    SDL_FPoint mousePoint = { event->button.x, event->button.y };
-    // Only move the scrollbar if the mouse is in the scrollbar
-    if (!SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect)) {
-        data->moveListInfo.isScrolling = false;
-        return SDL_APP_CONTINUE;
-    }
-
-    if (data->moveListInfo.movesPlayed.count == 0) {
-        // No moves have been made
-        data->moveListInfo.isScrolling = false;
-        return SDL_APP_CONTINUE;
-    }
-
-    // If this is the first time clicking the scrollbar set the startingDragOffset
-    if (!data->moveListInfo.isScrolling) data->moveListInfo.startingDragOffset = mousePoint.y - data->moveListInfo.scrollbarFRect.y;
-
-    // We are currently scrolling the movelist!
-    data->moveListInfo.isScrolling = true;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
-    return SDL_APP_CONTINUE;
-}
-
 #define MAXIMUM_SCROLL_WHEEL_TICKS_AMOUNT (25.0) 
 
 SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app) {
@@ -501,12 +467,18 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
 
+    // We are scrolling the screen!
+    // Note: This will be set to false the moment we stop holding click
+    data->moveListInfo.isScrolling = true;
+
     const float maxScrollY = rect.h - data->moveListInfo.scrollbarFRect.h;
     SDL_FPoint mousePoint = { event->button.x, event->button.y };
 
-
-    // If we click in the scrollbar do not set the scroll ratio
-    if (SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect)) return SDL_APP_CONTINUE;
+    // If we click in the scrollbar do not set the scroll ratio but correctly set the dragoffset
+    if (SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect)) {
+        data->moveListInfo.startingDragOffset = mousePoint.y - data->moveListInfo.scrollbarFRect.y;
+        return SDL_APP_CONTINUE;
+    }
 
     data->moveListInfo.startingDragOffset = data->moveListInfo.scrollbarFRect.h / 2.0;
     if (mousePoint.y >= rect.y + maxScrollY) {

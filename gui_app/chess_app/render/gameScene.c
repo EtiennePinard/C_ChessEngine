@@ -145,19 +145,22 @@ SDL_AppResult renderMoveListScrollbar(SDL_Rect rect, App* app) {
 
     // Drawing the bar
     float scrollbarX = (float)rect.x;
+
     float scrollbarHeight = SCROLL_BAR_SIZE_PERCENT * (float)rect.h;
     const float maxScrollY = (float)rect.h - scrollbarHeight;
     float scrollbarY = (float)rect.y + maxScrollY * data->moveListInfo.scrollRatio;
+
+    float mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
     if (data->moveListInfo.isScrolling && app->events.mouseState.holdingLeftMouseButton) {
-        float mouseY;
-        SDL_GetMouseState(NULL, &mouseY);
         // Render the scrollbar over the mouse
         scrollbarY = SDL_clamp(mouseY - data->moveListInfo.startingDragOffset, (float)rect.y, (float)(rect.y + maxScrollY));
         // Update the scroll ratio
         data->moveListInfo.scrollRatio = SDL_clamp((mouseY - data->moveListInfo.startingDragOffset - rect.y) / maxScrollY, 0.0, 1.0);
-        // Highlight the scrollbar
-        scrollBarColor = (SDL_Color){ 150, 150, 150, 255 };
-    } else {
+        // Bright highlight the scrollbar
+        scrollBarColor = (SDL_Color){ 140, 140, 140, 255 };
+    }
+    else {
         data->moveListInfo.isScrolling = false;
     }
 
@@ -171,6 +174,14 @@ SDL_AppResult renderMoveListScrollbar(SDL_Rect rect, App* app) {
         scrollbarWidth,
         scrollbarHeight
     };
+    SDL_FPoint mousePoint = { mouseX, mouseY };
+    if (app->events.mouseState.hoveredIndex == MOVE_LIST_SCROLLBAR &&
+        SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect) &&
+        !app->events.mouseState.holdingLeftMouseButton) {
+
+        // Small highlight of the scrollbar
+        scrollBarColor = (SDL_Color){ 111, 111, 111, 255 };
+    }
 
     SDL_FRect scrollbarFRect = (SDL_FRect){
         scrollbarX,
@@ -469,6 +480,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
 #define SCROLL_BAR_WIDTH_PERCENT (0.02f)
 #define GAME_ENDED_SIZE (0.35f)
 
+// TODO: Convert all Rects to FRects to have more flexible dimension values
 void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     SceneRender* sceneRender = &scene->sceneRender;
     GameSceneData* data = (GameSceneData*)scene->data;
@@ -533,7 +545,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
 
     // Movelist scrollbar
     int moveListScrollWidth = (int)(SCROLL_BAR_WIDTH_PERCENT * windowWidth);
-    int moveListScrollX = windowWidth - padding - moveListScrollWidth;
+    int moveListScrollX = windowWidth - moveListScrollWidth;
     SDL_Rect moveListScrollRect = (SDL_Rect){
         moveListScrollX,
         boardY,
@@ -543,12 +555,12 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderRect = moveListScrollRect;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderFunction = &renderMoveListScrollbar;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseButtonDown = &clickedDownScrollbar;
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &scrollbarHovered;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &rerenderScene;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
 
     // Right side layout (move list)
     int moveListX = boardX + boardSize + padding;
-    int moveListWidth = windowWidth - moveListX - moveListScrollWidth - padding;
+    int moveListWidth = windowWidth - moveListX - moveListScrollWidth;
 
     SDL_Rect moveListRect = (SDL_Rect){
         moveListX,

@@ -208,6 +208,7 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
     SDL_Color borderColor = BUTTON_BORDER_COLOR;
     SDL_Color textColor = BUTTON_TEXT_COLOR;
+    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
     SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
 
     // Draw semi-transparent background
@@ -226,6 +227,7 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
     const int padding = rect.w / 16;
     const int lineHeightPerMove = TTF_GetFontLineSkip(font);
+    const int spaceTakenUpByOneMove = lineHeightPerMove + padding;
 
     // Define 3 column widths
     const int column1Width = rect.w / 6; // Move number
@@ -233,27 +235,33 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
     const int maxY = rect.y + rect.h - padding;
     const float scrollRatio = data->moveListInfo.scrollRatio;
-    const size_t scrollY = numRows * lineHeightPerMove * scrollRatio;
+    const size_t scrollY = numRows * spaceTakenUpByOneMove * scrollRatio;
     int y = rect.y + padding - scrollY;
 
     ChessPosition position;
     Board board;
 
+    char moveText[16];
+    SDL_Rect whiteMoveRect;
+
+    float mouseX, mouseY;
+    SDL_GetMouseState(&mouseX, &mouseY);
+    SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
     // So that the move info will not be out of the rectangle
     // if the scroll index is a fraction of a line height
     SDL_SetRenderClipRect(renderer, &rect);
-    for (size_t i = 0; i < data->moveListInfo.movesPlayed.count; i += 2) {
+    for (size_t index = 0; index < data->moveListInfo.movesPlayed.count; index += 2) {
         // If we are completely below the move list stop rendering
         if (y >= maxY) break;
         // If we are completely above the move list skip to the next move to render
         if (y + lineHeightPerMove < rect.y) {
-            y += lineHeightPerMove;
+            y += spaceTakenUpByOneMove;
             continue;
         }
 
         // --- Move number ---
         char numberBuffer[8];
-        snprintf(numberBuffer, sizeof(numberBuffer), "%zu.", i / 2 + 1);
+        snprintf(numberBuffer, sizeof(numberBuffer), "%zu.", index / 2 + 1);
 
         SDL_Rect moveNumberRect = {
             .x = rect.x + padding,
@@ -265,16 +273,13 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
         SDL_AppResult result = renderTextCenteredToFit(renderer, font, numberBuffer, false, textColor, moveNumberRect);
         if (result != SDL_APP_CONTINUE) return result;
 
-        // --- White's move ---
-        SDL_Rect whiteMoveRect;
-        if (i < data->moveListInfo.movesPlayed.count) {
+        if (index < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
-            position = data->undoGameStates.data[i].position;
+            position = data->undoGameStates.data[index].position;
             memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
-            char whiteMove[16];
-            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[i], whiteMove);
+            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[index], moveText);
 
             whiteMoveRect = (SDL_Rect){
                 .x = moveNumberRect.x + moveNumberRect.w + padding,
@@ -283,19 +288,24 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
                 .h = lineHeightPerMove
             };
 
-            result = renderTextCenteredToFit(renderer, font, whiteMove, false, textColor, whiteMoveRect);
+            if (app->events.mouseState.hoveredIndex == MOVE_LIST &&
+                SDL_PointInRect(&mousePoint, &whiteMoveRect)) {
+                SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+                SDL_RenderFillRect(renderer, &RECT_TO_FRECT(whiteMoveRect));
+                data->moveListInfo.hoveredMoveIndex = index;
+            }
+
+            result = renderTextCenteredToFit(renderer, font, moveText, false, textColor, whiteMoveRect);
             if (result != SDL_APP_CONTINUE) return result;
         }
 
-        // --- Black's move ---
-        if (i + 1 < data->moveListInfo.movesPlayed.count) {
+        if (index + 1 < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
-            position = data->undoGameStates.data[i + 1].position;
+            position = data->undoGameStates.data[index + 1].position;
             memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
-            char blackMove[16];
-            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[i + 1], blackMove);
+            moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[index + 1], moveText);
 
             SDL_Rect blackMoveRect = {
                 .x = whiteMoveRect.x + whiteMoveRect.w + padding,
@@ -304,11 +314,18 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
                 .h = lineHeightPerMove
             };
 
-            result = renderTextCenteredToFit(renderer, font, blackMove, false, textColor, blackMoveRect);
+            if (app->events.mouseState.hoveredIndex == MOVE_LIST &&
+                SDL_PointInRect(&mousePoint, &blackMoveRect)) {
+                SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+                SDL_RenderFillRect(renderer, &RECT_TO_FRECT(blackMoveRect));
+                data->moveListInfo.hoveredMoveIndex = index + 1;
+            }
+
+            result = renderTextCenteredToFit(renderer, font, moveText, false, textColor, blackMoveRect);
             if (result != SDL_APP_CONTINUE) return result;
         }
 
-        y += lineHeightPerMove;
+        y += spaceTakenUpByOneMove;
     }
 
     // Resetting the clip rect
@@ -571,6 +588,8 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[MOVE_LIST].renderRect = moveListRect;
     sceneRender->renderBoxes[MOVE_LIST].renderFunction = &renderMoveList;
     sceneRender->renderBoxes[MOVE_LIST].onMouseWheelScrolled = &movelistMouseWheelScrolled;
+    sceneRender->renderBoxes[MOVE_LIST].onMouseHovered = &rerenderScene;
+    sceneRender->renderBoxes[MOVE_LIST].onMouseButtonDown = &clickedDownMoveList;
 
     // Buttons
     const int buttonWidth = (int)(GAME_BUTTON_WIDTH_PERCENT * windowWidth);

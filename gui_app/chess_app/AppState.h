@@ -39,7 +39,8 @@ typedef struct TimeControl {
 
 typedef struct UndoGameState {
     ChessPosition position;
-    TimeControl playerToGoTimeControl;
+    TimeControl whiteTimeControl;
+    TimeControl blackTimeControl;
 } UndoGameState;
 
 typedef struct UndoGameStates {
@@ -76,6 +77,8 @@ typedef struct MoveListInfo {
     bool isScrolling;
     float startingDragOffset;
     float scrollRatio;
+
+    int hoveredMoveIndex;
 } MoveListInfo;
 
 typedef enum GameResult {

@@ -1,5 +1,7 @@
-#include "RepetitionTable.h"
 #include <stdio.h>
+
+#include "../utils/Math.h"
+#include "RepetitionTable.h"
 
 #define REPETITION_TABLE_CAPACITY (1 << 9)
 
@@ -32,6 +34,7 @@ bool RepetitionTable_storeKey(ZobristKey key) {
 }
 
 void RepetitionTable_pop() { currentIndex--; }
+void RepetitionTable_setIndex(u16 newIndex) { currentIndex = min(newIndex, currentIndex); } 
 
 void RepetitionTable_clear() { currentIndex = 0; }
 

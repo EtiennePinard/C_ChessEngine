@@ -21,6 +21,14 @@ bool RepetitionTable_storeKey(ZobristKey key);
 void RepetitionTable_pop();
 
 /**
+ * @brief Sets the index of the repetition table to newIndex.
+ * If newIndex is bigger than the index of the table it does nothing.
+ * 
+ * @param newIndex The newIndex of the table 
+ */
+void RepetitionTable_setIndex(u16 newIndex);
+
+/**
  * @brief Removes all elements from the repetition table
  * 
  */

@@ -99,26 +99,23 @@ static void computeGameEnd(GameSceneData* data) {
 static inline void playMoveOnBoard(GameSceneData* data, Move move) {
     GameState* gameState = &data->state;
 
-    Player oppositePlayer = gameState->position.colorToGo == WHITE ? gameState->black : gameState->white;
+    // We add the time increment
+    // Note: We add the increment before checking if we have ran out of time
+    // Maybe verify if this is how a gui is supposed to do it
+    Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
+    currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
+    MoveHandler_playMove(move, &gameState->position, true);
 
-    // We append the position to the previous position
-    // The -1 is because the time control for the current position has already
-    // been added and so the count has already been added by one
-    data->undoGameStates.data[data->undoGameStates.count - 1].position = gameState->position;
-
-    ChessPosition dummyPosition = { 0 };
-    UndoGameState undoState = {
-        .position = dummyPosition,
-        .playerToGoTimeControl = oppositePlayer.timeControl
-    };
     // We append the timecontrol for the player to go
+    UndoGameState undoState = {
+        .position = gameState->position,
+        .whiteTimeControl = gameState->white.timeControl,
+        .blackTimeControl = gameState->black.timeControl
+    };
     da_append((&data->undoGameStates), undoState);
     da_append((&data->moveListInfo.movesPlayed), move);
 
-    Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
-    currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
 
-    MoveHandler_playMove(move, &gameState->position, true);
     computeGameEnd(data);
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
         data->gameEndedInfo.renderOverlay = true;
@@ -195,10 +192,10 @@ SDL_AppResult resetGame(GameSceneData* data) {
     else {
         // If no elements are in the undo states then add the first one
         // with the correct time control
-        ChessPosition dummyPosition = { 0 };
         UndoGameState undoState = {
-            .position = dummyPosition,
-            .playerToGoTimeControl = data->gameInfo.timeControl
+            .position = startingPosition,
+            .whiteTimeControl = data->gameInfo.timeControl,
+            .blackTimeControl = data->gameInfo.timeControl
         };
         // We append the timecontrol for the player to go
         da_append((&data->undoGameStates), undoState);
@@ -433,11 +430,45 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app) {
+    (void)event;
+    (void)rect;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+
+    int selectedIndex = data->moveListInfo.hoveredMoveIndex;
+    // An index of -1 means no moves is selected
+    if (selectedIndex == -1) return SDL_APP_CONTINUE;
+
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
+        clickedWhenGameIsDone(app);
+    }
+
+    // Reset the game so that the previous move made is the move at the index
+    data->gameEndedInfo.result = GAME_IS_NOT_DONE;
+    data->moveListInfo.movesPlayed.count = selectedIndex + 1;
+    RepetitionTable_setIndex(selectedIndex + 1);
+
+    data->undoGameStates.count = selectedIndex + 2;
+    UndoGameState undoState = data->undoGameStates.data[data->undoGameStates.count - 1];
+    data->state.position = undoState.position;
+    data->state.white.timeControl = undoState.whiteTimeControl;
+    data->state.black.timeControl = undoState.blackTimeControl;
+
+    computeGameEnd(data);
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
+        data->gameEndedInfo.renderOverlay = true;
+    }
+
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+
+    return SDL_APP_CONTINUE;
+}
+
 #define MAXIMUM_SCROLL_WHEEL_TICKS_AMOUNT (25.0) 
 
 SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)rect;
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;    
     // If no moves have been made don't scroll the scroll bar
     if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
 
@@ -450,6 +481,7 @@ SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* a
 
 SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+
     if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
 
     // We are scrolling the screen!
@@ -469,7 +501,8 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
     if (mousePoint.y >= rect.y + maxScrollY) {
         // We exceeded the max scroll ratio so we set it to 1.0
         data->moveListInfo.scrollRatio = 1.0;
-    } else {
+    }
+    else {
         data->moveListInfo.scrollRatio = (mousePoint.y - data->moveListInfo.startingDragOffset - (float)rect.y) / maxScrollY;
     }
     return SDL_APP_CONTINUE;

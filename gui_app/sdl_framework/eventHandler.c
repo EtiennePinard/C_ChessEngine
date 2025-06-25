@@ -98,6 +98,8 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 else {
                     if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
                 }
+                // If a function set lockSelectedBoxIndex then exit
+                if (app->events.lockSelectedBoxIndex) break;
             }
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
@@ -105,10 +107,20 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
+        if (app->events.lockSelectedBoxIndex) {
+            box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
+            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+                if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
+            }
+            break;
+        }
+
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
             if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
                 if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
+                // If a function set lockSelectedBoxIndex then exit
+                if (app->events.lockSelectedBoxIndex) break;
             }
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;

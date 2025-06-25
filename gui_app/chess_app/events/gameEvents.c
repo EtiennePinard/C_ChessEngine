@@ -243,14 +243,6 @@ SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRe
     // If the overlay is not visible we don't do anything
     if (!data->promotionInfo.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
-    // We need this if statement to invalidate the first click to the promotion overlay since
-    // this first click could be the second click of the pawn moving to the promotion square
-    if (data->selectedSquare.selectedSquare != NO_SQUARE_SELECTED) {
-        // We are not holding the mouse button anymore
-        data->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
-        return SDL_APP_CONTINUE;
-    }
-
     SDL_Rect overlayRect = data->promotionInfo.overlayRect;
 
     SDL_Point mousePoint = { (int)event->button.x, (int)event->button.y };
@@ -333,13 +325,8 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
 }
 
 SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app) {
-    (void)event;
-
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
-        clickedWhenGameIsDone(app);
-        return SDL_APP_CONTINUE;
-    }
+    if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE;
 
     if (data->selectedSquare.selectedSquare == NO_SQUARE_SELECTED) {
         // The user clicked down outside the board rect and then moved
@@ -381,8 +368,6 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
 }
 
 SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app) {
-    //(void)event;
-
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
         clickedWhenGameIsDone(app);

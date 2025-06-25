@@ -49,6 +49,17 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
 SDL_AppResult renderButton(SDL_Rect rect, App* app, int hoverIndex, const char* text);
 
 /**
+ * @brief Draws a filled circle
+ * 
+ * @param renderer The rendering target
+ * @param cx The circle x offset
+ * @param cy The circle y offset
+ * @param radius The radius of the circle
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius);
+
+/**
  * @brief The render function for the credits of the app
  * 
  * @param rect The rectangle to draw the credits in

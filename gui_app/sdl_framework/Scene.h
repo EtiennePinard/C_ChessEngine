@@ -13,6 +13,7 @@ typedef struct RenderBox {
     EventCallbackBox onMouseEntered;
     EventCallbackBox onMouseHovered;
     EventCallbackBox onMouseExited;
+    EventCallbackBox onMouseWheelScrolled;
 } RenderBox;
 
 typedef struct SceneRender {

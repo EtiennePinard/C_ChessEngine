@@ -72,7 +72,10 @@ typedef struct Moves {
 typedef struct MoveListInfo {
     Moves movesPlayed;
 
-    size_t moveListScrollY;
+    SDL_FRect scrollbarFRect;
+    bool isScrolling;
+    float startingDragOffset;
+    float scrollRatio;
 } MoveListInfo;
 
 typedef enum GameResult {
@@ -98,6 +101,8 @@ typedef struct PromotionInfo {
     Square promotionSquareFrom;
     SDL_Rect overlayRect;
 } PromotionInfo;
+
+#define NO_SQUARE_SELECTED ((Square)-1)
 
 typedef struct SelectedSquareInfo {
     Square selectedSquare;

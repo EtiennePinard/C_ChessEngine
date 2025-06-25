@@ -34,10 +34,10 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
     SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
     if (!SDL_PointInRect(&mousePoint, &boardRect)) {
         // If the mouse is not in the board rect reset selected piece state
-        data->selectedSquare.selectedSquare = (Square)-1;
+        data->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
     }
 
-    bool doRenderDraggedPiece = data->selectedSquare.selectedSquare != (Square)-1 && app->events.mouseState.holdingLeftMouseButton;
+    bool doRenderDraggedPiece = data->selectedSquare.selectedSquare != NO_SQUARE_SELECTED && app->events.mouseState.holdingLeftMouseButton;
 
     for (Square squareIndex = 0; squareIndex < BOARD_SIZE; squareIndex++) {
         int row = rank(squareIndex);
@@ -111,7 +111,7 @@ SDL_AppResult renderChessboard(SDL_Rect boardRect, App* app) {
         }
         else {
             // Resetting selectedPiece
-            data->selectedSquare.selectedSquare = (Square)-1;
+            data->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
         }
     }
     return SDL_APP_CONTINUE;
@@ -129,6 +129,65 @@ SDL_AppResult renderWhiteClock(SDL_Rect whiteClockRect, App* app) {
 
     if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.timeControl.timeLeft, buffer, 16) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, false, WHITE_COLOR, whiteClockRect);
+}
+
+#define SCROLL_BAR_SIZE_PERCENT (0.1f)
+
+SDL_AppResult renderMoveListScrollbar(SDL_Rect rect, App* app) {
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    SDL_Color scrollBarColor = { 75, 75, 75, 255 };
+    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
+
+    SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+    SDL_RenderFillRect(renderer, &RECT_TO_FRECT(rect));
+
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+
+    // Drawing the bar
+    float scrollbarX = (float)rect.x;
+    float scrollbarHeight = SCROLL_BAR_SIZE_PERCENT * (float)rect.h;
+    float scrollbarY = (float)rect.y + ((float)(rect.h - scrollbarHeight)) * data->moveListInfo.scrollRatio;
+    if (data->moveListInfo.isScrolling && app->events.mouseState.holdingLeftMouseButton) {
+        float mouseY;
+        SDL_GetMouseState(NULL, &mouseY);
+        // Render the scrollbar over the mouse
+        scrollbarY = SDL_clamp(mouseY - data->moveListInfo.startingDragOffset, (float)rect.y, (float)(rect.y + rect.h - scrollbarHeight));
+        // Update the scroll ratio
+        data->moveListInfo.scrollRatio = SDL_clamp((mouseY - data->moveListInfo.startingDragOffset - rect.y) / (rect.h - scrollbarHeight), 0.0, 1.0);
+        // Highlight the scrollbar
+        scrollBarColor = (SDL_Color){ 150, 150, 150, 255 };
+    } else {
+        data->moveListInfo.isScrolling = false;
+    }
+
+    float scrollbarWidth = (float)rect.w;
+    float radius = scrollbarWidth / 2.0f;
+
+    // The movelist scrollbar frect contains the semi circles
+    data->moveListInfo.scrollbarFRect = (SDL_FRect){
+        scrollbarX,
+        scrollbarY,
+        scrollbarWidth,
+        scrollbarHeight
+    };
+
+    SDL_FRect scrollbarFRect = (SDL_FRect){
+        scrollbarX,
+        scrollbarY + radius,
+        scrollbarWidth,
+        scrollbarHeight - 2 * radius
+    };
+
+    SDL_SetRenderDrawColor(renderer, scrollBarColor.r, scrollBarColor.g, scrollBarColor.b, scrollBarColor.a);
+    SDL_RenderFillRect(renderer, &scrollbarFRect);
+
+    float cx = scrollbarFRect.x + radius;
+    float cy = scrollbarY + radius;
+    if (drawFilledCircle(renderer, cx, cy, radius) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+    cy = scrollbarY + scrollbarHeight - radius;
+    if (drawFilledCircle(renderer, cx, cy, radius) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+
+    return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
@@ -149,20 +208,36 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
+    const size_t numRows = data->moveListInfo.movesPlayed.count / 2 + data->moveListInfo.movesPlayed.count % 2;
+    // If we have no moves to render simply return
+    if (numRows == 0) return SDL_APP_CONTINUE;
+
     const int padding = rect.w / 16;
-    const int lineHeight = TTF_GetFontLineSkip(font);
+    const int lineHeightPerMove = TTF_GetFontLineSkip(font);
 
     // Define 3 column widths
     const int column1Width = rect.w / 6; // Move number
     const int columnWidth = (rect.w - column1Width - 4 * padding) / 2;
 
-    int y = rect.y + padding;
-    int maxY = rect.y + rect.h - lineHeight;
+    const int maxY = rect.y + rect.h - padding;
+    const float scrollRatio = data->moveListInfo.scrollRatio;
+    const size_t scrollY = numRows * lineHeightPerMove * scrollRatio;
+    int y = rect.y + padding - scrollY;
 
     ChessPosition position;
     Board board;
+
+    // So that the move info will not be out of the rectangle
+    // if the scroll index is a fraction of a line height
+    SDL_SetRenderClipRect(renderer, &rect);
     for (size_t i = 0; i < data->moveListInfo.movesPlayed.count; i += 2) {
-        if (y > maxY) break; // stop if we run out of vertical space
+        // If we are completely below the move list stop rendering
+        if (y >= maxY) break;
+        // If we are completely above the move list skip to the next move to render
+        if (y + lineHeightPerMove < rect.y) {
+            y += lineHeightPerMove;
+            continue;
+        }
 
         // --- Move number ---
         char numberBuffer[8];
@@ -172,7 +247,7 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
             .x = rect.x + padding,
             .y = y,
             .w = column1Width,
-            .h = lineHeight
+            .h = lineHeightPerMove
         };
 
         SDL_AppResult result = renderTextCenteredToFit(renderer, font, numberBuffer, false, textColor, moveNumberRect);
@@ -193,7 +268,7 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
                 .x = moveNumberRect.x + moveNumberRect.w + padding,
                 .y = y,
                 .w = columnWidth,
-                .h = lineHeight
+                .h = lineHeightPerMove
             };
 
             result = renderTextCenteredToFit(renderer, font, whiteMove, false, textColor, whiteMoveRect);
@@ -214,16 +289,18 @@ SDL_AppResult renderMoveList(SDL_Rect rect, App* app) {
                 .x = whiteMoveRect.x + whiteMoveRect.w + padding,
                 .y = y,
                 .w = columnWidth,
-                .h = lineHeight
+                .h = lineHeightPerMove
             };
 
             result = renderTextCenteredToFit(renderer, font, blackMove, false, textColor, blackMoveRect);
             if (result != SDL_APP_CONTINUE) return result;
         }
 
-        y += lineHeight + padding;
+        y += lineHeightPerMove;
     }
 
+    // Resetting the clip rect
+    SDL_SetRenderClipRect(renderer, NULL);
     return SDL_APP_CONTINUE;
 }
 
@@ -388,6 +465,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_Rect overlayRect, App* app) {
 #define CLOCK_WIDTH_PERCENT (0.1f)
 #define GAME_BUTTON_HEIGHT_PERCENT CLOCK_HEIGHT_PERCENT
 #define GAME_BUTTON_WIDTH_PERCENT CLOCK_WIDTH_PERCENT
+#define SCROLL_BAR_WIDTH_PERCENT (0.02f)
 #define GAME_ENDED_SIZE (0.35f)
 
 void computeGameSceneRender(SDL_Window* window, Scene* scene) {
@@ -452,19 +530,33 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[WHITE_CLOCK].renderRect = whiteClockRect;
     sceneRender->renderBoxes[WHITE_CLOCK].renderFunction = &renderWhiteClock;
 
+    // Movelist scrollbar
+    int moveListScrollWidth = (int)(SCROLL_BAR_WIDTH_PERCENT * windowWidth);
+    int moveListScrollX = windowWidth - padding - moveListScrollWidth;
+    SDL_Rect moveListScrollRect = (SDL_Rect){
+        moveListScrollX,
+        boardY,
+        moveListScrollWidth,
+        boardRect.h
+    };
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderRect = moveListScrollRect;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderFunction = &renderMoveListScrollbar;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &scrollbarHovered;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
+
     // Right side layout (move list)
     int moveListX = boardX + boardSize + padding;
-    int moveListWidth = windowWidth - moveListX - padding;
-    int moveListHeight = boardRect.h;
+    int moveListWidth = windowWidth - moveListX - moveListScrollWidth - padding;
 
     SDL_Rect moveListRect = (SDL_Rect){
         moveListX,
         boardY,
         moveListWidth,
-        moveListHeight
+        boardRect.h
     };
     sceneRender->renderBoxes[MOVE_LIST].renderRect = moveListRect;
     sceneRender->renderBoxes[MOVE_LIST].renderFunction = &renderMoveList;
+    sceneRender->renderBoxes[MOVE_LIST].onMouseWheelScrolled = &movelistMouseWheelScrolled;
 
     // Buttons
     const int buttonWidth = (int)(GAME_BUTTON_WIDTH_PERCENT * windowWidth);

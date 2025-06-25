@@ -12,6 +12,9 @@ SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app
 
 SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app);
 
+SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult scrollbarHovered(SDL_Event* event, SDL_Rect rect, App* app);
+
 /**
  * @brief Plays a move chosen by the bot. This function takes
  * a long time and so it creates a thread to compute the bot

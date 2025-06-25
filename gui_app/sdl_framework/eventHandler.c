@@ -78,7 +78,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
             if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                   if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
+                    if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
                 else {
                     if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
@@ -93,7 +93,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 // We change the selectedRenderBox on mouse button up and on mouse button down
                 app->state.currentScene.selectedRenderBoxIndex = index;
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                   if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
+                    if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
                 else {
                     if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
@@ -103,6 +103,18 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (appResult != SDL_APP_CONTINUE) return appResult;
         }
         break;
+
+    case SDL_EVENT_MOUSE_WHEEL:
+        for (index = 0; index < sceneRender.numRenderBox; index++) {
+            box = sceneRender.renderBoxes[index];
+            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+                if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
+            }
+            // Return early if we have encountered an error
+            if (appResult != SDL_APP_CONTINUE) return appResult;
+        }
+        break;
+
     case SDL_EVENT_WINDOW_RESIZED:
         if (app->events.onWindowResize) appResult = app->events.onWindowResize(app, event);
         break;

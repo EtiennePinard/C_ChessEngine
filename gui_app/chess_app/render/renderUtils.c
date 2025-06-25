@@ -191,6 +191,27 @@ SDL_AppResult renderButton(SDL_Rect rect, App* app, int hoverIndex, const char* 
     return renderTextCenteredToFit(renderer, font, text, false, textColor, rect);
 }
 
+SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius) {
+    int maxPoints = SDL_ceilf(SDL_PI_F * radius * radius) + 1; // + 1 for good measure
+    SDL_FPoint* points = SDL_malloc(sizeof(SDL_FPoint) * maxPoints);
+    if (!points) return SDL_APP_FAILURE;
+
+    int count = 0;
+    for (int dy = -radius; dy <= radius; ++dy) {
+        for (int dx = -radius; dx <= radius; ++dx) {
+            if (dx * dx + dy * dy <= radius * radius) {
+                points[count].x = cx + dx;
+                points[count].y = cy + dy;
+                count++;
+            }
+        }
+    }
+
+    SDL_RenderPoints(renderer, points, count);
+    SDL_free(points);
+    return SDL_APP_CONTINUE;
+}
+
 SDL_AppResult renderCredits(SDL_Rect rect, App* app) {
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect);
 }

@@ -7,6 +7,10 @@ typedef enum GameSceneRenderBoxIndex {
     CHESSBOARD,
     BLACK_CLOCK,
     WHITE_CLOCK,
+    // It is very important that the scrollbar
+    // renders before the move list else the scrolling
+    // with the scrollbar will not work
+    MOVE_LIST_SCROLLBAR,
     MOVE_LIST,
     RESTART_BUTTON,
     BACK_BUTTON,

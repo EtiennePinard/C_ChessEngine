@@ -496,3 +496,24 @@ SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* a
 
     return SDL_APP_CONTINUE;
 }
+
+SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
+
+    const float maxScrollY = rect.h - data->moveListInfo.scrollbarFRect.h;
+    SDL_FPoint mousePoint = { event->button.x, event->button.y };
+
+
+    // If we click in the scrollbar do not set the scroll ratio
+    if (SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect)) return SDL_APP_CONTINUE;
+
+    data->moveListInfo.startingDragOffset = data->moveListInfo.scrollbarFRect.h / 2.0;
+    if (mousePoint.y >= rect.y + maxScrollY) {
+        // We exceeded the max scroll ratio so we set it to 1.0
+        data->moveListInfo.scrollRatio = 1.0;
+    } else {
+        data->moveListInfo.scrollRatio = (mousePoint.y - data->moveListInfo.startingDragOffset - (float)rect.y) / maxScrollY;
+    }
+    return SDL_APP_CONTINUE;
+}

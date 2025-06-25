@@ -13,6 +13,7 @@ SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app
 SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app);
 
 SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app);
 SDL_AppResult scrollbarHovered(SDL_Event* event, SDL_Rect rect, App* app);
 
 /**

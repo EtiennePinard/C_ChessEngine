@@ -146,14 +146,15 @@ SDL_AppResult renderMoveListScrollbar(SDL_Rect rect, App* app) {
     // Drawing the bar
     float scrollbarX = (float)rect.x;
     float scrollbarHeight = SCROLL_BAR_SIZE_PERCENT * (float)rect.h;
-    float scrollbarY = (float)rect.y + ((float)(rect.h - scrollbarHeight)) * data->moveListInfo.scrollRatio;
+    const float maxScrollY = (float)rect.h - scrollbarHeight;
+    float scrollbarY = (float)rect.y + maxScrollY * data->moveListInfo.scrollRatio;
     if (data->moveListInfo.isScrolling && app->events.mouseState.holdingLeftMouseButton) {
         float mouseY;
         SDL_GetMouseState(NULL, &mouseY);
         // Render the scrollbar over the mouse
-        scrollbarY = SDL_clamp(mouseY - data->moveListInfo.startingDragOffset, (float)rect.y, (float)(rect.y + rect.h - scrollbarHeight));
+        scrollbarY = SDL_clamp(mouseY - data->moveListInfo.startingDragOffset, (float)rect.y, (float)(rect.y + maxScrollY));
         // Update the scroll ratio
-        data->moveListInfo.scrollRatio = SDL_clamp((mouseY - data->moveListInfo.startingDragOffset - rect.y) / (rect.h - scrollbarHeight), 0.0, 1.0);
+        data->moveListInfo.scrollRatio = SDL_clamp((mouseY - data->moveListInfo.startingDragOffset - rect.y) / maxScrollY, 0.0, 1.0);
         // Highlight the scrollbar
         scrollBarColor = (SDL_Color){ 150, 150, 150, 255 };
     } else {
@@ -541,6 +542,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     };
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderRect = moveListScrollRect;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderFunction = &renderMoveListScrollbar;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseButtonDown = &clickedDownScrollbar;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &scrollbarHovered;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
 

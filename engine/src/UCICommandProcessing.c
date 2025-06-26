@@ -411,7 +411,11 @@ bool UCI_processUCICommand(char* command) {
 
     string_toLower(messageType);
 
-    if (string_compareStrings(messageType, "quit")) return false;
+    if (string_compareStrings(messageType, "quit")) {
+        // If we are searching stop and then exit the engine
+        processStopCommand();
+        return false;
+    }
     else if (string_compareStrings(messageType, "uci")) processUCICommand();
     else if (string_compareStrings(messageType, "isready")) processIsReadyCommand();
     else if (string_compareStrings(messageType, "ucinewgame")) processUCINewGameCommand();

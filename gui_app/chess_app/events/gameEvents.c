@@ -425,6 +425,10 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     app->state.currentScene.data = mainMenuData;
     app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
+        free(app->state.currentScene.sceneRender.renderBoxes);
+        app->state.currentScene.sceneRender.renderBoxes = NULL;
+    }
     computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
 
     return SDL_APP_CONTINUE;
@@ -437,6 +441,10 @@ SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* a
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     data->flipBoard = !data->flipBoard;
 
+    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
+        free(app->state.currentScene.sceneRender.renderBoxes);
+        app->state.currentScene.sceneRender.renderBoxes = NULL;
+    }
     computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;

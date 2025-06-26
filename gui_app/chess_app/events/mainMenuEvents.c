@@ -214,6 +214,10 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
     app->state.currentScene.sceneId = GAME_SCENE_ID;
     app->state.currentScene.data = gameData;
     app->state.currentScene.terminateSceneFunction = &terminateGameScene;
+    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
+        free(app->state.currentScene.sceneRender.renderBoxes);
+        app->state.currentScene.sceneRender.renderBoxes = NULL;
+    }
     computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 

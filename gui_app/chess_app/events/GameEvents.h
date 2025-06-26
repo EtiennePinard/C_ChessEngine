@@ -3,17 +3,20 @@
 
 #include "../AppState.h"
 
+// Chessboard
 SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app);
 SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app);
 
+// Promotion
 SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app);
 
+// Buttons
 SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app);
-
 SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* app);
 
+// Move list
 SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app);
-
 SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app);
 SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app);
 

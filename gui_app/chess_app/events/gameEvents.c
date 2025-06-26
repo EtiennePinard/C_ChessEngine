@@ -430,6 +430,18 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* app) {
+    (void)event;
+    (void)rect;
+
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    data->flipBoard = !data->flipBoard;
+
+    computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return SDL_APP_CONTINUE;
+}
+
 SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)event;
     (void)rect;
@@ -468,7 +480,7 @@ SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app) {
 
 SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app) {
     (void)rect;
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;    
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     // If no moves have been made don't scroll the scroll bar
     if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
 

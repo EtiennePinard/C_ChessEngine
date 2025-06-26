@@ -342,6 +342,10 @@ SDL_AppResult renderBackButton(SDL_Rect rect, App* app) {
     return renderButton(rect, app, BACK_BUTTON, "Back");
 }
 
+SDL_AppResult renderFlipBoardButton(SDL_Rect rect, App* app) {
+    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board");
+}
+
 SDL_Rect calculatePromotionRect(GameSceneData* data, SDL_Rect boardRect) {
     // Chessboard dimensions
     int squareSize = boardRect.w / BOARD_LENGTH;
@@ -619,6 +623,19 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedDownRestartButton;
+
+
+    SDL_Rect flipBoardButton = (SDL_Rect){
+        moveListX + moveListWidth / 2,
+        restartButtonRect.y,
+        buttonWidth,
+        buttonHeight
+    };
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderRect = flipBoardButton;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderFunction = &renderFlipBoardButton;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseButtonDown = &clickedDownFlipBoardButton;
 
     // Rectangle for the promotion overlay will be calculated when it is rendered
     // The only information needed to create this rectangle is the size of the board 

@@ -503,6 +503,9 @@ SDL_AppResult renderGameEndedOverlay(SDL_FRect overlayRect, App* app) {
 #define SCROLL_BAR_WIDTH_PERCENT (0.02f)
 #define GAME_ENDED_SIZE (0.35f)
 
+#define MAX_SCROLL_BAR_WIDTH (20.0)
+#define MAX_MOVE_LIST_WIDTH (250.0)
+
 void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     SceneRender* sceneRender = &scene->sceneRender;
     GameSceneData* data = (GameSceneData*)scene->data;
@@ -521,9 +524,17 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     const float clockHeight = CLOCK_HEIGHT_PERCENT * windowHeight;
     const float clockWidth = CLOCK_WIDTH_PERCENT * windowWidth;
     const float boardSize = min(windowHeight, windowWidth) * BOARD_SIZE_PERCENT;
+    const float moveListScrollWidth = SDL_min(SCROLL_BAR_WIDTH_PERCENT * windowWidth, MAX_SCROLL_BAR_WIDTH);
+    
+    const float maxGameSceneWidth = boardSize + padding + MAX_MOVE_LIST_WIDTH + moveListScrollWidth;
+
+    // If we have too much space simply center the game scene
+    const float boardX = (float)windowWidth > maxGameSceneWidth ? (windowWidth - maxGameSceneWidth) / 2.0 : padding;
+    
+    const float moveListX = boardX + boardSize + padding;
+    const float moveListWidth = SDL_min(windowWidth - moveListX - moveListScrollWidth, MAX_MOVE_LIST_WIDTH);
 
     // Left side layout (board and clocks)
-    float boardX = padding;
     float boardY = padding + clockHeight + padding;
 
     SDL_FRect boardRect = (SDL_FRect){ boardX, boardY, boardSize, boardSize };
@@ -565,25 +576,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[WHITE_CLOCK].renderRect = whiteClockRect;
     sceneRender->renderBoxes[WHITE_CLOCK].renderFunction = &renderWhiteClock;
 
-    // Movelist scrollbar
-    float moveListScrollWidth = SCROLL_BAR_WIDTH_PERCENT * windowWidth;
-    float moveListScrollX = windowWidth - moveListScrollWidth;
-    SDL_FRect moveListScrollRect = (SDL_FRect){
-        moveListScrollX,
-        boardY,
-        moveListScrollWidth,
-        boardRect.h
-    };
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderRect = moveListScrollRect;
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderFunction = &renderMoveListScrollbar;
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseButtonDown = &clickedDownScrollbar;
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &rerenderScene;
-    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
-
-    // Right side layout (move list)
-    float moveListX = boardX + boardSize + padding;
-    float moveListWidth = windowWidth - moveListX - moveListScrollWidth;
-
+    // Right side layout (move list with scrollbar)
     SDL_FRect moveListRect = (SDL_FRect){
         moveListX,
         boardY,
@@ -595,6 +588,20 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[MOVE_LIST].onMouseWheelScrolled = &movelistMouseWheelScrolled;
     sceneRender->renderBoxes[MOVE_LIST].onMouseHovered = &rerenderScene;
     sceneRender->renderBoxes[MOVE_LIST].onMouseButtonDown = &clickedDownMoveList;
+
+    float moveListScrollX = moveListX +moveListWidth;
+    SDL_FRect moveListScrollRect = (SDL_FRect){
+        moveListScrollX,
+        moveListRect.y,
+        moveListScrollWidth,
+        moveListRect.h
+    };
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderRect = moveListScrollRect;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].renderFunction = &renderMoveListScrollbar;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseButtonDown = &clickedDownScrollbar;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &rerenderScene;
+    sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
+
 
     // Buttons
     const float buttonWidth = GAME_BUTTON_WIDTH_PERCENT * windowWidth;
@@ -616,7 +623,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     SDL_FRect restartButtonRect = (SDL_FRect){
         boardX,
         boardY + boardSize + padding,
-        buttonWidth * 2,
+        buttonWidth,
         buttonHeight
     };
     sceneRender->renderBoxes[RESTART_BUTTON].renderRect = restartButtonRect;
@@ -627,7 +634,7 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
 
 
     SDL_FRect flipBoardButton = (SDL_FRect){
-        moveListX + moveListWidth / 2,
+        moveListX + (moveListWidth - buttonWidth) / 2,
         restartButtonRect.y,
         buttonWidth,
         buttonHeight

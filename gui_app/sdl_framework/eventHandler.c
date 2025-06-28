@@ -7,7 +7,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
+    SDL_FPoint mousePoint = { mouseX, mouseY };
 
     size_t index = 0;
     SceneRender sceneRender = app->state.currentScene.sceneRender;
@@ -22,7 +22,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         int foundIndex = -1;
         if (app->events.lockSelectedBoxIndex) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 foundIndex = app->state.currentScene.selectedRenderBoxIndex;
                 if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) {
                     appResult = box.onMouseEntered(event, box.renderRect, app);
@@ -34,7 +34,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 foundIndex = (int)index;
 
                 if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) appResult = box.onMouseEntered(event, box.renderRect, app);
@@ -76,7 +76,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         if (app->events.lockSelectedBoxIndex) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
                     if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
@@ -89,7 +89,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 // We change the selectedRenderBox on mouse button up and on mouse button down
                 app->state.currentScene.selectedRenderBoxIndex = index;
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -109,7 +109,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     case SDL_EVENT_MOUSE_WHEEL:
         if (app->events.lockSelectedBoxIndex) {
             box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
             }
             break;
@@ -117,7 +117,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRect(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
                 if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
                 // If a function set lockSelectedBoxIndex then exit
                 if (app->events.lockSelectedBoxIndex) break;

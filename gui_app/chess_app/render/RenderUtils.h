@@ -14,7 +14,7 @@
  * @param rect The rectangle to fit the text into
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_Rect rect);
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_FRect rect);
 
 /**
  * @brief Formats the time in the min:sec format and writes it to a buffer
@@ -46,7 +46,7 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
  * @param text The text to be displayed in the button
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderButton(SDL_Rect rect, App* app, int hoverIndex, const char* text);
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text);
 
 /**
  * @brief Draws a filled circle
@@ -66,6 +66,6 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
  * @param app The data associated with this app
  * @return SDL_AppResult If the app should continue or terminate with failure or success 
  */
-SDL_AppResult renderCredits(SDL_Rect rect, App* app);
+SDL_AppResult renderCredits(SDL_FRect rect, App* app);
 
 #endif /* DDB8F9F1_B4AC_462A_883D_545E82BB7F71 */

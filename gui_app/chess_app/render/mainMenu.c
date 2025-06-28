@@ -11,27 +11,25 @@
 #include "RenderUtils.h"
 #include "MainMenu.h"
 
-SDL_AppResult renderWhiteKingImage(SDL_Rect rect, App* app) {
+SDL_AppResult renderWhiteKingImage(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    SDL_FRect kingFRect = RECT_TO_FRECT(rect);
-    SDL_RenderTexture(app->state.sdlState.renderer, scene->textures.data[0].texture, NULL, &kingFRect);
+    SDL_RenderTexture(app->state.sdlState.renderer, scene->textures.data[0].texture, NULL, &rect);
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderBlackKingImage(SDL_Rect rect, App* app) {
+SDL_AppResult renderBlackKingImage(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
-    SDL_FRect kingFRect = RECT_TO_FRECT(rect);
-    SDL_RenderTexture(app->state.sdlState.renderer, scene->textures.data[1].texture, NULL, &kingFRect);
+    SDL_RenderTexture(app->state.sdlState.renderer, scene->textures.data[1].texture, NULL, &rect);
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderWhitePlayerTypeButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderWhitePlayerTypeButton(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     const char* label = scene->gameInfo.white.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, WHITE_PLAYER_TYPE, label);
 }
 
-SDL_AppResult renderBlackPlayerTypeButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderBlackPlayerTypeButton(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     const char* label = scene->gameInfo.black.isEngine ? "Engine" : "Human";
     return renderButton(rect, app, BLACK_PLAYER_TYPE, label);
@@ -51,22 +49,21 @@ const char* getFilenameFromPath(const char* path) {
     return lastSlash ? lastSlash + 1 : path;
 }
 
-#include <stdio.h>
-SDL_AppResult renderWhiteEnginePathButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderWhiteEnginePathButton(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char* label = scene->gameInfo.white.isEngine ? scene->gameInfo.white.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, WHITE_ENGINE_PATH, getFilenameFromPath(label));
 }
 
-SDL_AppResult renderBlackEnginePathButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderBlackEnginePathButton(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char* label = scene->gameInfo.black.isEngine ? scene->gameInfo.black.enginePath : "Human Player";
     if (!label) label = "Engine's path";
     return renderButton(rect, app, BLACK_ENGINE_PATH, getFilenameFromPath(label));
 }
 
-SDL_AppResult renderTimeControlLabel(SDL_Rect rect, App* app) {
+SDL_AppResult renderTimeControlLabel(SDL_FRect rect, App* app) {
     TTF_Font* tempFont = TTF_CopyFont(app->state.sdlState.font);
     if (!tempFont) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_CopyFont failed: %s\n", SDL_GetError());
@@ -78,7 +75,7 @@ SDL_AppResult renderTimeControlLabel(SDL_Rect rect, App* app) {
     return result;
 }
 
-SDL_AppResult renderTimeControlButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderTimeControlButton(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     char buffer[11];
     formatTimeControl(scene->gameInfo.timeControl, buffer, 11);
@@ -105,7 +102,7 @@ const TimeControl timeControlOptions[NUM_TIME_CONTROL_STYLE][NUM_TIME_CONTROL_OP
 }
 };
 
-SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
+SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
     MainMenuSceneData* scene = (MainMenuSceneData*)app->state.currentScene.data;
     if (!scene->timeControlSettings.selectModalVisible) return SDL_APP_CONTINUE;
     scene->timeControlSettings.hovered = (TimeControl){ 0, 0 };
@@ -126,9 +123,9 @@ SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &RECT_TO_FRECT(rect));
 
-    const int verticalPadding = rect.h / (2 * NUM_TIME_CONTROL_STYLE);
-    const int horizontalPadding = rect.h / (2 * NUM_TIME_CONTROL_OPTIONS_PER_STYLE);
-    SDL_Rect optionRect = {
+    const float verticalPadding = rect.h / (2 * NUM_TIME_CONTROL_STYLE);
+    const float horizontalPadding = rect.h / (2 * NUM_TIME_CONTROL_OPTIONS_PER_STYLE);
+    SDL_FRect optionRect = {
         .x = rect.x + horizontalPadding,
         .y = rect.y + verticalPadding,
         .w = (rect.w - horizontalPadding) / NUM_TIME_CONTROL_OPTIONS_PER_STYLE - horizontalPadding,
@@ -137,14 +134,14 @@ SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
 
     float mouseX, mouseY;
     SDL_GetMouseState(&mouseX, &mouseY);
-    SDL_Point mousePoint = { (int)mouseX, (int)mouseY };
+    SDL_FPoint mousePoint = { mouseX, mouseY };
     for (int styleIndex = 0; styleIndex < NUM_TIME_CONTROL_STYLE; styleIndex++) {
         for (int optionIndex = 0; optionIndex < NUM_TIME_CONTROL_OPTIONS_PER_STYLE; optionIndex++) {
             TimeControl timeControl = timeControlOptions[styleIndex][optionIndex];
             if (app->events.mouseState.hoveredIndex == TIME_CONTROL_MODAL &&
-                SDL_PointInRect(&mousePoint, &optionRect)) {
+                SDL_PointInRectFloat(&mousePoint, &optionRect)) {
                 SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
-                SDL_RenderFillRect(renderer, &RECT_TO_FRECT(optionRect));
+                SDL_RenderFillRect(renderer, &optionRect);
                 scene->timeControlSettings.hovered = timeControl;
             }
             char buffer[11];
@@ -167,7 +164,7 @@ SDL_AppResult renderTimeControlModal(SDL_Rect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderStartGameButton(SDL_Rect rect, App* app) {
+SDL_AppResult renderStartGameButton(SDL_FRect rect, App* app) {
     return renderButton(rect, app, START_GAME, "Start Game");
 }
 
@@ -188,26 +185,26 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     int windowWidth, windowHeight;
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
 
-    const int padding = (int)(PADDING_PERCENT * windowHeight);
-    const int columnWidth = (int)(COLUMN_WIDTH_PERCENT * windowWidth);
-    const int columnSpacing = windowWidth - 2 * (columnWidth + padding);
+    const float padding = PADDING_PERCENT * windowHeight;
+    const float columnWidth = COLUMN_WIDTH_PERCENT * windowWidth;
+    const float columnSpacing = windowWidth - 2 * (columnWidth + padding);
 
-    const int kingImageSize = (int)(KING_IMAGE_HEIGHT_PERCENT * windowHeight);
-    const int buttonHeight = (int)(MM_BUTTON_HEIGHT_PERCENT * windowHeight);
-    const int buttonWidth = (int)(MM_BUTTON_WIDTH_PERCENT * columnWidth);
-    const int controlButtonHeight = (int)(CONTROL_BUTTON_HEIGHT_PERCENT * windowHeight);
+    const float kingImageSize = KING_IMAGE_HEIGHT_PERCENT * windowHeight;
+    const float buttonHeight = MM_BUTTON_HEIGHT_PERCENT * windowHeight;
+    const float buttonWidth = MM_BUTTON_WIDTH_PERCENT * columnWidth;
+    const float controlButtonHeight = CONTROL_BUTTON_HEIGHT_PERCENT * windowHeight;
 
-    const int centerX = windowWidth / 2;
+    const float centerX = windowWidth / 2;
 
-    int whiteColumnX = padding;
-    int blackColumnX = whiteColumnX + columnWidth + columnSpacing;
+    float whiteColumnX = padding;
+    float blackColumnX = whiteColumnX + columnWidth + columnSpacing;
 
     // Y offset tracks vertical positioning
-    int whiteY = padding;
-    int blackY = padding;
+    float whiteY = padding;
+    float blackY = padding;
 
     // --- King Images ---
-    SDL_Rect whiteKingRect = {
+    SDL_FRect whiteKingRect = {
         .x = whiteColumnX + (columnWidth - kingImageSize) / 2,
         .y = whiteY,
         .w = kingImageSize,
@@ -217,7 +214,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[WHITE_KING_IMAGE].renderFunction = &renderWhiteKingImage;
     whiteY += kingImageSize + padding;
 
-    SDL_Rect blackKingRect = {
+    SDL_FRect blackKingRect = {
         .x = blackColumnX + (columnWidth - kingImageSize) / 2,
         .y = blackY,
         .w = kingImageSize,
@@ -228,7 +225,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     blackY += kingImageSize + padding;
 
     // --- Player Type Buttons ---
-    SDL_Rect whiteTypeButton = {
+    SDL_FRect whiteTypeButton = {
         .x = whiteColumnX + (columnWidth - buttonWidth) / 2,
         .y = whiteY,
         .w = buttonWidth,
@@ -241,7 +238,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[WHITE_PLAYER_TYPE].onMouseButtonDown = &clickedDownWhitePlayerType;
     whiteY += buttonHeight + padding;
 
-    SDL_Rect blackTypeButton = {
+    SDL_FRect blackTypeButton = {
         .x = blackColumnX + (columnWidth - buttonWidth) / 2,
         .y = blackY,
         .w = buttonWidth,
@@ -255,7 +252,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     blackY += buttonHeight + padding;
 
     // --- Engine Path Buttons ---
-    SDL_Rect whitePathButton = {
+    SDL_FRect whitePathButton = {
         .x = whiteColumnX + (columnWidth - buttonWidth) / 2,
         .y = whiteY,
         .w = buttonWidth,
@@ -268,7 +265,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[WHITE_ENGINE_PATH].onMouseButtonDown = &clickedDownWhiteEnginePath;
     whiteY += buttonHeight + padding;
 
-    SDL_Rect blackPathButton = {
+    SDL_FRect blackPathButton = {
         .x = blackColumnX + (columnWidth - buttonWidth) / 2,
         .y = blackY,
         .w = buttonWidth,
@@ -282,10 +279,10 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     blackY += buttonHeight + padding;
 
     // --- Center Controls ---
-    int controlY = SDL_max(blackY, whiteY) + padding;
-    int timeControlWidth = 2 * buttonWidth / 3;
+    float controlY = SDL_max(blackY, whiteY) + padding;
+    float timeControlWidth = 2 * buttonWidth / 3;
 
-    SDL_Rect timeControlButton = {
+    SDL_FRect timeControlButton = {
         .x = centerX - timeControlWidth / 2,
         .y = controlY,
         .w = timeControlWidth,
@@ -297,9 +294,9 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[TIME_CONTROL_BUTTON].onMouseExited = &rerenderScene;
     sceneRender->renderBoxes[TIME_CONTROL_BUTTON].onMouseButtonDown = &clickedDownTimeControlButton;
 
-    int modalWidth = (int)(windowWidth - timeControlButton.x - padding);
-    int modalHeight = controlButtonHeight * 6; // enough for options
-    SDL_Rect timeControlModal = {
+    float modalWidth = windowWidth - timeControlButton.x - padding;
+    float modalHeight = controlButtonHeight * 6; // enough for options
+    SDL_FRect timeControlModal = {
         .x = timeControlButton.x,
         .y = controlY,
         .w = modalWidth,
@@ -312,7 +309,7 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
 
     controlY += timeControlButton.h + padding;
 
-    SDL_Rect startGameButton = {
+    SDL_FRect startGameButton = {
         .x = centerX - buttonWidth / 2,
         .y = controlY,
         .w = buttonWidth,
@@ -325,9 +322,9 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     sceneRender->renderBoxes[START_GAME].onMouseButtonUp = &clickedUpStartGame;
 
     // --- Credits ---
-    const int creditsHeight = (int)(CREDITS_HEIGHT_PERCENT * windowHeight);
-    const int creditsWidth = (int)(CREDITS_WIDTH_PERCENT * windowWidth);
-    SDL_Rect creditsRect = {
+    const float creditsHeight = CREDITS_HEIGHT_PERCENT * windowHeight;
+    const float creditsWidth = CREDITS_WIDTH_PERCENT * windowWidth;
+    SDL_FRect creditsRect = {
         .x = centerX - creditsWidth / 2,
         .y = windowHeight - creditsHeight - padding,
         .w = creditsWidth,

@@ -225,7 +225,7 @@ void clickedWhenGameIsDone(App* app) {
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 }
 
-SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
@@ -233,18 +233,18 @@ SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app
     return resetGame(data);
 }
 
-SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect boardRect, App* app) {
+SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_FRect boardRect, App* app) {
     (void)boardRect;
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     // If the overlay is not visible we don't do anything
     if (!data->promotionInfo.renderPromotionOverlay) return SDL_APP_CONTINUE;
 
-    SDL_Rect overlayRect = data->promotionInfo.overlayRect;
+    SDL_FRect overlayRect = data->promotionInfo.overlayRect;
 
-    SDL_Point mousePoint = { (int)event->button.x, (int)event->button.y };
+    SDL_FPoint mousePoint = { event->button.x, event->button.y };
     // If we are not in the promotion overlay simply continue the app
-    if (!SDL_PointInRect(&mousePoint, &overlayRect)) return SDL_APP_CONTINUE;
+    if (!SDL_PointInRectFloat(&mousePoint, &overlayRect)) return SDL_APP_CONTINUE;
 
     Move move = NULL_MOVE;
     int squareSize = (STARTING_WINDOW_WIDTH * 2 / 3) / BOARD_LENGTH;
@@ -321,7 +321,7 @@ SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_FRect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE;
 
@@ -364,7 +364,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app)
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->gameEndedInfo.result != GAME_IS_NOT_DONE) {
         clickedWhenGameIsDone(app);
@@ -397,7 +397,7 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* ap
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
 
@@ -434,7 +434,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
 
@@ -450,7 +450,7 @@ SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* a
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
@@ -486,7 +486,7 @@ SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app) {
 
 #define MAXIMUM_SCROLL_WHEEL_TICKS_AMOUNT (25.0) 
 
-SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)rect;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     // If no moves have been made don't scroll the scroll bar
@@ -499,7 +499,7 @@ SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* a
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_FRect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
     if (data->moveListInfo.movesPlayed.count == 0) return SDL_APP_CONTINUE;
@@ -523,7 +523,7 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app) {
         data->moveListInfo.scrollRatio = 1.0;
     }
     else {
-        data->moveListInfo.scrollRatio = (mousePoint.y - data->moveListInfo.startingDragOffset - (float)rect.y) / maxScrollY;
+        data->moveListInfo.scrollRatio = (mousePoint.y - data->moveListInfo.startingDragOffset - rect.y) / maxScrollY;
     }
     return SDL_APP_CONTINUE;
 }

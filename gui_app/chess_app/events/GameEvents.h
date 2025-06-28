@@ -4,21 +4,21 @@
 #include "../AppState.h"
 
 // Chessboard
-SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app);
-SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_FRect rect, App* app);
 
 // Promotion
-SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app);
 
 // Buttons
-SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_Rect rect, App* app);
-SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_Rect rect, App* app);
-SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app);
 
 // Move list
-SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_Rect rect, App* app);
-SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_Rect rect, App* app);
-SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_Rect rect, App* app);
+SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult movelistMouseWheelScrolled(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_FRect rect, App* app);
 
 /**
  * @brief Plays a move chosen by the bot. This function takes
@@ -58,10 +58,10 @@ SDL_AppResult resetGame(GameSceneData* data);
  * @param x The x coordinates
  * @param y The y coordinates
  * @param flip If the board is currently flipper
- * @param chessBoardRect The SDL_Rect from which the board is renderer with
+ * @param chessBoardRect The SDL_FRect from which the board is renderer with
  * @return Square The square index which at the point (x, y) 
  */
-static inline Square squareFromxy(int x, int y, bool flip, SDL_Rect chessBoardRect) {
+static inline Square squareFromxy(float x, float y, bool flip, SDL_FRect chessBoardRect) {
     int squareSize = chessBoardRect.w / BOARD_LENGTH;
     int col = (x - chessBoardRect.x) / squareSize;
     int row = (y - chessBoardRect.y) / squareSize;

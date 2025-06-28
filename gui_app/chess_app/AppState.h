@@ -102,7 +102,7 @@ typedef struct PromotionInfo {
     bool renderPromotionOverlay;
     Square promotionSquareTo;
     Square promotionSquareFrom;
-    SDL_Rect overlayRect;
+    SDL_FRect overlayRect;
 } PromotionInfo;
 
 #define NO_SQUARE_SELECTED ((Square)-1)

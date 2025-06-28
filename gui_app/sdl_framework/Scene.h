@@ -2,11 +2,11 @@
 
 typedef struct App App;
 
-typedef SDL_AppResult(*RenderFunction)(SDL_Rect, App*);
-typedef SDL_AppResult(*EventCallbackBox)(SDL_Event*, SDL_Rect, App*);
+typedef SDL_AppResult(*RenderFunction)(SDL_FRect, App*);
+typedef SDL_AppResult(*EventCallbackBox)(SDL_Event*, SDL_FRect, App*);
 
 typedef struct RenderBox {
-    SDL_Rect renderRect;
+    SDL_FRect renderRect;
     RenderFunction renderFunction;
     EventCallbackBox onMouseButtonDown;
     EventCallbackBox onMouseButtonUp;

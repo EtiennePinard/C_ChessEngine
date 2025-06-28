@@ -6,7 +6,7 @@
 #include "../AppStyle.h"
 #include "RenderUtils.h"
 
-SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
+SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
     if (!renderer || !font || !text) return SDL_APP_FAILURE;
 
     char* textCopy = strdup(text);
@@ -41,7 +41,7 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
             return SDL_APP_FAILURE;
         }
 
-        SDL_Rect dst = {
+        SDL_FRect dst = {
             .x = rect.x + (rect.w - surf->w) / 2,
             .y = y,
             .w = surf->w,
@@ -61,7 +61,7 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_Rect rect) {
+SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
     SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, color, 0);
     if (!textSurface) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_RenderText_Blended failed: %s\n", SDL_GetError());
@@ -76,7 +76,7 @@ SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* fon
 
     // Centering the text from the baseline
     int ascent = TTF_GetFontAscent(font);
-    SDL_Rect textRect = {
+    SDL_FRect textRect = {
     .x = rect.x + (rect.w - textSurface->w) / 2,
     .y = rect.y + (rect.h - ascent) / 2,
     .w = textSurface->w,
@@ -88,7 +88,7 @@ SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* fon
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_Rect rect) {
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_FRect rect) {
     SDL_AppResult result = SDL_APP_FAILURE;
 
     if (!renderer || !baseFont || !textString) {
@@ -174,7 +174,7 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderButton(SDL_Rect rect, App* app, int hoverIndex, const char* text) {
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
@@ -212,6 +212,6 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderCredits(SDL_Rect rect, App* app) {
+SDL_AppResult renderCredits(SDL_FRect rect, App* app) {
     return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect);
 }

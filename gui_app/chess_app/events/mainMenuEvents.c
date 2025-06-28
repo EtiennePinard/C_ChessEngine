@@ -9,7 +9,7 @@
 #include "GameEvents.h"
 #include "MainMenuEvents.h"
 
-SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
@@ -18,7 +18,7 @@ SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_Rect rect, App* a
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
@@ -103,19 +103,19 @@ SDL_AppResult clickedDownEnginePath(App* app, PlayerConfig player, SDL_DialogFil
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownWhiteEnginePath(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownWhiteEnginePath(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.white, &onWhiteEnginePathSelected);
 }
 
-SDL_AppResult clickedDownBlackEnginePath(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownBlackEnginePath(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.black, &onBlackEnginePathSelected);
 }
 
-SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
@@ -130,7 +130,7 @@ SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_Rect rect, App*
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
@@ -149,7 +149,7 @@ SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_Rect rect, App* 
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_Rect rect, App* app) {
+SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;

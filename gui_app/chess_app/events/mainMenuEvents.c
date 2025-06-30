@@ -203,7 +203,7 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     gameData->promotionInfo.renderPromotionOverlay = false;
     gameData->gameEndedInfo.renderOverlay = false;
 
-    gameData->selectedSquare.selectedSquare = (Square)-1;
+    gameData->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
 
     gameData->gameInfo = mainMenuData->gameInfo;
 
@@ -214,16 +214,17 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     app->state.currentScene.sceneId = GAME_SCENE_ID;
     app->state.currentScene.data = gameData;
     app->state.currentScene.terminateSceneFunction = &terminateGameScene;
-    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        free(app->state.currentScene.sceneRender.renderBoxes);
-        app->state.currentScene.sceneRender.renderBoxes = NULL;
-    }
-    computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER); 
+    
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
     
     resetGame(gameData);
-    return SDL_APP_CONTINUE;
+
+    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
+        free(app->state.currentScene.sceneRender.renderBoxes);
+        app->state.currentScene.sceneRender.renderBoxes = NULL;
+    }
+    return computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
 }

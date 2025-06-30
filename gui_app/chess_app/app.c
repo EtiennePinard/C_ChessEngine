@@ -27,10 +27,10 @@ SDL_AppResult onWindowResize(App* app, SDL_Event* event) {
 
     switch (app->state.currentScene.sceneId) {
     case GAME_SCENE_ID:
-        computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+        if (computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
         break;
     case MAIN_MENU_SCENE_ID:
-        computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+        if (computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
         break;
     default: break;
     }
@@ -107,7 +107,7 @@ bool initializeApp(App* app) {
     app->state.currentScene.data = mainMenu;
     app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
     app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
-    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
+    if (computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender) != SDL_APP_CONTINUE) return false;
 
     app->events.onWindowResize = &onWindowResize;
     app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
@@ -120,6 +120,8 @@ bool initializeApp(App* app) {
 
 void cleanupApp(App* app) {
     MagicBitBoard_terminate();
+
+    free(app->state.currentScene.sceneRender.renderBoxes);
 
     cleanupSDL_State(app->state.sdlState);
     quitSDL();

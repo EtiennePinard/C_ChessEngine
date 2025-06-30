@@ -24,7 +24,7 @@ typedef enum MainMenuRenderBoxIndex {
  * @param window The window the scene will be drawn onto 
  * @param sceneRender The sceneRender object to fill. 
  */
-void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender);
+SDL_AppResult computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender);
 
 void terminateMainMenuScene(void* data);
 

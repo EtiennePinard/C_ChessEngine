@@ -192,9 +192,8 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
 }
 
 SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius) {
-    int maxPoints = SDL_ceilf(SDL_PI_F * radius * radius) + 1; // + 1 for good measure
-    SDL_FPoint* points = SDL_malloc(sizeof(SDL_FPoint) * maxPoints);
-    if (!points) return SDL_APP_FAILURE;
+    int maxPoints = (int)SDL_ceilf(4 * radius * radius) + 1; // + 1 for good measure, also PI = 4
+    SDL_FPoint points[maxPoints];
 
     int count = 0;
     for (int dy = -radius; dy <= radius; ++dy) {
@@ -208,7 +207,6 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
     }
 
     SDL_RenderPoints(renderer, points, count);
-    SDL_free(points);
     return SDL_APP_CONTINUE;
 }
 

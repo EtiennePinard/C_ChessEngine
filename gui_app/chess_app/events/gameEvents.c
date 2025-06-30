@@ -429,9 +429,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
         free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
-    computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
-
-    return SDL_APP_CONTINUE;
+    return computeMainMenuSceneRender(app->state.sdlState.window, &app->state.currentScene.sceneRender);
 }
 
 SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app) {
@@ -445,7 +443,8 @@ SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* 
         free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
-    computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+    if (computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }

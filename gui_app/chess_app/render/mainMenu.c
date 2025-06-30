@@ -174,12 +174,16 @@ SDL_AppResult renderStartGameButton(SDL_FRect rect, App* app) {
 #define MM_BUTTON_WIDTH_PERCENT (0.75f)
 #define CONTROL_BUTTON_HEIGHT_PERCENT (0.06f)
 
-void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
+SDL_AppResult computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     // Setting in the background color of the scene
     sceneRender->renderDrawColor = BACKGROUND_COLOR;
 
     sceneRender->numRenderBox = TOTAL_MAIN_MENU_RENDER_BOX;
     // We assume that sceneRender->renderBoxes is always NULL
+    if (sceneRender->renderBoxes != NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "renderBoxes is not NULL when re-computing game scene\n");
+        return SDL_APP_FAILURE;
+    }
     sceneRender->renderBoxes = calloc(sceneRender->numRenderBox, sizeof(RenderBox));
 
     int windowWidth, windowHeight;
@@ -332,11 +336,15 @@ void computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender) {
     };
     sceneRender->renderBoxes[MAIN_MENU_CREDITS].renderRect = creditsRect;
     sceneRender->renderBoxes[MAIN_MENU_CREDITS].renderFunction = &renderCredits;
+
+    return SDL_APP_CONTINUE;
 }
 
 void terminateMainMenuScene(void* data) {
-    MainMenuSceneData* mainMenuData = (MainMenuSceneData*) data;
+    MainMenuSceneData* mainMenuData = (MainMenuSceneData*)data;
     if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
+    if (mainMenuData->gameInfo.white.enginePath != NULL) free(mainMenuData->gameInfo.white.enginePath);
+    if (mainMenuData->gameInfo.black.enginePath != NULL) free(mainMenuData->gameInfo.black.enginePath);
     cleanupTextures(mainMenuData->textures);
     free(mainMenuData->textures.data);
     free(mainMenuData);

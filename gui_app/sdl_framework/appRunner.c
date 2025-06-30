@@ -43,6 +43,11 @@ SDL_AppResult SDL_AppEvent(void* globalAppObject, SDL_Event* event) {
 }
 
 void SDL_AppQuit(void* globalAppObject, SDL_AppResult result) {
+    App* app = (App*)globalAppObject;
+    app->state.currentScene.terminateSceneFunction(app->state.currentScene.data);
+    cleanupApp(app);
+    free(app);
+
     switch (result) {
     case SDL_APP_FAILURE:
         SDL_Log("The app was terminated with an error\n");
@@ -53,9 +58,4 @@ void SDL_AppQuit(void* globalAppObject, SDL_AppResult result) {
     default:
         break;
     }
-
-    App* app = (App*)globalAppObject;
-    app->state.currentScene.terminateSceneFunction(app->state.currentScene.data);
-    cleanupApp(app);
-    free(app);
 }

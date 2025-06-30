@@ -27,7 +27,7 @@ typedef enum GameSceneRenderBoxIndex {
  * @param window The window the scene will be drawn onto 
  * @param scene The scene object to fill the SceneRender struct of.
  */
-void computeGameSceneRender(SDL_Window* window, Scene* scene);
+SDL_AppResult computeGameSceneRender(SDL_Window* window, Scene* scene);
 
 void terminateGameScene(void* data);
 

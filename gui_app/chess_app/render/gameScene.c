@@ -506,7 +506,7 @@ SDL_AppResult renderGameEndedOverlay(SDL_FRect overlayRect, App* app) {
 #define MAX_SCROLL_BAR_WIDTH (20.0)
 #define MAX_MOVE_LIST_WIDTH (250.0)
 
-void computeGameSceneRender(SDL_Window* window, Scene* scene) {
+SDL_AppResult computeGameSceneRender(SDL_Window* window, Scene* scene) {
     SceneRender* sceneRender = &scene->sceneRender;
     GameSceneData* data = (GameSceneData*)scene->data;
 
@@ -515,6 +515,10 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
 
     sceneRender->numRenderBox = TOTAL_GAME_SCENE_RENDER_BOX;
     // We assume that sceneRender->renderBoxes is always NULL
+    if (sceneRender->renderBoxes != NULL) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "renderBoxes is not NULL when re-computing game scene\n");
+        return SDL_APP_FAILURE;
+    }
     sceneRender->renderBoxes = calloc(sceneRender->numRenderBox, sizeof(RenderBox));
 
     int windowWidth, windowHeight;
@@ -653,6 +657,8 @@ void computeGameSceneRender(SDL_Window* window, Scene* scene) {
     sceneRender->renderBoxes[PROMOTION_OVERLAY].renderFunction = &renderPromotionOverlay;
     sceneRender->renderBoxes[PROMOTION_OVERLAY].onMouseHovered = &rerenderScene;
     sceneRender->renderBoxes[PROMOTION_OVERLAY].onMouseButtonDown = &promotionOverlayMouseButtonDown;
+
+    return SDL_APP_CONTINUE;
 }
 
 void terminateGameScene(void* data) {

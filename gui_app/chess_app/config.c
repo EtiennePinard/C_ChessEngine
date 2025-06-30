@@ -116,6 +116,7 @@ bool loadMainMenuConfigFromFile(FILE* file, GameConfig* data) {
         else if (string_compareStrings(tokens.tokens[0], "timecontrol")) {
             if (!parseTimeControl(&data->timeControl, tokens)) goto end_of_parsing_file;
         }
+        free(line);
     }
 
     result = true;
@@ -137,11 +138,11 @@ void loadMainMenuConfig(GameConfig* data) {
     FILE* file = fopen(configPath, "r");
     if (file && loadMainMenuConfigFromFile(file, data)) {
         fclose(file);
+        free(configPath);
         return;
     }
 
     if (file) fclose(file);
-    free(configPath);
 
 fallback:
     // Fallback to default settings

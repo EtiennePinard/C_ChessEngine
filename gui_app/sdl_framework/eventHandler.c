@@ -12,6 +12,9 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     size_t index = 0;
     SceneRender sceneRender = app->state.currentScene.sceneRender;
     RenderBox box;
+
+    SceneId currentSceneId = app->state.currentScene.sceneId;
+
     SDL_AppResult appResult = SDL_APP_CONTINUE;
     switch (event->type) {
     case SDL_EVENT_QUIT:
@@ -29,6 +32,11 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 }
                 if (box.onMouseHovered) appResult = box.onMouseHovered(event, box.renderRect, app);
             }
+            // If the scene has changed exit this function
+            if (currentSceneId != app->state.currentScene.sceneId) return appResult;
+            // If the render boxes have changed exit this function
+            if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
+
             goto mouseExited;
         }
 
@@ -43,6 +51,10 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 if (box.onMouseHovered) appResult = box.onMouseHovered(event, box.renderRect, app);
                 // Return early if we have encountered an error
                 if (appResult != SDL_APP_CONTINUE) return appResult;
+                // If the scene has changed exit this function
+                if (currentSceneId != app->state.currentScene.sceneId) return appResult;
+                // If the render boxes have changed exit this function
+                if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
                 break; // Only one box should be hovered at a time
             }
         }
@@ -100,6 +112,10 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 }
                 // If a function set lockSelectedBoxIndex then exit
                 if (app->events.lockSelectedBoxIndex) break;
+                // If the scene has changed exit this function
+                if (currentSceneId != app->state.currentScene.sceneId) break;
+                // If the render boxes have changed exit this function
+                if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) break;
             }
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
@@ -124,6 +140,10 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             }
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
+            // If the scene has changed exit this function
+            if (currentSceneId != app->state.currentScene.sceneId) break;
+            // If the render boxes have changed exit this function
+            if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
         }
         break;
 

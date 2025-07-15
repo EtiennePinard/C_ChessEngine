@@ -62,20 +62,7 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
 }
 
 SDL_AppResult afterRenderAndEventsFunction(App* app) {
-    if (app->state.currentScene.sceneId == MAIN_MENU_SCENE_ID) {
-        // Handling the cursor logic
-        MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-        if (data->startingPositionData.textInput.isTextInputActive) {
-            u64 now = SDL_GetTicks();
-            if (now - data->startingPositionData.textInput.lastCursorToggleTime >= 500) {
-                data->startingPositionData.textInput.showCursor = !data->startingPositionData.textInput.showCursor;
-                data->startingPositionData.textInput.lastCursorToggleTime = now;
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-            }
-        }
-
-    }
-    else if (app->state.currentScene.sceneId == GAME_SCENE_ID) {
+    if (app->state.currentScene.sceneId == GAME_SCENE_ID) {
         // Updating the time controls using SDL_GetTicks
         GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
@@ -104,7 +91,6 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
             }
         }
     }
-
 
     return SDL_APP_CONTINUE;
 }

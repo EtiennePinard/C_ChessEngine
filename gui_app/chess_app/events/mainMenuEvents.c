@@ -2,105 +2,67 @@
 #include <stdlib.h>
 
 #include "../../../engine/src/utils/FenString.h"
+
 #include "../../sdl_framework/AppInit.h"
+#include "../../sdl_framework/CommonEvents.h"
 
 #include "../render/scene/MainMenuScene.h"
 #include "../render/modal/MainMenuModals.h"
 #include "../render/scene/GameScene.h"
-#include "CommonEvents.h"
 #include "GameEvents.h"
 #include "MainMenuEvents.h"
 
-SDL_AppResult onMainMenuKeyDown(SDL_Event* event, App* app) {
+// TODO: Figure out of the framework will handle errors on close 
+// and code included in the framework and not included
+SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {
+    (void)event;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
 
-    if (event->key.key == SDLK_ESCAPE) {
-        if (data->startingPositionData.textInput.isTextInputActive) {
-            // Escape is pressed, cancel the inputted text
-            data->startingPositionData.textInput.isTextInputActive = false;
-            free(data->startingPositionData.textInput.text.data);
-            SDL_StopTextInput(app->state.sdlState.window);
-            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-        }
+    ChessPosition dummyPosition;
+    char fenCopy[app->events.textInput.text.count + 1];
+    SDL_strlcpy(fenCopy, app->events.textInput.text.data, app->events.textInput.text.count + 1);
+    if (!FenString_setChessPositionFromFenString(fenCopy, &dummyPosition)) {
+        SDL_Log("The inputted fen string, `%s`, is incorrect\n", app->events.textInput.text.data);
+        int messageSize = snprintf(NULL, 0, "The inputted fen string, `%s`, is not a valid fen string", app->events.textInput.text.data) + 1;
+        char message[messageSize];
+        snprintf(message, messageSize, "The inputted fen string, `%s` is not a valid fen string", app->events.textInput.text.data);
+        // TODO: Bug when clicking the return key to exit the popup
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fen string error", message, app->state.sdlState.window);
     }
-    else if (event->key.key == SDLK_RETURN) {
-        if (data->startingPositionData.textInput.isTextInputActive) {
-            // Return is pressed, store the inputted text
-            ChessPosition dummyPosition;
-            char fenCopy[data->startingPositionData.textInput.text.count + 1];
-            SDL_strlcpy(fenCopy, data->startingPositionData.textInput.text.data, data->startingPositionData.textInput.text.count + 1);
-            if (!FenString_setChessPositionFromFenString(fenCopy, &dummyPosition)) {
-                SDL_Log("The inputted fen string, `%s`, is incorrect\n", data->startingPositionData.textInput.text.data);
-                int messageSize = snprintf(NULL, 0, "The inputted fen string, `%s`, is not a valid fen string", data->startingPositionData.textInput.text.data) + 1;
-                char message[messageSize];
-                snprintf(message, messageSize, "The inputted fen string, `%s` is not a valid fen string", data->startingPositionData.textInput.text.data);
-                // TODO: Bug when clicking the return key to exit the popup
-                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fen string error", message, app->state.sdlState.window);
-            }
-            else {
-                // The fen string is correct, store it into the gameInfo field
-                if (data->gameInfo.startingPositionFen) free(data->gameInfo.startingPositionFen);
-                data->gameInfo.startingPositionFen = calloc(data->startingPositionData.textInput.text.count + 1, sizeof(char));
-                SDL_assert(data->gameInfo.startingPositionFen);
-                SDL_strlcpy(data->gameInfo.startingPositionFen, data->startingPositionData.textInput.text.data, data->startingPositionData.textInput.text.count + 1);
+    else {
+        // The fen string is correct, store it into the gameInfo field
+        if (data->gameInfo.startingPositionFen) free(data->gameInfo.startingPositionFen);
+        data->gameInfo.startingPositionFen = calloc(app->events.textInput.text.count + 1, sizeof(char));
+        SDL_assert(data->gameInfo.startingPositionFen);
+        SDL_strlcpy(data->gameInfo.startingPositionFen, app->events.textInput.text.data, app->events.textInput.text.count + 1);
 
-                free(data->startingPositionData.textInput.text.data);
-                data->startingPositionData.textInput.text.data = NULL;
+        free(app->events.textInput.text.data);
+        app->events.textInput.text.data = NULL;
 
-                data->startingPositionData.textInput.isTextInputActive = false;
-                SDL_StopTextInput(app->state.sdlState.window);
-            }
-
-            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-        }
+        SDL_StopTextInput(app->state.sdlState.window);
     }
-    else if (event->key.key == SDLK_BACKSPACE) {
-        if (data->startingPositionData.textInput.isTextInputActive) {
-            // Remove one character from the buffer
-            if (data->startingPositionData.textInput.text.count > 0) {
-                data->startingPositionData.textInput.text.count--;
-                data->startingPositionData.textInput.text.data[data->startingPositionData.textInput.text.count] = '\0';
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-            }
-        }
-    }
-
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult onMainMenuTextInput(SDL_Event* event, App* app) {
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-
-    const char* text = event->text.text;
-
-    if (data->startingPositionData.textInput.isTextInputActive) {
-        for (; *text; ++text) {
-            // Append only ASCII characters
-            // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
-            if ((unsigned char)*text < 0x80) {
-                da_append((&data->startingPositionData.textInput.text), (*text));
-            }
-        }
-        SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    }
-
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
 
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
     // If the text input is already active simply return
-    if (data->startingPositionData.textInput.isTextInputActive) return SDL_APP_CONTINUE;
+    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
 
     SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
-    data->startingPositionData.textInput.isTextInputActive = true;
-    data->startingPositionData.textInput.text.capacity = MAX_FEN_STRING_SIZE;
-    data->startingPositionData.textInput.text.count = 0;
+    app->events.textInput.text.capacity = MAX_FEN_STRING_SIZE;
+    app->events.textInput.text.count = 0;
     // we are guaranteed that the text data is either already freed, or transferred
     // to the gameInfo field
-    data->startingPositionData.textInput.text.data = calloc(data->startingPositionData.textInput.text.capacity, sizeof(char));
+    app->events.textInput.text.data = calloc(app->events.textInput.text.capacity, sizeof(char));
+    SDL_assert(app->events.textInput.text.data);
+
+    app->events.textInput.onEscape = &closeTextInput;
+    app->events.textInput.onReturn = &startingPositionTextInputReturn;
+    
+    app->events.textInput.keepOnlyAscii = true;
+    app->events.textInput.isActive = true;
 
     SDL_SetTextInputArea(app->state.sdlState.window,
         &area,

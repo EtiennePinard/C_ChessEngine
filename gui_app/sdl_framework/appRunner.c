@@ -35,6 +35,17 @@ SDL_AppResult SDL_AppIterate(void* globalAppObject) {
     if (returnValue != SDL_APP_CONTINUE) return returnValue;
 
     if (app->runAfterRenderAndEventsFunction) returnValue = app->runAfterRenderAndEventsFunction(app);
+
+    // Handling flashing cursor logic
+    if (app->events.textInput.isActive) {
+        Uint64 now = SDL_GetTicks();
+        if (now - app->events.textInput.lastCursorToggleTime >= 500) {
+            app->events.textInput.showCursor = !app->events.textInput.showCursor;
+            app->events.textInput.lastCursorToggleTime = now;
+            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+        }
+    }
+
     return returnValue;
 }
 
@@ -44,11 +55,11 @@ SDL_AppResult SDL_AppEvent(void* globalAppObject, SDL_Event* event) {
 
 void SDL_AppQuit(void* globalAppObject, SDL_AppResult result) {
     App* app = (App*)globalAppObject;
-    if (app->events.modal.isActive && app->events.modal.onCancel) {
+    if (app->events.modal.isActive && app->events.modal.onEscape) {
         SDL_Event event;
         event.type = SDL_EVENT_QUIT;
         event.quit.timestamp = SDL_GetTicksNS();
-        app->events.modal.onCancel(&event, app);
+        app->events.modal.onEscape(&event, app);
     }
     app->state.currentScene.terminateSceneFunction(app->state.currentScene.data);
     cleanupApp(app);

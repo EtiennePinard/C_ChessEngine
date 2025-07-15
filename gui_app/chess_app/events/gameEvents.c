@@ -174,7 +174,7 @@ SDL_Thread* playBotMove(App* app) {
 SDL_AppResult resetGame(SDL_Event* event, App* app) {
     if (app->events.modal.isActive) {
         // Cancel the modal
-        if (app->events.modal.onCancel) app->events.modal.onCancel(event, app);
+        if (app->events.modal.onEscape) app->events.modal.onEscape(event, app);
         app->events.modal.isActive = false;
     }
 

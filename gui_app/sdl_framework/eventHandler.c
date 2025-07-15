@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "EventHandler.h"
 
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
@@ -165,25 +167,58 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         if (app->events.onKeyDown) appResult = app->events.onKeyDown(event, app);
         if (appResult != SDL_APP_CONTINUE) return appResult;
 
-        // Then cancelling/closing the active modal
-        if (app->events.modal.isActive) {
-            if (event->key.key == SDLK_ESCAPE && app->events.modal.cancelWithEscape) {
-                if (app->events.modal.onCancel) app->events.modal.onCancel(event, app);
-                // Making the current modal disappear 
-                app->events.modal.isActive = false;
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+        // Then cancelling/closing any other active events
+        switch (event->key.key) {
+        case SDLK_ESCAPE:
+            // We first start by cancelling the text input
+            if (app->events.textInput.isActive && app->events.textInput.onEscape) {
+                app->events.textInput.onEscape(event, app);
             }
-            else if (event->key.key == SDLK_RETURN && app->events.modal.closeWithReturn) {
-                if (app->events.modal.onClose) app->events.modal.onClose(event, app);
-                // Making the current modal disappear 
-                app->events.modal.isActive = false;
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+            // Then we cancel the modal
+            if (app->events.modal.isActive && app->events.modal.onEscape) {
+                app->events.modal.onEscape(event, app);
             }
+            break;
+        case SDLK_RETURN:
+            // We first start by closing the text input
+            if (app->events.textInput.isActive && app->events.textInput.onReturn) {
+                app->events.textInput.onReturn(event, app);
+            }
+            // Then we close the modal
+            if (app->events.modal.isActive && app->events.modal.onReturn) {
+                app->events.modal.onReturn(event, app);
+            }
+            break;
+        case SDLK_BACKSPACE:
+            if (app->events.textInput.isActive) {
+                // Removing one character from the buffer
+                if (app->events.textInput.text.count > 0) {
+                    app->events.textInput.text.count--;
+                    app->events.textInput.text.data[app->events.textInput.text.count] = '\0';
+                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+                }
+            }
+            break;
         }
 
         break;
     case SDL_EVENT_TEXT_INPUT:
+        // First running the custom event handling code
         if (app->events.onTextInput) appResult = app->events.onTextInput(event, app);
+
+        // Then handling events from the textinput
+        if (app->events.textInput.isActive) {
+            const char* text = event->text.text;
+            for (; *text; ++text) {
+                // Append only ASCII characters or keep everything if we do not keep only ascii
+                // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
+                if ((unsigned char)*text < 0x80 || !app->events.textInput.keepOnlyAscii) {
+                    da_append((&app->events.textInput.text), (*text));
+                }
+            }
+            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+        }
+
         break;
     default: break;
     }

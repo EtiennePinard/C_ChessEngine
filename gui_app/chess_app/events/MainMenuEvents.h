@@ -3,16 +3,11 @@
 
 #include "../AppState.h"
 
-SDL_AppResult onMainMenuKeyDown(SDL_Event* event , App* app);
-SDL_AppResult onMainMenuTextInput(SDL_Event* event, App* app);
-
 SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
 SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
-SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* app);
 
 SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app);
 SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app);
-SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app);
 
 SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app);
 

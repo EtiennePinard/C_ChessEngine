@@ -71,13 +71,30 @@ typedef struct Modal {
     
     RenderBox modalRender;
 
-    bool cancelWithEscape;
-    bool closeWithReturn;
-    EventCallback onCancel;
-    EventCallback onClose;
+    EventCallback onEscape;
+    EventCallback onReturn;
 
     void* data;
 } Modal;
+
+typedef struct Text_da {
+    char* data;
+    size_t count;
+    size_t capacity;
+} Text_da;
+
+typedef struct TextInput {
+    bool isActive;
+    
+    EventCallback onEscape;
+    EventCallback onReturn;
+
+    Text_da text;
+    bool keepOnlyAscii;
+
+    Uint64 lastCursorToggleTime;
+    bool showCursor;
+} TextInput;
 
 typedef struct AppEvents {
     EventCallback onWindowResize;
@@ -85,6 +102,7 @@ typedef struct AppEvents {
     EventCallback onTextInput;
 
     Modal modal;
+    TextInput textInput;
 
     MouseState mouseState;
     bool shouldHandleEvents;

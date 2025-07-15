@@ -3,9 +3,9 @@
 #include "../../../../engine/src/utils/FenString.h"
 
 #include "../../../sdl_framework/AppCleanup.h"
+#include "../../../sdl_framework/CommonEvents.h"
 
 #include "../../events/MainMenuEvents.h"
-#include "../../events/CommonEvents.h"
 
 #include "../../Config.h"
 #include "../../AppStyle.h"
@@ -70,7 +70,7 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &rect);
 
-    if (!data->startingPositionData.textInput.isTextInputActive) {
+    if (!app->events.textInput.isActive) {
         // Highlight the rectangle if hovered without inputing text
         if (app->events.mouseState.hoveredIndex == STARTING_POSITION) {
             SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
@@ -92,10 +92,10 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
         // we need the text rect to set the cursor's position
         SDL_FRect textRect = { 0 };
         SDL_AppResult result = renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
-            data->startingPositionData.textInput.text.data, false, textColor, rect, &textRect);
+            app->events.textInput.text.data, false, textColor, rect, &textRect);
         SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
         float cursorOffset = (rect.w + textRect.w) / 2.0;
-        if (data->startingPositionData.textInput.showCursor) {
+        if (app->events.textInput.showCursor) {
             SDL_SetRenderDrawColor(renderer, textColor.r, textColor.g, textColor.b, textColor.a);
 
             const float caretPadding = 3.0;
@@ -126,10 +126,6 @@ SDL_AppResult renderStartGameButton(SDL_FRect rect, App* app) {
 
 SDL_AppResult computeMainMenuSceneRender(App* app) {
     SceneRender* sceneRender = &app->state.currentScene.sceneRender;
-
-    // Setting the onKeyDown and onTextInput callbacks
-    app->events.onKeyDown = &onMainMenuKeyDown;
-    app->events.onTextInput = &onMainMenuTextInput;
 
     // Setting in the background color of the scene
     sceneRender->renderDrawColor = BACKGROUND_COLOR;

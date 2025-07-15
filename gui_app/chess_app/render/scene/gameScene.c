@@ -4,11 +4,9 @@
 #include "../../../../engine/src/utils/Math.h"
 #include "../../../../engine/src/utils/AlgebraicNotation.h"
 
-#include "../../../sdl_framework/Render.h"
-#include "../../../sdl_framework/EventHandler.h"
 #include "../../../sdl_framework/AppCleanup.h"
+#include "../../../sdl_framework/CommonEvents.h"
 
-#include "../../events/CommonEvents.h"
 #include "../../events/GameEvents.h"
 #include "../../AppStyle.h"
 

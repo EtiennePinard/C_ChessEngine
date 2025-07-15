@@ -147,28 +147,6 @@ typedef struct GameSceneData {
     Textures textures;
 } GameSceneData;
 
-typedef struct Text_da {
-    char* data;
-    size_t count;
-    size_t capacity;
-} Text_da;
-
-// TODO: Make it so that the TextInput struct
-// takes a callback when return is pressed
-// This would make the code the same for every
-// text input except for when return is pressed,
-// then the callback would be used.
-// This could be in the SDL framework but in a 
-// separate file like common events so that you
-// can include it in your app if you need 
-// text input
-typedef struct TextInput {
-    bool isTextInputActive;
-    Text_da text;
-    u64 lastCursorToggleTime;
-    bool showCursor;
-} TextInput;
-
 typedef struct TimeControlModalData {
     TimeControl hovered;
     PieceCharacteristics playerColor;
@@ -185,13 +163,8 @@ typedef struct EngineConfigModalData {
     SDL_FRect cancelButtonRect;
 } EngineConfigModalData;
 
-typedef struct StartingPositionData {
-    TextInput textInput;
-} StartingPositionData;
-
 typedef struct MainMenuSceneData {
     GameConfig gameInfo;
-    StartingPositionData startingPositionData;
 
     Textures textures;
 } MainMenuSceneData;

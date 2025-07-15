@@ -1,7 +1,8 @@
 #include <stdlib.h>
 
+#include "../../../sdl_framework/CommonEvents.h"
+
 #include "../../AppStyle.h"
-#include "../../events/CommonEvents.h"
 
 #include "../scene/MainMenuScene.h"
 #include "../RenderUtils.h"
@@ -72,7 +73,7 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
     const float optionHeight = optionWidth / 2.0;
     const float verticalEmptySpace = rect.h - titleHeight - optionHeight * NUM_TIME_CONTROL_STYLE;
     const float verticalSeparation = verticalEmptySpace / (NUM_TIME_CONTROL_STYLE + 2);
-    
+
     SDL_FRect titleRect = {
         .x = rect.x,
         .y = rect.y + verticalSeparation / 2.0,
@@ -90,7 +91,7 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
         NULL
     );
     if (result != SDL_APP_CONTINUE) return result;
-    
+
     const float gridTopY = titleRect.y + titleRect.h;
     SDL_FRect optionRect = {
         .x = rect.x + horizontalPadding,
@@ -138,10 +139,8 @@ SDL_AppResult onTimeControlModalCancel(SDL_Event* event, App* app) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The player color of the timeControlModal is %d, which is not white (%d) nor black (%d)\n", data->playerColor, WHITE, BLACK);
         return SDL_APP_FAILURE;
     }
-    // We don't need the modal's data anymore
-    free(data);
-
-    return SDL_APP_CONTINUE;
+    // Close the modal
+    return closeModalEventCallback(event, app);
 }
 
 SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app) {
@@ -165,13 +164,9 @@ SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The player color of the timeControlModal is %d, which is not white (%d) nor black (%d)\n", modalData->playerColor, WHITE, BLACK);
         return SDL_APP_FAILURE;
     }
-    // We don't need the modal data anymore
-    free(modalData);
 
-    app->events.modal.isActive = false;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
-    return SDL_APP_CONTINUE;
+    // Close the modal
+    return closeModalEventCallback(event, app);
 }
 
 void setTimeControlModalActive(App* app, PieceCharacteristics colorToSet) {
@@ -191,11 +186,10 @@ void setTimeControlModalActive(App* app, PieceCharacteristics colorToSet) {
     app->events.modal.modalRender.onMouseEntered = NULL;
     app->events.modal.modalRender.onMouseExited = NULL;
 
-    app->events.modal.canOnlyInteractWithModal = true;
-    app->events.modal.cancelWithEscape = true;
-    app->events.modal.closeWithReturn = false;
     app->events.modal.data = modalData;
-    app->events.modal.onCancel = &onTimeControlModalCancel;
+    app->events.modal.canOnlyInteractWithModal = true;
+    app->events.modal.onEscape = &onTimeControlModalCancel;
+    app->events.modal.onReturn = NULL;
     app->events.modal.modalId = TIME_CONTROL_MODAL_ID;
     app->events.modal.isActive = true;
 
@@ -342,10 +336,9 @@ SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The player color of the engineConfigModal is %d, which is not white (%d) nor black (%d)\n", modalData->playerColor, WHITE, BLACK);
         return SDL_APP_FAILURE;
     }
-    // We don't need the modal's data anymore
-    free(modalData);
 
-    return SDL_APP_CONTINUE;
+    // Close the modal
+    return closeModalEventCallback(event, app);
 }
 
 SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
@@ -360,10 +353,9 @@ SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
         return SDL_APP_FAILURE;
     }
     if (data->currentConfig.enginePath) free(data->currentConfig.enginePath);
-    // We don't need the modal's data anymore
-    free(data);
 
-    return SDL_APP_CONTINUE;
+    // Close the modal
+    return closeModalEventCallback(event, app);
 }
 
 static void onEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
@@ -432,12 +424,12 @@ SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* ap
     SDL_FPoint mousePoint = { event->button.x, event->button.y };
     if (SDL_PointInRectFloat(&mousePoint, &modalData->cancelButtonRect)) {
         // Clicked cancel button, cancelling modal
-        app->events.modal.onCancel(event, app);
+        app->events.modal.onEscape(event, app);
         app->events.modal.isActive = false;
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->okButtonRect)) {
         // Clicked ok button, closing modal
-        app->events.modal.onClose(event, app);
+        app->events.modal.onReturn(event, app);
         app->events.modal.isActive = false;
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->checkboxRect)) {
@@ -500,11 +492,9 @@ void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
     app->events.modal.modalRender.onMouseExited = NULL;
 
     app->events.modal.canOnlyInteractWithModal = true;
-    app->events.modal.cancelWithEscape = true;
-    app->events.modal.closeWithReturn = true;
     app->events.modal.data = modalData;
-    app->events.modal.onCancel = &onEngineConfigModalCancel;
-    app->events.modal.onClose = &onEngineConfigModalClose;
+    app->events.modal.onEscape = &onEngineConfigModalCancel;
+    app->events.modal.onReturn = &onEngineConfigModalClose;
 
     app->events.modal.modalId = ENGINE_CONFIG_MODAL_ID;
     app->events.modal.isActive = true;

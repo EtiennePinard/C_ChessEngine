@@ -2,8 +2,9 @@
 
 #include "../../../../engine/src/utils/Math.h"
 
+#include "../../../sdl_framework/CommonEvents.h"
+
 #include "../../AppStyle.h"
-#include "../../events/CommonEvents.h"
 #include "../../events/GameEvents.h"
 
 #include "../scene/GameScene.h"
@@ -163,11 +164,9 @@ void setPromotionModalActive(App* app, int promotionSquareTo) {
     app->events.modal.modalRender.onMouseExited = NULL;
 
     app->events.modal.canOnlyInteractWithModal = true;
-    app->events.modal.cancelWithEscape = false;
-    app->events.modal.closeWithReturn = false;
     app->events.modal.data = modalData;
-    app->events.modal.onCancel = &closeModalEventCallback;
-    app->events.modal.onClose = &closeModalEventCallback;
+    app->events.modal.onEscape = NULL;
+    app->events.modal.onReturn = NULL;
 
     app->events.modal.modalId = PROMOTION_MODAL_ID;
     app->events.modal.isActive = true;
@@ -260,11 +259,9 @@ void setGameEndedModalActive(App* app) {
     app->events.modal.modalRender.onMouseExited = NULL;
 
     app->events.modal.canOnlyInteractWithModal = false;
-    app->events.modal.cancelWithEscape = true;
-    app->events.modal.closeWithReturn = true;
     app->events.modal.data = modalData;
-    app->events.modal.onCancel = &closeModalEventCallback;
-    app->events.modal.onClose = &closeModalEventCallback;
+    app->events.modal.onEscape = &closeModalEventCallback;
+    app->events.modal.onReturn = &closeModalEventCallback;
 
     app->events.modal.modalId = GAME_ENDED_MODAL_ID;
     app->events.modal.isActive = true;

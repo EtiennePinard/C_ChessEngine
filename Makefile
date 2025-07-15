@@ -116,7 +116,8 @@ sdlFramework_SRC = \
     gui_app/sdl_framework/appRunner.c \
     gui_app/sdl_framework/eventHandler.c \
     gui_app/sdl_framework/render.c \
-    gui_app/sdl_framework/appCleanup.c
+    gui_app/sdl_framework/appCleanup.c \
+    gui_app/sdl_framework/commonEvents.c
 
 app_SRC = \
     engine/src/moveHandler/movePlayer.c \
@@ -131,7 +132,6 @@ app_SRC = \
     engine/src/magicBitBoard/bishop.c \
     engine/src/bot/repetitionTable.c \
     gui_app/chess_app/app.c \
-    gui_app/chess_app/events/commonEvents.c \
     gui_app/chess_app/events/gameEvents.c \
     gui_app/chess_app/events/mainMenuEvents.c \
     gui_app/chess_app/render/scene/gameScene.c \

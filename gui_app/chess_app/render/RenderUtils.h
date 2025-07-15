@@ -11,10 +11,12 @@
  * @param text The text to draw
  * @param isTextMultiLine If the text is a multi-line string
  * @param color The color of the text
- * @param rect The rectangle to fit the text into
+ * @param rectToFit The rectangle to fit the text into
+ * @param textRect A pointer where the actual text rectangle will be stored if it is not NULL
+ * Note: The textRect param only works if the text is single line. This will not work with multiline text
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_FRect rect);
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_FRect rectToFit, SDL_FRect* textRect);
 
 /**
  * @brief Formats the time in the min:sec format and writes it to a buffer
@@ -47,6 +49,19 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
 SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text);
+
+/**
+ * @brief Renders a labeled checkbox to the window
+ * 
+ * @param rect The rect to contain the checkbox and the label
+ * @param app The app's data
+ * @param checked If the checkbox is checked
+ * @param label The checkbox's label
+ * @param hoverIndex The index of the render box this button is associated to.
+ * This will be used for a hovering effect.
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex);
 
 /**
  * @brief Draws a filled circle

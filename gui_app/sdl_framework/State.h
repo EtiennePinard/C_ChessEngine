@@ -8,24 +8,24 @@
 
 /**
  * @brief Useful macro to convert a Rect to a FRect
- * 
+ *
  */
 #define RECT_TO_FRECT(rect) ((SDL_FRect) { .x = (float) rect.x, .y = (float) rect.y, .w = (float) rect.w, .h = (float) rect.h })
 
 typedef struct SDL_State {
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-    TTF_Font *font;
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    TTF_Font* font;
 } SDL_State;
 
 typedef struct TextureState {
-    SDL_Texture *texture;
+    SDL_Texture* texture;
     int width;
     int height;
 } TextureState;
 
 typedef struct Textures {
-    TextureState *data;
+    TextureState* data;
     size_t count;
     size_t capacity;
 } Textures;
@@ -50,29 +50,54 @@ typedef struct AppState {
     Scene currentScene;
 } AppState;
 
-typedef SDL_AppResult (*EventCallback)(App*, SDL_Event*);
+typedef SDL_AppResult(*EventCallback)(SDL_Event*, App*);
+
+#define HOVERING_NOTHING (-1)
+#define HOVERING_MODAL (-2)
 
 typedef struct MouseState {
-    int hoveredIndex; // -1 if not hovering anything
+    int hoveredIndex;
     bool holdingLeftMouseButton;
     bool holdingRightMouseButton;
+    SDL_FPoint mousePoint;
 } MouseState;
+
+typedef int ModalId;
+
+typedef struct Modal {
+    ModalId modalId;
+    bool isActive;
+    bool canOnlyInteractWithModal;
+    
+    RenderBox modalRender;
+
+    bool cancelWithEscape;
+    bool closeWithReturn;
+    EventCallback onCancel;
+    EventCallback onClose;
+
+    void* data;
+} Modal;
 
 typedef struct AppEvents {
     EventCallback onWindowResize;
+    EventCallback onKeyDown;
+    EventCallback onTextInput;
+
+    Modal modal;
+
     MouseState mouseState;
     bool shouldHandleEvents;
-    bool lockSelectedBoxIndex;
 } AppEvents;
 
 /**
  * @brief Structs that holds the AppEvents and AppState struct
- * 
+ *
  */
 struct App {
     AppState state;
     AppEvents events;
-    SDL_AppResult (*runAfterRenderAndEventsFunction)(App*);
+    SDL_AppResult(*runAfterRenderAndEventsFunction)(App*);
 };
 
 #endif /* D5A082FB_118E_4F77_A831_0F85357C54A5 */

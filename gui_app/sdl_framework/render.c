@@ -11,6 +11,7 @@ SDL_AppResult render(App* app) {
         SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     }
 
+    // Start by drawing the scene
     SDL_Color drawColor = app->state.currentScene.sceneRender.renderDrawColor;
     SDL_SetRenderDrawColor(app->state.sdlState.renderer, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
     SDL_RenderClear(app->state.sdlState.renderer);
@@ -26,15 +27,26 @@ SDL_AppResult render(App* app) {
         if (returnValue != SDL_APP_CONTINUE) return returnValue;
     }
 
+    // Finish by drawing the modal if it is active
+    // This means that the modal is on top of the scene
+    if (app->events.modal.isActive) {
+        renderFunction = app->events.modal.modalRender.renderFunction;
+        if (renderFunction) returnValue = renderFunction(app->events.modal.modalRender.renderRect, app);
+        if (returnValue != SDL_APP_CONTINUE) return returnValue;
+    }
+
+    // We have finished drawing things to the screen
     SDL_RenderPresent(app->state.sdlState.renderer);
 
     // After we render, we assume that shouldRender is either OTHER_THREAD or MAIN_THREAD
     // This means that if shouldRender is NO_RERENDER then it will stay that way
+    // else we go to a main thread rerender so that we rerender once more before stopping
     if (SDL_GetAtomicInt(&app->state.currentScene.shouldRender) == OTHER_THREAD_RERENDER) {
         SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     }
     else {
         SDL_SetAtomicInt(&app->state.currentScene.shouldRender, NO_RERENDER);
     }
-    return SDL_APP_CONTINUE;
+
+    return returnValue;
 }

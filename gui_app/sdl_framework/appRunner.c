@@ -44,6 +44,12 @@ SDL_AppResult SDL_AppEvent(void* globalAppObject, SDL_Event* event) {
 
 void SDL_AppQuit(void* globalAppObject, SDL_AppResult result) {
     App* app = (App*)globalAppObject;
+    if (app->events.modal.isActive && app->events.modal.onCancel) {
+        SDL_Event event;
+        event.type = SDL_EVENT_QUIT;
+        event.quit.timestamp = SDL_GetTicksNS();
+        app->events.modal.onCancel(&event, app);
+    }
     app->state.currentScene.terminateSceneFunction(app->state.currentScene.data);
     cleanupApp(app);
     free(app);

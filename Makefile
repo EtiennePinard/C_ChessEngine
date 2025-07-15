@@ -134,9 +134,11 @@ app_SRC = \
     gui_app/chess_app/events/commonEvents.c \
     gui_app/chess_app/events/gameEvents.c \
     gui_app/chess_app/events/mainMenuEvents.c \
-    gui_app/chess_app/render/gameScene.c \
-    gui_app/chess_app/render/mainMenu.c \
+    gui_app/chess_app/render/scene/gameScene.c \
+    gui_app/chess_app/render/scene/mainMenuScene.c \
     gui_app/chess_app/render/renderUtils.c \
+    gui_app/chess_app/render/modal/gameModals.c \
+    gui_app/chess_app/render/modal/mainMenuModals.c \
     gui_app/chess_app/config.c \
     gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \
 	$(sdlFramework_SRC)

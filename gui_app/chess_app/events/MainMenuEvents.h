@@ -3,15 +3,19 @@
 
 #include "../AppState.h"
 
-SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_FRect rect, App *app);
-SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_FRect rect, App *app);
+SDL_AppResult onMainMenuKeyDown(SDL_Event* event , App* app);
+SDL_AppResult onMainMenuTextInput(SDL_Event* event, App* app);
 
-SDL_AppResult clickedDownWhiteEnginePath(SDL_Event* event, SDL_FRect rect, App* app);
-SDL_AppResult clickedDownBlackEnginePath(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
+SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
+SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* app);
 
-SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_FRect rect, App* app);
-SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app);
 
-SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app);
+
+SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app);
 
 #endif /* C61E4442_9787_481D_A215_AC1494D87CFD */

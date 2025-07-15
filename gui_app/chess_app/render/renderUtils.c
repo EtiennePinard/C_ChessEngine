@@ -48,7 +48,7 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
             .h = surf->h
         };
 
-        SDL_RenderTexture(renderer, tex, NULL, &RECT_TO_FRECT(dst));
+        SDL_RenderTexture(renderer, tex, NULL, &dst);
 
         y += lineHeight;
 
@@ -61,7 +61,7 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
+SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect, SDL_FRect* textRect) {
     SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, color, 0);
     if (!textSurface) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_RenderText_Blended failed: %s\n", SDL_GetError());
@@ -76,24 +76,29 @@ SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* fon
 
     // Centering the text from the baseline
     int ascent = TTF_GetFontAscent(font);
-    SDL_FRect textRect = {
+    SDL_FRect renderTextRect = {
     .x = rect.x + (rect.w - textSurface->w) / 2,
     .y = rect.y + (rect.h - ascent) / 2,
     .w = textSurface->w,
     .h = textSurface->h
     };
-    SDL_RenderTexture(renderer, textTexture, NULL, &RECT_TO_FRECT(textRect));
+    SDL_RenderTexture(renderer, textTexture, NULL, &renderTextRect);
     SDL_DestroySurface(textSurface);
     SDL_DestroyTexture(textTexture);
+    if (textRect) *textRect = renderTextRect;
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_FRect rect) {
+SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_FRect rect, SDL_FRect* textRect) {
     SDL_AppResult result = SDL_APP_FAILURE;
 
     if (!renderer || !baseFont || !textString) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter at " __FILE__);
         return result;
+    }
+    if (textString[0] == '\0') {
+        // If we have an empty string simply return
+        return SDL_APP_CONTINUE;
     }
 
     // Initial guess font size
@@ -127,7 +132,7 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
     float scale = fminf(scaleW, scaleH);
 
     float finalSize = referenceSize * scale;
-    finalSize = SDL_clamp(finalSize, 4, rect.h);  // Prevent tiny or huge font sizes
+    finalSize = SDL_clamp(finalSize, 4, rect.h); // Prevent tiny or huge font sizes
 
     // Set the computed best size
     if (!TTF_SetFontSize(tempFont, (float)finalSize)) {
@@ -137,7 +142,7 @@ SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont
 
     // Drawing the text centered
     if (isTextMultiLine) result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
-    else result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect);
+    else result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect, textRect);
 
 end:
     TTF_CloseFont(tempFont);
@@ -178,17 +183,65 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    SDL_Color hightLightColor = BUTTON_HIGHLIGHT_COLOR;
+    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
     SDL_Color textColor = BUTTON_TEXT_COLOR;
-
+    
     // If this is the currently hovered box, highlight it
-    if (app->events.mouseState.hoveredIndex == hoverIndex) {
-        SDL_SetRenderDrawColor(renderer, hightLightColor.r, hightLightColor.g, hightLightColor.b, hightLightColor.a);
-        SDL_RenderFillRect(renderer, &RECT_TO_FRECT(rect));
+    if (app->events.mouseState.hoveredIndex == hoverIndex &&
+        SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &rect)) {
+        SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+        SDL_RenderFillRect(renderer, &rect);
     }
 
     // Render button text
-    return renderTextCenteredToFit(renderer, font, text, false, textColor, rect);
+    return renderTextCenteredToFit(renderer, font, text, false, textColor, rect, NULL);
+}
+
+SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex) {
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    TTF_Font* font = app->state.sdlState.font;
+
+    SDL_Color borderColor = BUTTON_HIGHLIGHT_COLOR;
+    SDL_Color highlightColor = BUTTON_BORDER_COLOR;
+    SDL_Color fillColor = checked ? CHECKBOX_FILLED_COLOR : (SDL_Color) { 0, 0, 0, 0 };
+    SDL_Color textColor = BUTTON_TEXT_COLOR;
+
+    const float boxSize = rect.h * 0.8f;
+    const float boxX = rect.x;
+    const float boxY = rect.y + (rect.h - boxSize) / 2.0f;
+
+    SDL_FRect checkboxRect = { boxX, boxY, boxSize, boxSize };
+
+    // Draw border
+    SDL_FPoint mousePoint;
+    SDL_GetMouseState(&mousePoint.x, &mousePoint.y);
+    if (app->events.mouseState.hoveredIndex == hoveredIndex &&
+        SDL_PointInRectFloat(&mousePoint, &rect)) {
+        // highlight the checkbox border if it is hovered
+        SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+    }
+    else {
+        // else do not highlight it
+        SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+
+    }
+    SDL_RenderRect(renderer, &checkboxRect);
+
+    // Fill if checked
+    if (checked) {
+        SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
+        SDL_RenderFillRect(renderer, &checkboxRect);
+    }
+
+    // Draw label to the right of the box
+    SDL_FRect textRect = {
+        .x = checkboxRect.x + checkboxRect.w + rect.h * 0.3f,
+        .y = rect.y,
+        .w = rect.w - checkboxRect.w - rect.h * 0.3f,
+        .h = rect.h
+    };
+
+    return renderTextCenteredToFit(renderer, font, label, false, textColor, textRect, NULL);
 }
 
 SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius) {
@@ -211,5 +264,5 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
 }
 
 SDL_AppResult renderCredits(SDL_FRect rect, App* app) {
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect);
+    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect, NULL);
 }

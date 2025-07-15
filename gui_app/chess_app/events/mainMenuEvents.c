@@ -4,154 +4,139 @@
 #include "../../../engine/src/utils/FenString.h"
 #include "../../sdl_framework/AppInit.h"
 
-#include "../render/MainMenu.h"
-#include "../render/GameScene.h"
+#include "../render/scene/MainMenuScene.h"
+#include "../render/modal/MainMenuModals.h"
+#include "../render/scene/GameScene.h"
+#include "CommonEvents.h"
 #include "GameEvents.h"
 #include "MainMenuEvents.h"
 
-SDL_AppResult clickedDownWhitePlayerType(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
+SDL_AppResult onMainMenuKeyDown(SDL_Event* event, App* app) {
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    data->gameInfo.white.isEngine = !data->gameInfo.white.isEngine;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    return SDL_APP_CONTINUE;
-}
 
-SDL_AppResult clickedDownBlackPlayerType(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    data->gameInfo.black.isEngine = !data->gameInfo.black.isEngine;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    return SDL_APP_CONTINUE;
-}
+    if (event->key.key == SDLK_ESCAPE) {
+        if (data->startingPositionData.textInput.isTextInputActive) {
+            // Escape is pressed, cancel the inputted text
+            data->startingPositionData.textInput.isTextInputActive = false;
+            free(data->startingPositionData.textInput.text.data);
+            SDL_StopTextInput(app->state.sdlState.window);
+            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+        }
+    }
+    else if (event->key.key == SDLK_RETURN) {
+        if (data->startingPositionData.textInput.isTextInputActive) {
+            // Return is pressed, store the inputted text
+            ChessPosition dummyPosition;
+            char fenCopy[data->startingPositionData.textInput.text.count + 1];
+            SDL_strlcpy(fenCopy, data->startingPositionData.textInput.text.data, data->startingPositionData.textInput.text.count + 1);
+            if (!FenString_setChessPositionFromFenString(fenCopy, &dummyPosition)) {
+                SDL_Log("The inputted fen string, `%s`, is incorrect\n", data->startingPositionData.textInput.text.data);
+                int messageSize = snprintf(NULL, 0, "The inputted fen string, `%s`, is not a valid fen string", data->startingPositionData.textInput.text.data) + 1;
+                char message[messageSize];
+                snprintf(message, messageSize, "The inputted fen string, `%s` is not a valid fen string", data->startingPositionData.textInput.text.data);
+                // TODO: Bug when clicking the return key to exit the popup
+                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fen string error", message, app->state.sdlState.window);
+            }
+            else {
+                // The fen string is correct, store it into the gameInfo field
+                if (data->gameInfo.startingPositionFen) free(data->gameInfo.startingPositionFen);
+                data->gameInfo.startingPositionFen = calloc(data->startingPositionData.textInput.text.count + 1, sizeof(char));
+                SDL_assert(data->gameInfo.startingPositionFen);
+                SDL_strlcpy(data->gameInfo.startingPositionFen, data->startingPositionData.textInput.text.data, data->startingPositionData.textInput.text.count + 1);
 
-char* onEnginePathSelected(const char* const* filelist) {
-    // Handle error
-    if (filelist == NULL) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "File dialog error: %s", SDL_GetError());
-        return NULL;
+                free(data->startingPositionData.textInput.text.data);
+                data->startingPositionData.textInput.text.data = NULL;
+
+                data->startingPositionData.textInput.isTextInputActive = false;
+                SDL_StopTextInput(app->state.sdlState.window);
+            }
+
+            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+        }
+    }
+    else if (event->key.key == SDLK_BACKSPACE) {
+        if (data->startingPositionData.textInput.isTextInputActive) {
+            // Remove one character from the buffer
+            if (data->startingPositionData.textInput.text.count > 0) {
+                data->startingPositionData.textInput.text.count--;
+                data->startingPositionData.textInput.text.data[data->startingPositionData.textInput.text.count] = '\0';
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+            }
+        }
     }
 
-    // Handle cancel
-    if (filelist[0] == NULL) {
-        SDL_Log("File dialog canceled.");
-        return NULL;
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult onMainMenuTextInput(SDL_Event* event, App* app) {
+    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
+
+    const char* text = event->text.text;
+
+    if (data->startingPositionData.textInput.isTextInputActive) {
+        for (; *text; ++text) {
+            // Append only ASCII characters
+            // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
+            if ((unsigned char)*text < 0x80) {
+                da_append((&data->startingPositionData.textInput.text), (*text));
+            }
+        }
+        SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     }
 
-    // Use the first selected file
-    size_t length = strlen(filelist[0]);
-    char* result = malloc(length * sizeof(char) + 1);
-    strncpy(result, filelist[0], length);
-    result[length] = '\0';
-    return result;
-}
-
-static void onWhiteEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
-    (void)filterIndex;
-
-    App* app = (App*)userdata;
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-
-    // Re-enabling events and rendering
-    app->events.shouldHandleEvents = true;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
-    char* enginePath = onEnginePathSelected(filelist);
-    if (!enginePath) return;
-
-    if (data->gameInfo.white.enginePath != NULL) free(data->gameInfo.white.enginePath);
-    data->gameInfo.white.enginePath = enginePath;
-}
-
-static void onBlackEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
-    (void)filterIndex;
-
-    App* app = (App*)userdata;
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-
-    // Re-enabling events and rendering
-    app->events.shouldHandleEvents = true;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
-    char* enginePath = onEnginePathSelected(filelist);
-    if (!enginePath) return;
-
-    if (data->gameInfo.black.enginePath != NULL) free(data->gameInfo.black.enginePath);
-    data->gameInfo.black.enginePath = enginePath;
-}
-
-SDL_AppResult clickedDownEnginePath(App* app, PlayerConfig player, SDL_DialogFileCallback callback) {
-    if (!player.isEngine) return SDL_APP_CONTINUE;
-
-    SDL_DialogFileFilter filters[] = { { "All Files", "*" } };
-
-    SDL_ShowOpenFileDialog(
-        callback,
-        app,
-        app->state.sdlState.window,
-        filters, 1,
-        NULL,
-        false
-    );
-
-    // Disabling events and rendering
-    app->events.shouldHandleEvents = false;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, NO_RERENDER);
-
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownWhiteEnginePath(SDL_Event* event, SDL_FRect rect, App* app) {
+SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
-    (void)rect;
-    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.white, &onWhiteEnginePathSelected);
-}
 
-SDL_AppResult clickedDownBlackEnginePath(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
-    return clickedDownEnginePath(app, ((MainMenuSceneData*)app->state.currentScene.data)->gameInfo.black, &onBlackEnginePathSelected);
-}
-
-SDL_AppResult clickedDownTimeControlButton(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    data->timeControlSettings.selectModalVisible = true;
-    // Setting the hovered time left to 0 since we did not select any time control yet
-    data->timeControlSettings.hovered.timeLeft = 0;
+    // If the text input is already active simply return
+    if (data->startingPositionData.textInput.isTextInputActive) return SDL_APP_CONTINUE;
 
-    app->state.currentScene.selectedRenderBoxIndex = TIME_CONTROL_MODAL;
-    app->events.lockSelectedBoxIndex = true;
+    SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
+    data->startingPositionData.textInput.isTextInputActive = true;
+    data->startingPositionData.textInput.text.capacity = MAX_FEN_STRING_SIZE;
+    data->startingPositionData.textInput.text.count = 0;
+    // we are guaranteed that the text data is either already freed, or transferred
+    // to the gameInfo field
+    data->startingPositionData.textInput.text.data = calloc(data->startingPositionData.textInput.text.capacity, sizeof(char));
+
+    SDL_SetTextInputArea(app->state.sdlState.window,
+        &area,
+        area.w / 2);
+    SDL_StartTextInput(app->state.sdlState.window);
+
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
-    MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    // If the modal is not visible we don't do anything
-    if (!data->timeControlSettings.selectModalVisible) return SDL_APP_CONTINUE;
-    // A timeleft of 0 means no time controls were selected
-    if (data->timeControlSettings.hovered.timeLeft == 0) return SDL_APP_CONTINUE;
-
-    data->gameInfo.timeControl = data->timeControlSettings.hovered;
-    data->timeControlSettings.selectModalVisible = false;
-
-    app->state.currentScene.selectedRenderBoxIndex = TIME_CONTROL_BUTTON;
-    app->events.lockSelectedBoxIndex = false;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
+SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setEngineConfigModalActive(app, WHITE);
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
+SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setEngineConfigModalActive(app, BLACK);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setTimeControlModalActive(app, WHITE);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setTimeControlModalActive(app, BLACK);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
 
     GameSceneData* gameData = calloc(1, sizeof(GameSceneData));
@@ -168,19 +153,18 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
         return SDL_APP_FAILURE;
     }
 
-    gameData->gameEndedInfo.result = GAME_IS_NOT_DONE;
+    gameData->state.result = GAME_IS_NOT_DONE;
 
-    char* fenString = INITIAL_FEN;
-    if (!FenString_setChessPositionFromCopiedFenString(fenString, &gameData->state.position)) {
+    if (!FenString_setChessPositionFromCopiedFenString(mainMenuData->gameInfo.startingPositionFen, &gameData->state.position)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the position\n");
         return SDL_APP_FAILURE;
     }
 
-    gameData->state.white.timeControl = mainMenuData->gameInfo.timeControl;
-    if (mainMenuData->gameInfo.white.isEngine) {
-        gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.white.enginePath, "uci_engine_log_white.txt");
+    gameData->state.white.timeControl = mainMenuData->gameInfo.white.timeControl;
+    if (mainMenuData->gameInfo.white.engineConfig.isEngine) {
+        gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.white.engineConfig.enginePath, "uci_engine_log_white.txt");
         if (!gameData->state.white.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.engineConfig.enginePath);
             return SDL_APP_FAILURE;
         }
     }
@@ -188,20 +172,17 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
         gameData->state.white.engineCommunication = NULL;
     }
 
-    gameData->state.black.timeControl = mainMenuData->gameInfo.timeControl;
-    if (mainMenuData->gameInfo.black.isEngine) {
-        gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.black.enginePath, "uci_engine_log_black.txt");
+    gameData->state.black.timeControl = mainMenuData->gameInfo.black.timeControl;
+    if (mainMenuData->gameInfo.black.engineConfig.isEngine) {
+        gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.black.engineConfig.enginePath, "uci_engine_log_black.txt");
         if (!gameData->state.black.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.enginePath);
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.engineConfig.enginePath);
             return SDL_APP_FAILURE;
         }
     }
     else {
         gameData->state.black.engineCommunication = NULL;
     }
-
-    gameData->promotionInfo.renderPromotionOverlay = false;
-    gameData->gameEndedInfo.renderOverlay = false;
 
     gameData->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
 
@@ -215,16 +196,16 @@ SDL_AppResult clickedUpStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     app->state.currentScene.data = gameData;
     app->state.currentScene.terminateSceneFunction = &terminateGameScene;
 
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER); 
-    
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
-    
-    resetGame(gameData);
+
+    resetGame(event, app);
 
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
         free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
-    return computeGameSceneRender(app->state.sdlState.window, &app->state.currentScene);
+    return computeGameSceneRender(app);
 }

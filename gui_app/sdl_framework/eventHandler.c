@@ -3,11 +3,9 @@
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     if (!app->events.shouldHandleEvents) return SDL_APP_CONTINUE;
 
-    MouseState mouseState;
-
-    float mouseX, mouseY;
-    SDL_GetMouseState(&mouseX, &mouseY);
-    SDL_FPoint mousePoint = { mouseX, mouseY };
+    // Updating the mouse point
+    SDL_GetMouseState(&app->events.mouseState.mousePoint.x, &app->events.mouseState.mousePoint.y);
+    MouseState mouseState = app->events.mouseState;
 
     size_t index = 0;
     SceneRender sceneRender = app->state.currentScene.sceneRender;
@@ -21,12 +19,11 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         return SDL_APP_SUCCESS;
         break;
     case SDL_EVENT_MOUSE_MOTION:
-        mouseState = app->events.mouseState;
         int foundIndex = -1;
-        if (app->events.lockSelectedBoxIndex) {
-            box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
-                foundIndex = app->state.currentScene.selectedRenderBoxIndex;
+        if (app->events.modal.isActive) {
+            box = app->events.modal.modalRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
+                foundIndex = HOVERING_MODAL;
                 if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) {
                     appResult = box.onMouseEntered(event, box.renderRect, app);
                 }
@@ -37,17 +34,24 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             // If the render boxes have changed exit this function
             if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
 
-            goto mouseExited;
+            if (app->events.modal.canOnlyInteractWithModal) goto mouseExited;
         }
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
                 foundIndex = (int)index;
 
+                // Dealing with mouse entered first
                 if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) appResult = box.onMouseEntered(event, box.renderRect, app);
                 // Return early if we have encountered an error
                 if (appResult != SDL_APP_CONTINUE) return appResult;
+                // If the scene has changed exit this function
+                if (currentSceneId != app->state.currentScene.sceneId) return appResult;
+                // If the render boxes have changed exit this function
+                if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
+
+                // Then dealing with mouse hovered
                 if (box.onMouseHovered) appResult = box.onMouseHovered(event, box.renderRect, app);
                 // Return early if we have encountered an error
                 if (appResult != SDL_APP_CONTINUE) return appResult;
@@ -55,13 +59,17 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 if (currentSceneId != app->state.currentScene.sceneId) return appResult;
                 // If the render boxes have changed exit this function
                 if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
-                break; // Only one box should be hovered at a time
+
+                // We assume that only one box is hovered at a time
+                break;
             }
         }
 
     mouseExited:
         if (mouseState.hoveredIndex != -1 && mouseState.hoveredIndex != foundIndex) {
-            RenderBox oldBox = sceneRender.renderBoxes[mouseState.hoveredIndex];
+            RenderBox oldBox;
+            if (mouseState.hoveredIndex != HOVERING_MODAL) oldBox = sceneRender.renderBoxes[mouseState.hoveredIndex];
+            else oldBox = app->events.modal.modalRender;
             if (oldBox.onMouseExited) appResult = oldBox.onMouseExited(event, oldBox.renderRect, app);
         }
 
@@ -86,9 +94,9 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             }
         }
 
-        if (app->events.lockSelectedBoxIndex) {
-            box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
+        if (app->events.modal.isActive) {
+            box = app->events.modal.modalRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
                     if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
                 }
@@ -96,12 +104,13 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                     if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
                 }
             }
-            break;
+            // If we can only interact with the modal break
+            if (app->events.modal.canOnlyInteractWithModal) break;
         }
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
                 // We change the selectedRenderBox on mouse button up and on mouse button down
                 app->state.currentScene.selectedRenderBoxIndex = index;
                 if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
@@ -110,8 +119,8 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 else {
                     if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
                 }
-                // If a function set lockSelectedBoxIndex then exit
-                if (app->events.lockSelectedBoxIndex) break;
+                // If a function set a modal to be active and we can only interact with the modal then exit
+                if (app->events.modal.isActive && app->events.modal.canOnlyInteractWithModal) break;
                 // If the scene has changed exit this function
                 if (currentSceneId != app->state.currentScene.sceneId) break;
                 // If the render boxes have changed exit this function
@@ -123,20 +132,21 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
-        if (app->events.lockSelectedBoxIndex) {
-            box = sceneRender.renderBoxes[app->state.currentScene.selectedRenderBoxIndex];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
+        if (app->events.modal.isActive) {
+            box = app->events.modal.modalRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
                 if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
             }
-            break;
+            // If we can only interact with the modal break
+            if (app->events.modal.canOnlyInteractWithModal) break;
         }
 
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
-            if (SDL_PointInRectFloat(&mousePoint, &box.renderRect)) {
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
                 if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
-                // If a function set lockSelectedBoxIndex then exit
-                if (app->events.lockSelectedBoxIndex) break;
+                // If a function set a modal to be active and we can only interact with the modal then exit
+                if (app->events.modal.isActive && app->events.modal.canOnlyInteractWithModal) break;
             }
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
@@ -148,7 +158,32 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         break;
 
     case SDL_EVENT_WINDOW_RESIZED:
-        if (app->events.onWindowResize) appResult = app->events.onWindowResize(app, event);
+        if (app->events.onWindowResize) appResult = app->events.onWindowResize(event, app);
+        break;
+    case SDL_EVENT_KEY_DOWN:
+        // First running the custom event handling code
+        if (app->events.onKeyDown) appResult = app->events.onKeyDown(event, app);
+        if (appResult != SDL_APP_CONTINUE) return appResult;
+
+        // Then cancelling/closing the active modal
+        if (app->events.modal.isActive) {
+            if (event->key.key == SDLK_ESCAPE && app->events.modal.cancelWithEscape) {
+                if (app->events.modal.onCancel) app->events.modal.onCancel(event, app);
+                // Making the current modal disappear 
+                app->events.modal.isActive = false;
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+            }
+            else if (event->key.key == SDLK_RETURN && app->events.modal.closeWithReturn) {
+                if (app->events.modal.onClose) app->events.modal.onClose(event, app);
+                // Making the current modal disappear 
+                app->events.modal.isActive = false;
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+            }
+        }
+
+        break;
+    case SDL_EVENT_TEXT_INPUT:
+        if (app->events.onTextInput) appResult = app->events.onTextInput(event, app);
         break;
     default: break;
     }

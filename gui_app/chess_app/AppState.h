@@ -11,26 +11,34 @@
 #define APP_AUTHOR "Etienne Pinard"
 #define CREDIT_TEXT ("Version " APP_VERSION " by " APP_AUTHOR)
 
+#define WINDOW_TITLE ("Chess")
 #define STARTING_WINDOW_WIDTH 900
 #define STARTING_WINDOW_HEIGHT 850
+
 #define DEFAULT_FONT_SIZE (20.0f)
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
-#define TITLE ("Chess")
 
-#define WHITE_PAWN_IMG_PATH ("./assets/png/white_pawn.png")
-#define WHITE_KNIGHT_IMG_PATH ("./assets/png/white_knight.png")
-#define WHITE_BISHOP_IMG_PATH ("./assets/png/white_bishop.png")
-#define WHITE_ROOK_IMG_PATH ("./assets/png/white_rook.png")
-#define WHITE_QUEEN_IMG_PATH ("./assets/png/white_queen.png") 
-#define WHITE_KING_IMG_PATH ("./assets/png/white_king.png")
-#define BLACK_PAWN_IMG_PATH ("./assets/png/black_pawn.png")
-#define BLACK_KNIGHT_IMG_PATH ("./assets/png/black_knight.png")
-#define BLACK_BISHOP_IMG_PATH ("./assets/png/black_bishop.png")
-#define BLACK_ROOK_IMG_PATH ("./assets/png/black_rook.png")
-#define BLACK_QUEEN_IMG_PATH ("./assets/png/black_queen.png") 
-#define BLACK_KING_IMG_PATH ("./assets/png/black_king.png")
+#define BASE_IMG_PATH "./assets/img"
 
-#define DEFAULT_TIME_CONTROL ((TimeControl) { .increment = (TimeControl_MS) (5 * 60 * 1000), .timeLeft = (TimeControl_MS) (0) })
+#define BASE_CHESS_PIECES_IMG_PATH BASE_IMG_PATH "/chess_pieces"
+#define WHITE_PAWN_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_pawn.png")
+#define WHITE_KNIGHT_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_knight.png")
+#define WHITE_BISHOP_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_bishop.png")
+#define WHITE_ROOK_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_rook.png")
+#define WHITE_QUEEN_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_queen.png") 
+#define WHITE_KING_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/white_king.png")
+#define BLACK_PAWN_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_pawn.png")
+#define BLACK_KNIGHT_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_knight.png")
+#define BLACK_BISHOP_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_bishop.png")
+#define BLACK_ROOK_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_rook.png")
+#define BLACK_QUEEN_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_queen.png") 
+#define BLACK_KING_IMG_PATH (BASE_CHESS_PIECES_IMG_PATH "/black_king.png")
+
+#define BASE_ICON_PATH BASE_IMG_PATH "/icons"
+#define HUMAN_ICON_PATH (BASE_ICON_PATH "/human_icon.png")
+#define COMPUTER_ICON_PATH (BASE_ICON_PATH "/computer_icon.png")
+
+#define DEFAULT_TIME_CONTROL ((TimeControl) { .timeLeft = (TimeControl_MS) (5 * 60 * 1000), .increment = (TimeControl_MS) (0) })
 
 typedef struct TimeControl {
     TimeControl_MS timeLeft;
@@ -56,10 +64,24 @@ typedef struct Player {
     SDL_AtomicInt isBotThinking;
 } Player;
 
+typedef enum GameResult {
+    GAME_IS_NOT_DONE,
+    THREE_MOVE_REPETITION,
+    STALEMATE,
+    INSUFFICIENT_MATERIAL,
+    FIFTY_MOVE_RULE,
+    WHITE_WON_CHECKMATE,
+    BLACK_WON_CHECKMATE,
+    WHITE_WON_ON_TIME,
+    BLACK_WON_ON_TIME
+} GameResult;
+
 typedef struct GameState {
     ChessPosition position;
     Player white;
     Player black;
+
+    GameResult result;
 
     u64 previousTick;
 } GameState;
@@ -81,29 +103,14 @@ typedef struct MoveListInfo {
     int hoveredMoveIndex;
 } MoveListInfo;
 
-typedef enum GameResult {
-    GAME_IS_NOT_DONE,
-    THREE_MOVE_REPETITION,
-    STALEMATE,
-    INSUFFICIENT_MATERIAL,
-    FIFTY_MOVE_RULE,
-    WHITE_WON_CHECKMATE,
-    BLACK_WON_CHECKMATE,
-    WHITE_WON_ON_TIME,
-    BLACK_WON_ON_TIME
-} GameResult;
-
-typedef struct GameEndedInfo {
-    bool renderOverlay;
+typedef struct GameEndedModalData {
     GameResult result;
-} GameEndedInfo;
+} GameEndedModalData;
 
-typedef struct PromotionInfo {
-    bool renderPromotionOverlay;
+typedef struct PromotionModalData {
     Square promotionSquareTo;
     Square promotionSquareFrom;
-    SDL_FRect overlayRect;
-} PromotionInfo;
+} PromotionModalData;
 
 #define NO_SQUARE_SELECTED ((Square)-1)
 
@@ -111,15 +118,21 @@ typedef struct SelectedSquareInfo {
     Square selectedSquare;
 } SelectedSquareInfo;
 
-typedef struct PlayerConfig {
+typedef struct EngineConfig {
     bool isEngine;
+    TimeControl_MS timeToThink; // 0 if the bot thinks by itself
     char* enginePath;
+} EngineConfig;
+
+typedef struct PlayerConfig {
+    TimeControl timeControl;
+    EngineConfig engineConfig;
 } PlayerConfig;
 
 typedef struct GameConfig {
     PlayerConfig white;
     PlayerConfig black;
-    TimeControl timeControl;
+    char* startingPositionFen;
 } GameConfig;
 
 typedef struct GameSceneData {
@@ -127,23 +140,58 @@ typedef struct GameSceneData {
     
     bool flipBoard;
     SelectedSquareInfo selectedSquare;
-    PromotionInfo promotionInfo;
     MoveListInfo moveListInfo;
-    GameEndedInfo gameEndedInfo;
     UndoGameStates undoGameStates;
     
     GameConfig gameInfo;
     Textures textures;
 } GameSceneData;
 
-typedef struct TimeControlSettings {
+typedef struct Text_da {
+    char* data;
+    size_t count;
+    size_t capacity;
+} Text_da;
+
+// TODO: Make it so that the TextInput struct
+// takes a callback when return is pressed
+// This would make the code the same for every
+// text input except for when return is pressed,
+// then the callback would be used.
+// This could be in the SDL framework but in a 
+// separate file like common events so that you
+// can include it in your app if you need 
+// text input
+typedef struct TextInput {
+    bool isTextInputActive;
+    Text_da text;
+    u64 lastCursorToggleTime;
+    bool showCursor;
+} TextInput;
+
+typedef struct TimeControlModalData {
     TimeControl hovered;
-    bool selectModalVisible;
-} TimeControlSettings;
+    PieceCharacteristics playerColor;
+} TimeControlModalData;
+
+typedef struct EngineConfigModalData {
+    EngineConfig currentConfig;
+    PieceCharacteristics playerColor;
+
+    SDL_FRect checkboxRect;
+    SDL_FRect enginePathRect;
+    SDL_FRect thinkTimeRect;
+    SDL_FRect okButtonRect;
+    SDL_FRect cancelButtonRect;
+} EngineConfigModalData;
+
+typedef struct StartingPositionData {
+    TextInput textInput;
+} StartingPositionData;
 
 typedef struct MainMenuSceneData {
     GameConfig gameInfo;
-    TimeControlSettings timeControlSettings;
+    StartingPositionData startingPositionData;
 
     Textures textures;
 } MainMenuSceneData;

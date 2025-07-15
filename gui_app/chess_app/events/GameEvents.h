@@ -8,10 +8,10 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* a
 SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_FRect rect, App* app);
 
 // Promotion
-SDL_AppResult promotionOverlayMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedDownPromotionModal(SDL_Event* event, SDL_FRect rect, App* app);
 
 // Buttons
-SDL_AppResult clickedDownRestartButton(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult clickedRestartButton(SDL_Event* event, SDL_FRect rect, App* app);
 SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app);
 SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app);
 
@@ -49,7 +49,9 @@ SDL_Thread* playBotMove(App* app);
  * @param data The game scene data
  * @return SDL_AppResult If the app should continue or terminate with success or failure
  */
-SDL_AppResult resetGame(GameSceneData* data);
+SDL_AppResult resetGame(SDL_Event* event, App* app);
+
+void playMoveOnBoard(GameSceneData* data, Move move);
 
 /**
  * @brief Calculates the square index of the chessboard from the (x, y) sdl coordinates

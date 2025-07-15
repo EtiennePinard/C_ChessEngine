@@ -1,19 +1,18 @@
 #ifndef DC6832D3_BA2C_425A_A3AA_925718E06AF6
 #define DC6832D3_BA2C_425A_A3AA_925718E06AF6
 
-#include "../AppState.h"
+#include "../../AppState.h"
 
 typedef enum MainMenuRenderBoxIndex {
-    WHITE_KING_IMAGE,
-    BLACK_KING_IMAGE,
-    WHITE_PLAYER_TYPE,
-    BLACK_PLAYER_TYPE,
-    WHITE_ENGINE_PATH,
-    BLACK_ENGINE_PATH,
-    TIME_CONTROL_BUTTON,
+    WHITE_PLAYER_INFO,
+    WHITE_SETTINGS,
+    WHITE_TIME_CONTROL,
+    BLACK_PLAYER_INFO,
+    BLACK_SETTINGS,
+    BLACK_TIME_CONTROL,
+    STARTING_POSITION,
     START_GAME,
     MAIN_MENU_CREDITS,
-    TIME_CONTROL_MODAL,
     TOTAL_MAIN_MENU_RENDER_BOX
 } MainMenuRenderBoxIndex;
 
@@ -21,10 +20,9 @@ typedef enum MainMenuRenderBoxIndex {
  * @brief Computes the SceneRender struct for the main menu scene based on the current 
  * window size
  * 
- * @param window The window the scene will be drawn onto 
- * @param sceneRender The sceneRender object to fill. 
+ * @param app The app's data pointer
  */
-SDL_AppResult computeMainMenuSceneRender(SDL_Window* window, SceneRender* sceneRender);
+SDL_AppResult computeMainMenuSceneRender(App* app);
 
 void terminateMainMenuScene(void* data);
 

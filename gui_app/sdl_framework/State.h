@@ -92,6 +92,7 @@ typedef struct TextInput {
     Text_da text;
     bool keepOnlyAscii;
 
+    size_t cursorIndex;
     Uint64 lastCursorToggleTime;
     bool showCursor;
 } TextInput;

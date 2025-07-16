@@ -2,6 +2,43 @@
 
 #include "EventHandler.h"
 
+void appendTextToTextInput(App* app, const char* text) {
+    TextInput* ti = &app->events.textInput;
+    size_t insertCount = 0;
+
+    for (const char* t = text; *t; t++) {
+        // Append only ASCII characters or keep everything if we do not keep only ascii
+        // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
+        if ((unsigned char)*t < 0x80 || !ti->keepOnlyAscii) insertCount++;
+    }
+
+    // Make room in the buffer
+    size_t needed = ti->text.count + insertCount + 1;
+    if (needed > ti->text.capacity) {
+        size_t newCap = needed * 2;
+        char* newData = realloc(ti->text.data, newCap);
+        SDL_assert(newData);
+        ti->text.data = newData;
+        ti->text.capacity = newCap;
+    }
+
+    // Shift existing data after cursorIndex to the right
+    SDL_memmove(
+        ti->text.data + ti->cursorIndex + insertCount,
+        ti->text.data + ti->cursorIndex,
+        ti->text.count - ti->cursorIndex + 1
+    );
+
+    // Insert characters
+    for (const char* t = text; *t; t++) {
+        // Append only ASCII characters or keep everything if we do not keep only ascii
+        if ((unsigned char)*text < 0x80 || !ti->keepOnlyAscii) {
+            ti->text.data[ti->cursorIndex++] = *t;
+            ti->text.count++;
+        }
+    }
+}
+
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     if (!app->events.shouldHandleEvents) return SDL_APP_CONTINUE;
 
@@ -191,10 +228,29 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             break;
         case SDLK_BACKSPACE:
             if (app->events.textInput.isActive) {
-                // Removing one character from the buffer
-                if (app->events.textInput.text.count > 0) {
-                    app->events.textInput.text.count--;
-                    app->events.textInput.text.data[app->events.textInput.text.count] = '\0';
+                TextInput* ti = &app->events.textInput;
+
+                if (ti->cursorIndex > 0 && ti->text.count > 0) {
+                    // Move text after cursor one char to the left
+                    memmove(
+                        ti->text.data + ti->cursorIndex - 1,
+                        ti->text.data + ti->cursorIndex,
+                        ti->text.count - ti->cursorIndex + 1 // includes null terminator
+                    );
+
+                    ti->cursorIndex--;
+                    ti->text.count--;
+
+                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+                }
+            }
+            break;
+        case SDLK_V:
+            if (app->events.textInput.isActive && (event->key.mod & SDL_KMOD_CTRL)) {
+                char* clipboard = SDL_GetClipboardText();
+                if (clipboard) {
+                    appendTextToTextInput(app, clipboard);
+                    SDL_free(clipboard);
                     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
                 }
             }
@@ -208,14 +264,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         // Then handling events from the textinput
         if (app->events.textInput.isActive) {
-            const char* text = event->text.text;
-            for (; *text; ++text) {
-                // Append only ASCII characters or keep everything if we do not keep only ascii
-                // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
-                if ((unsigned char)*text < 0x80 || !app->events.textInput.keepOnlyAscii) {
-                    da_append((&app->events.textInput.text), (*text));
-                }
-            }
+            appendTextToTextInput(app, event->text.text);
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
 

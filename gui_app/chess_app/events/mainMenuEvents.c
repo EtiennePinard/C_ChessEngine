@@ -64,6 +64,8 @@ SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app
     app->events.textInput.keepOnlyAscii = true;
     app->events.textInput.isActive = true;
 
+    app->events.textInput.cursorIndex = 0;
+
     SDL_SetTextInputArea(app->state.sdlState.window,
         &area,
         area.w / 2);

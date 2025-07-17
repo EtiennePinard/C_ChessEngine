@@ -4,15 +4,65 @@
 #include <math.h>
 
 #include "../AppStyle.h"
+
 #include "RenderUtils.h"
 
-SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
+SDL_AppResult findFontSizeToFit(const char* textString, SDL_FRect rectToFit, TTF_Font* baseFont, bool isTextMultiLine, float* resultingFontSize) {
+    SDL_AppResult result = SDL_APP_FAILURE;
+    if (!baseFont || !textString) return result;
+
+    TTF_Font* tempFont = TTF_CopyFont(baseFont);
+    if (!tempFont) return result;
+
+    // If we have an empty string simply return the copied font
+    if (textString[0] == '\0') {
+        *resultingFontSize = 0.0;
+        result = SDL_APP_CONTINUE;
+        goto end;
+    }
+
+    // Initial guess font size
+    const float referenceSize = 16.0;
+
+    // Set base font to reference size
+    if (!TTF_SetFontSize(tempFont, referenceSize)) goto end;
+
+    int textW = 0, textH = 0;
+    bool sizeSuccess = false;
+    if (isTextMultiLine) sizeSuccess = TTF_GetStringSizeWrapped(tempFont, textString, 0, 0, &textW, &textH);
+    else sizeSuccess = TTF_GetStringSize(tempFont, textString, 0, &textW, &textH);
+
+    if (!sizeSuccess || textW == 0 || textH == 0) goto end;
+
+    // Compute scale factor based on rectToFit size
+    float scaleW = (float)rectToFit.w / (float)textW;
+    float scaleH = (float)rectToFit.h / (float)textH;
+    float scale = fminf(scaleW, scaleH);
+
+    float finalSize = referenceSize * scale;
+    finalSize = SDL_clamp(finalSize, 4, rectToFit.h); // Prevent tiny or huge font sizes
+
+    *resultingFontSize = finalSize;
+    result = SDL_APP_CONTINUE;
+end:
+    TTF_CloseFont(tempFont);
+    return result;
+}
+
+SDL_AppResult renderMultilineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
     if (!renderer || !font || !text) return SDL_APP_FAILURE;
 
-    char* textCopy = strdup(text);
-    if (!textCopy) return SDL_APP_FAILURE;
+    TTF_Font* tempFont = TTF_CopyFont(font);
+    if (!tempFont) return SDL_APP_FAILURE;
 
-    int lineHeight = TTF_GetFontLineSkip(font);
+    float fontSizeToFit;
+    if (findFontSizeToFit(text, rect, tempFont, true, &fontSizeToFit) != SDL_APP_CONTINUE) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+    if (!TTF_SetFontSize(tempFont, fontSizeToFit)) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+
+    char* textCopy = strdup(text);
+    if (!textCopy) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+
+    int lineHeight = TTF_GetFontLineSkip(tempFont);
     int numLines = 0;
 
     // Count lines
@@ -28,14 +78,16 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
     char* saveptr = NULL;
     char* line = strtok_r(textCopy, "\n", &saveptr);
     while (line) {
-        SDL_Surface* surf = TTF_RenderText_Blended(font, line, 0, color);
+        SDL_Surface* surf = TTF_RenderText_Blended(tempFont, line, 0, color);
         if (!surf) {
+            TTF_CloseFont(tempFont);
             free(textCopy);
             return SDL_APP_FAILURE;
         }
 
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
         if (!tex) {
+            TTF_CloseFont(tempFont);
             SDL_DestroySurface(surf);
             free(textCopy);
             return SDL_APP_FAILURE;
@@ -57,25 +109,29 @@ SDL_AppResult renderMultilineTextCentered(SDL_Renderer* renderer, TTF_Font* font
         line = strtok_r(NULL, "\n", &saveptr);
     }
 
+    TTF_CloseFont(tempFont);
     free(textCopy);
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect, SDL_FRect* textRect) {
-    SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(font, text, 0, color, 0);
-    if (!textSurface) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_RenderText_Blended failed: %s\n", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
+SDL_AppResult renderSingleLineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rect) {
+    if (!renderer || !font || !text) return SDL_APP_FAILURE;
+
+    TTF_Font* tempFont = TTF_CopyFont(font);
+    if (!tempFont) return SDL_APP_FAILURE;
+
+    float fontSizeToFit;
+    if (findFontSizeToFit(text, rect, tempFont, false, &fontSizeToFit) != SDL_APP_CONTINUE) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+    if (!TTF_SetFontSize(tempFont, fontSizeToFit)) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+
+    SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(tempFont, text, 0, color, 0);
+    if (!textSurface) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+
     SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
-    if (!textTexture) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_CreateTextureFromSurface failed: %s\n", SDL_GetError());
-        SDL_DestroySurface(textSurface);
-        return SDL_APP_FAILURE;
-    }
+    if (!textTexture) { SDL_DestroySurface(textSurface); TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
 
     // Centering the text from the baseline
-    int ascent = TTF_GetFontAscent(font);
+    int ascent = TTF_GetFontAscent(tempFont);
     SDL_FRect renderTextRect = {
     .x = rect.x + (rect.w - textSurface->w) / 2,
     .y = rect.y + (rect.h - ascent) / 2,
@@ -83,99 +139,9 @@ SDL_AppResult renderCenteredSingleLineText(SDL_Renderer* renderer, TTF_Font* fon
     .h = textSurface->h
     };
     SDL_RenderTexture(renderer, textTexture, NULL, &renderTextRect);
+    TTF_CloseFont(tempFont);
     SDL_DestroySurface(textSurface);
     SDL_DestroyTexture(textTexture);
-    if (textRect) *textRect = renderTextRect;
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* baseFont, const char* textString, bool isTextMultiLine, SDL_Color color, SDL_FRect rect, SDL_FRect* textRect) {
-    SDL_AppResult result = SDL_APP_FAILURE;
-
-    if (!renderer || !baseFont || !textString) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter at " __FILE__);
-        return result;
-    }
-    if (textString[0] == '\0') {
-        // If we have an empty string simply return
-        return SDL_APP_CONTINUE;
-    }
-
-    // Initial guess font size
-    const float referenceSize = 16.0;
-
-    // Copy and set base font to reference size
-    TTF_Font* tempFont = TTF_CopyFont(baseFont);
-    if (!tempFont) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_CopyFont failed: %s\n", SDL_GetError());
-        return result;
-    }
-
-    if (!TTF_SetFontSize(tempFont, referenceSize)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_SetFontSize(%f) failed: %s\n", referenceSize, SDL_GetError());
-        goto end;
-    }
-
-    int textW = 0, textH = 0;
-    bool sizeSuccess = false;
-    if (isTextMultiLine) sizeSuccess = TTF_GetStringSizeWrapped(tempFont, textString, 0, 0, &textW, &textH);
-    else sizeSuccess = TTF_GetStringSize(tempFont, textString, 0, &textW, &textH);
-
-    if (!sizeSuccess || textW == 0 || textH == 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_GetTextSize failed: %s\n", SDL_GetError());
-        goto end;
-    }
-
-    // Compute scale factor based on rect size
-    float scaleW = (float)rect.w / (float)textW;
-    float scaleH = (float)rect.h / (float)textH;
-    float scale = fminf(scaleW, scaleH);
-
-    float finalSize = referenceSize * scale;
-    finalSize = SDL_clamp(finalSize, 4, rect.h); // Prevent tiny or huge font sizes
-
-    // Set the computed best size
-    if (!TTF_SetFontSize(tempFont, (float)finalSize)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_SetFontSize(%f) failed: %s\n", finalSize, SDL_GetError());
-        goto end;
-    }
-
-    // Drawing the text centered
-    if (isTextMultiLine) result = renderMultilineTextCentered(renderer, tempFont, textString, color, rect);
-    else result = renderCenteredSingleLineText(renderer, tempFont, textString, color, rect, textRect);
-
-end:
-    TTF_CloseFont(tempFont);
-    return result;
-}
-
-SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
-    if (!output || outputSize < 6) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 6 at " __FILE__);
-        return SDL_APP_FAILURE;
-    }
-
-    u32 totalSeconds = milliseconds / 1000;
-    u32 minutes = totalSeconds / 60;
-    u32 seconds = totalSeconds % 60;
-    // Format the string as "mm:ss"
-    snprintf(output, outputSize, "%02u:%02u", minutes, seconds);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t outputSize) {
-    if (!output || outputSize < 11) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 11 at " __FILE__);
-        return SDL_APP_FAILURE;
-    }
-
-    u32 totalSeconds = timeControl.timeLeft / 1000;
-    u32 minutesTL = totalSeconds / 60;
-    u32 secondsTL = totalSeconds % 60;
-    totalSeconds = timeControl.increment / 1000;
-    u32 secondsIN = totalSeconds % 60;
-    // Format the string as "m:ss + s"
-    snprintf(output, outputSize, "%u:%02u + %u", minutesTL, secondsTL, secondsIN);
     return SDL_APP_CONTINUE;
 }
 
@@ -185,7 +151,7 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
 
     SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
     SDL_Color textColor = BUTTON_TEXT_COLOR;
-    
+
     // If this is the currently hovered box, highlight it
     if (app->events.mouseState.hoveredIndex == hoverIndex &&
         SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &rect)) {
@@ -194,7 +160,7 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
     }
 
     // Render button text
-    return renderTextCenteredToFit(renderer, font, text, false, textColor, rect, NULL);
+    return renderSingleLineTextCenteredToFit(renderer, font, text, textColor, rect);
 }
 
 SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex) {
@@ -241,7 +207,7 @@ SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked
         .h = rect.h
     };
 
-    return renderTextCenteredToFit(renderer, font, label, false, textColor, textRect, NULL);
+    return renderSingleLineTextCenteredToFit(renderer, font, label, textColor, textRect);
 }
 
 SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius) {
@@ -263,6 +229,145 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult drawCaret(App* app, SDL_Color color, SDL_FRect rect, float caretX) {
+    // Draw the blinking caret
+    if (app->events.textInput.showCursor) {
+        const float caretPadding = 2.0f;
+        SDL_SetRenderDrawColor(app->state.sdlState.renderer, color.r, color.g, color.b, color.a);
+
+        SDL_FRect caret = {
+            .x = caretX,
+            .y = rect.y + caretPadding,
+            .w = 1.5f,
+            .h = rect.h - 2.0f * caretPadding
+        };
+
+        SDL_RenderFillRect(app->state.sdlState.renderer, &caret);
+    }
+    return SDL_APP_CONTINUE;
+}
+
+// TODO: This is broken...
+// Fix later when you have some sleep and nothing to prepare/do the next day
+SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
+    if (!app->events.textInput.isActive) return SDL_APP_CONTINUE;
+
+    SDL_Color textColor = BUTTON_TEXT_COLOR;
+    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
+    if (app->events.textInput.text.count == 0) {
+        // There is no characters to draw, only draw the cursor
+        float caretX = rect.x + rect.w / 2.0;
+        SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
+        SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)(caretX - rect.x));
+        return drawCaret(app, textColor, rect, caretX);
+    }
+
+    TTF_Font* font = app->state.sdlState.font;
+    TTF_Font* tempFont = TTF_CopyFont(font);
+    if (!tempFont) return SDL_APP_FAILURE;
+
+    const char* text = app->events.textInput.text.data;
+    float fontSizeToFit;
+    if (findFontSizeToFit(text, rect, tempFont, false, &fontSizeToFit) != SDL_APP_CONTINUE) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+    if (!TTF_SetFontSize(tempFont, fontSizeToFit)) { TTF_CloseFont(tempFont); return SDL_APP_FAILURE; }
+
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+
+    // Highlight the border
+    SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+    SDL_RenderRect(renderer, &rect);
+
+    float totalWidth = 0.0f;
+    float maxHeight = 0.0f;
+
+    size_t textLen = app->events.textInput.text.count;
+    size_t cursorIndex = app->events.textInput.cursorIndex;
+
+    // First pass: measure total width
+    for (size_t i = 0; i < textLen; ++i) {
+        int minx, maxx, miny, maxy, advance;
+        if (!TTF_GetGlyphMetrics(tempFont, (Uint8)text[i], &minx, &maxx, &miny, &maxy, &advance)) return SDL_APP_FAILURE;
+        totalWidth += (float)advance;
+        float height = (float)(maxy - miny);
+        if (height > maxHeight) maxHeight = height;
+    }
+
+    // Starting point for centered rendering
+    float startX = rect.x + (rect.w - totalWidth) / 2.0f;
+    float baselineY = rect.y + (rect.h + TTF_GetFontAscent(tempFont)) / 2.0f;
+
+    float penX = startX;
+    float caretX = startX;
+
+    for (size_t i = 0; i < textLen; ++i) {
+        Uint8 ch = (Uint8)text[i];
+
+        int minx, maxx, miny, maxy, advance;
+        if (!TTF_GetGlyphMetrics(tempFont, ch, &minx, &maxx, &miny, &maxy, &advance)) return SDL_APP_FAILURE;
+
+        // Store caret position before drawing character
+        if (i == cursorIndex) caretX = penX;
+
+        SDL_Surface* glyphSurface = TTF_RenderGlyph_Blended(tempFont, ch, textColor);
+        if (!glyphSurface) return SDL_APP_FAILURE;
+
+        SDL_Texture* glyphTexture = SDL_CreateTextureFromSurface(renderer, glyphSurface);
+        SDL_DestroySurface(glyphSurface);
+        if (!glyphTexture) return SDL_APP_FAILURE;
+
+        SDL_FRect dst = {
+            .x = penX + minx,
+            .y = baselineY - maxy,
+            .w = (float)(maxx - minx),
+            .h = (float)(maxy - miny)
+        };
+
+        SDL_RenderTexture(renderer, glyphTexture, NULL, &dst);
+        SDL_DestroyTexture(glyphTexture);
+
+        penX += (float)advance;
+    }
+
+    // If cursor is at end of string
+    if (cursorIndex == textLen) caretX = penX;
+    
+    // Draw the blinking caret
+    SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
+    SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)(caretX - rect.x));
+    return drawCaret(app, textColor, rect, caretX);
+}
+
+SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
+    if (!output || outputSize < 6) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 6 at " __FILE__);
+        return SDL_APP_FAILURE;
+    }
+
+    u32 totalSeconds = milliseconds / 1000;
+    u32 minutes = totalSeconds / 60;
+    u32 seconds = totalSeconds % 60;
+    // Format the string as "mm:ss"
+    snprintf(output, outputSize, "%02u:%02u", minutes, seconds);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t outputSize) {
+    if (!output || outputSize < 11) {
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 11 at " __FILE__);
+        return SDL_APP_FAILURE;
+    }
+
+    u32 totalSeconds = timeControl.timeLeft / 1000;
+    u32 minutesTL = totalSeconds / 60;
+    u32 secondsTL = totalSeconds % 60;
+    totalSeconds = timeControl.increment / 1000;
+    u32 secondsIN = totalSeconds % 60;
+    // Format the string as "m:ss + s"
+    snprintf(output, outputSize, "%u:%02u + %u", minutesTL, secondsTL, secondsIN);
+    return SDL_APP_CONTINUE;
+}
+
+
 SDL_AppResult renderCredits(SDL_FRect rect, App* app) {
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, false, CREDIT_COLOR, rect, NULL);
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, CREDIT_COLOR, rect);
 }

@@ -81,15 +81,7 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
         .h = titleHeight
     };
     char* titleText = modalData->playerColor == WHITE ? "Select white's time control" : "Select black's time control";
-    SDL_AppResult result = renderTextCenteredToFit(
-        renderer,
-        font,
-        titleText,
-        false,
-        textColor,
-        titleRect,
-        NULL
-    );
+    SDL_AppResult result = renderSingleLineTextCenteredToFit(renderer, font, titleText, textColor, titleRect);
     if (result != SDL_APP_CONTINUE) return result;
 
     const float gridTopY = titleRect.y + titleRect.h;
@@ -110,15 +102,7 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
             }
             char buffer[11];
             formatTimeControl(timeControl, buffer, 11);
-            SDL_AppResult result = renderTextCenteredToFit(
-                renderer,
-                font,
-                buffer,
-                false,
-                textColor,
-                optionRect,
-                NULL
-            );
+            result = renderSingleLineTextCenteredToFit(renderer, font, buffer, textColor, optionRect);
             if (result != SDL_APP_CONTINUE) return result;
             optionRect.x += optionRect.w + horizontalPadding;
         }
@@ -211,7 +195,7 @@ SDL_AppResult renderEnginePathButton(SDL_FRect rect, App* app, SDL_Color highlig
     }
 
     // Render button text
-    return renderTextCenteredToFit(renderer, font, label, false, textColor, rect, NULL);
+    return renderSingleLineTextCenteredToFit(renderer, font, label, textColor, rect);
 }
 
 SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
@@ -246,7 +230,7 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
         .w = rect.w - 2 * padding,
         .h = lineHeight
     };
-    SDL_AppResult result = renderTextCenteredToFit(renderer, font, "Engine Configuration", false, textColor, titleRect, NULL);
+    SDL_AppResult result = renderSingleLineTextCenteredToFit(renderer, font, "Engine Configuration", textColor, titleRect);
     if (result != SDL_APP_CONTINUE) return result;
 
     y += lineHeight + padding;

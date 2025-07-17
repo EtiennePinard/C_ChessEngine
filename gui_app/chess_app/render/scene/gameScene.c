@@ -116,14 +116,14 @@ SDL_AppResult renderBlackClock(SDL_FRect blackClockRect, App* app) {
     char buffer[CLOCK_BUFFER_SIZE];
 
     if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.black.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, false, WHITE_COLOR, blackClockRect, NULL);
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, blackClockRect);
 }
 
 SDL_AppResult renderWhiteClock(SDL_FRect whiteClockRect, App* app) {
     char buffer[CLOCK_BUFFER_SIZE];
 
     if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, false, WHITE_COLOR, whiteClockRect, NULL);
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, whiteClockRect);
 }
 
 #define SCROLL_BAR_SIZE_PERCENT (0.1f)
@@ -260,7 +260,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
             .h = lineHeightPerMove
         };
 
-        SDL_AppResult result = renderTextCenteredToFit(renderer, font, numberBuffer, false, textColor, moveNumberRect, NULL);
+        SDL_AppResult result = renderSingleLineTextCenteredToFit(renderer, font, numberBuffer, textColor, moveNumberRect);
         if (result != SDL_APP_CONTINUE) return result;
 
         if (index < data->moveListInfo.movesPlayed.count) {
@@ -285,7 +285,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
                 data->moveListInfo.hoveredMoveIndex = index;
             }
 
-            result = renderTextCenteredToFit(renderer, font, moveText, false, textColor, whiteMoveRect, NULL);
+            result = renderSingleLineTextCenteredToFit(renderer, font, moveText, textColor, whiteMoveRect);
             if (result != SDL_APP_CONTINUE) return result;
         }
 
@@ -311,7 +311,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
                 data->moveListInfo.hoveredMoveIndex = index + 1;
             }
 
-            result = renderTextCenteredToFit(renderer, font, moveText, false, textColor, blackMoveRect, NULL);
+            result = renderSingleLineTextCenteredToFit(renderer, font, moveText, textColor, blackMoveRect);
             if (result != SDL_APP_CONTINUE) return result;
         }
 

@@ -4,19 +4,55 @@
 #include "../AppState.h"
 
 /**
- * @brief Renders text to fit a rectangle
- *
- * @param renderer The renderer to draw the text to
- * @param font The font to use for drawing the text
- * @param text The text to draw
- * @param isTextMultiLine If the text is a multi-line string
- * @param color The color of the text
+ * @brief Finds the best font size so that the text takes the most 
+ * amount of space inside the rectangle.
+ * 
+ * @param textString The text to draw
  * @param rectToFit The rectangle to fit the text into
- * @param textRect A pointer where the actual text rectangle will be stored if it is not NULL
- * Note: The textRect param only works if the text is single line. This will not work with multiline text
+ * @param baseFont The font to find the best size
+ * @param isTextMultiLine If the text is multiline or not
+ * @param resultingFontSize The pointer where the best font size to fit will be stored.
+ * If this function returns SDL_APP_FAILURE this pointer will not be set and is 
+ * left uninitialized
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, bool isTextMultiLine, SDL_Color color, SDL_FRect rectToFit, SDL_FRect* textRect);
+SDL_AppResult findFontSizeToFit(const char* textString, SDL_FRect rectToFit, TTF_Font* baseFont, bool isTextMultiLine, float* resultingFontSize);
+
+/**
+ * @brief Renders multiline text center justified and fitted using findFontSizeToFit
+ * inside a rectangle.
+ * 
+ * @param renderer The renderer to draw the text to
+ * @param font The font to render the text with. 
+ * @param text The text to render
+ * @param color The color of the text
+ * @param rectToFit The rectangle to fit the text into
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult renderMultilineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rectToFit);
+
+/**
+ * @brief Renders single line text centered and fitted using findFontSizeToFit
+ * inside a rectangle.
+ * 
+ * @param renderer The renderer to draw the text to
+ * @param font The font to render the text with. 
+ * @param text The text to render
+ * @param color The color of the text
+ * @param rectToFit The rectangle to fit the text into
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult renderSingleLineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color, SDL_FRect rectToFit);
+
+/**
+ * @brief Renders the text of an active text input centered in a rectangle with
+ * the correct cursor position and text highlighting
+ * 
+ * @param rect The rectangle to render the text into
+ * @param app The app's data
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app);
 
 /**
  * @brief Formats the time in the min:sec format and writes it to a buffer

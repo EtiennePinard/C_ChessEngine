@@ -255,6 +255,24 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 }
             }
             break;
+        case SDLK_LEFT:
+            if (app->events.textInput.isActive) {
+                app->events.textInput.cursorIndex = SDL_max((int)app->events.textInput.cursorIndex - 1, 0);
+                app->events.textInput.showCursor = true; // Resetting show cursor
+                app->events.textInput.lastCursorToggleTime = SDL_GetTicks();
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+
+            }
+            break;
+        case SDLK_RIGHT:
+            if (app->events.textInput.isActive) {
+                app->events.textInput.cursorIndex = SDL_min(app->events.textInput.cursorIndex + 1, app->events.textInput.text.count);
+                app->events.textInput.showCursor = true; // Resetting show cursor
+                app->events.textInput.lastCursorToggleTime = SDL_GetTicks();
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+
+            }
+            break;
         }
 
         break;

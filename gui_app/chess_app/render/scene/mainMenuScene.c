@@ -78,38 +78,12 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
             SDL_RenderFillRect(renderer, &rect);
         }
         // Render the text from the game info
-        return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
-            data->gameInfo.startingPositionFen, false, textColor, rect, NULL);
+        return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
+            data->gameInfo.startingPositionFen, textColor, rect);
     }
     else {
         // Text input is active
-        // Highlight the border
-        SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
-        SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
-        SDL_RenderRect(renderer, &rect);
-
-        // rendering the text from the text input struct
-        // we need the text rect to set the cursor's position
-        SDL_FRect textRect = { 0 };
-        SDL_AppResult result = renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
-            app->events.textInput.text.data, false, textColor, rect, &textRect);
-        SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
-        float cursorOffset = (rect.w + textRect.w) / 2.0;
-        if (app->events.textInput.showCursor) {
-            SDL_SetRenderDrawColor(renderer, textColor.r, textColor.g, textColor.b, textColor.a);
-
-            const float caretPadding = 3.0;
-            SDL_FRect caretRect = {
-                .x = rect.x + cursorOffset,
-                .y = rect.y + caretPadding,
-                .w = 1.5,
-                .h = rect.h - 2 * caretPadding
-            };
-
-            SDL_RenderFillRect(renderer, &caretRect);
-        }
-        SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)cursorOffset);
-        return result;
+        return renderTextInputCenteredToFit(rect, app);
     }
 
     // unreachable

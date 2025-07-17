@@ -239,7 +239,7 @@ SDL_AppResult renderGameEndedModal(SDL_FRect rect, App* app) {
         rect.h - 2 * overlayPadding
     };
 
-    return renderTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, true, BLACK_COLOR, textRect, NULL);
+    return renderMultilineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, BLACK_COLOR, textRect);
 }
 
 void setGameEndedModalActive(App* app) {

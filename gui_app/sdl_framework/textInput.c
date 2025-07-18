@@ -105,8 +105,7 @@ SDL_AppResult textInputKeyDown(SDL_Event* event, App* app) {
             );
 
             input->text.count -= (selectionEnd - selectionStart);
-            input->cursorIndex = selectionStart;
-
+            input->cursorIndex = SDL_min(input->selectionStart, input->selectionStart + input->nbCharSelected);
             input->nbCharSelected = 0;
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
@@ -128,6 +127,21 @@ SDL_AppResult textInputKeyDown(SDL_Event* event, App* app) {
         if (event->key.mod & SDL_KMOD_CTRL) {
             char* clipboard = SDL_GetClipboardText();
             if (clipboard) {
+                if (input->nbCharSelected != 0) {
+                    size_t selectionStart = SDL_min(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+                    size_t selectionEnd = SDL_max(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+
+                    // Move text after selectionEnd to selectionEnd
+                    memmove(
+                        input->text.data + selectionStart,
+                        input->text.data + selectionEnd,
+                        input->text.count - selectionEnd + 1 // includes null terminator
+                    );
+
+                    input->text.count -= (selectionEnd - selectionStart);
+                    input->cursorIndex = SDL_min(input->selectionStart, input->selectionStart + input->nbCharSelected);
+                    input->nbCharSelected = 0;
+                }
                 appendTextToTextInput(app, clipboard);
                 SDL_free(clipboard);
                 SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);

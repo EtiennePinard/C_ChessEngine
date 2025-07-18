@@ -37,6 +37,7 @@ SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {
         SDL_strlcpy(data->gameInfo.startingPositionFen, app->events.textInput.text.data, app->events.textInput.text.count + 1);
 
         free(app->events.textInput.text.data);
+        free(app->events.textInput.glyphRects.data);
         app->events.textInput.text.data = NULL;
 
         SDL_StopTextInput(app->state.sdlState.window);
@@ -44,11 +45,21 @@ SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult enteredStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return changeMouseIconOnEnterTextInput(event, rect, app);
+}
+
+SDL_AppResult exitedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return resetMouseIconOnExitTextInput(event, rect, app);
+}
+
 SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
 
-    // If the text input is already active simply return
-    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
+    // If the text input is already active, do the click to cursor
+    if (app->events.textInput.isActive) return clickToCursor(app);
 
     SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
     app->events.textInput.text.capacity = MAX_FEN_STRING_SIZE;
@@ -60,11 +71,13 @@ SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app
 
     app->events.textInput.onEscape = &closeTextInput;
     app->events.textInput.onReturn = &startingPositionTextInputReturn;
-    
+
     app->events.textInput.keepOnlyAscii = true;
     app->events.textInput.isActive = true;
 
     app->events.textInput.cursorIndex = 0;
+    app->events.textInput.cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
+    SDL_SetCursor(app->events.textInput.cursor);
 
     SDL_SetTextInputArea(app->state.sdlState.window,
         &area,

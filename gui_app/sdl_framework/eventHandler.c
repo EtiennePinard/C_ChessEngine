@@ -113,6 +113,29 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         }
 
         app->events.mouseState.hoveredIndex = foundIndex;
+
+        if (app->events.textInput.isActive) {
+            if (app->events.mouseState.holdingLeftMouseButton) {
+                // Note: selectionStart is correctly set already
+                float mouseX = (float)event->motion.x;
+
+                size_t hoveredIndex = app->events.textInput.text.count;
+                for (size_t i = 0; i < app->events.textInput.glyphRects.count; ++i) {
+                    SDL_FRect glyphRect = app->events.textInput.glyphRects.data[i];
+                    float midX = glyphRect.x + glyphRect.w / 2.0f;
+                    if (mouseX < midX) {
+                        hoveredIndex = i;
+                        break;
+                    }
+                }
+
+                // Compute selection range
+                app->events.textInput.nbCharSelected = (int)hoveredIndex - (int)app->events.textInput.selectionStart;
+                app->events.textInput.cursorIndex = app->events.textInput.selectionStart + app->events.textInput.nbCharSelected;
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+            }
+        }
+
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -168,6 +191,18 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
         }
+
+        if (app->events.textInput.isActive) {
+            if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                if (event->button.button == SDL_BUTTON_LEFT) {
+                    // Reset the nbCharSelected and the selectionStart
+                    app->events.textInput.nbCharSelected = 0;
+                    app->events.textInput.selectionStart = app->events.textInput.cursorIndex;
+                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+                }
+            }
+        }
+
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
@@ -257,20 +292,59 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             break;
         case SDLK_LEFT:
             if (app->events.textInput.isActive) {
-                app->events.textInput.cursorIndex = SDL_max((int)app->events.textInput.cursorIndex - 1, 0);
-                app->events.textInput.showCursor = true; // Resetting show cursor
-                app->events.textInput.lastCursorToggleTime = SDL_GetTicks();
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+                TextInput* input = &app->events.textInput;
 
+                if (event->key.mod & SDL_KMOD_SHIFT) {
+                    if (input->nbCharSelected == 0) input->selectionStart = input->cursorIndex;
+                    if ((int)input->selectionStart + input->nbCharSelected > 0) input->nbCharSelected--;
+                    input->cursorIndex = SDL_max((int)input->cursorIndex - 1, 0);
+                }
+                else {
+                    // If shift has stopped being held and something is selected unselect
+                    // it and set the cursor position to the start of the selection
+                    if (input->nbCharSelected != 0) {
+                        // We are holding the arrow in the opposite direction of the selection, setting it to the start of the selection
+                        if (input->nbCharSelected > 0) input->cursorIndex = input->selectionStart;
+
+                        input->nbCharSelected = 0;
+
+                    }
+                    else {
+                        input->cursorIndex = SDL_max((int)input->cursorIndex - 1, 0);
+                    }
+                }
+                // Resetting blinking cursor
+                input->showCursor = true;
+                input->lastCursorToggleTime = SDL_GetTicks();
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
             }
             break;
         case SDLK_RIGHT:
             if (app->events.textInput.isActive) {
-                app->events.textInput.cursorIndex = SDL_min(app->events.textInput.cursorIndex + 1, app->events.textInput.text.count);
-                app->events.textInput.showCursor = true; // Resetting show cursor
-                app->events.textInput.lastCursorToggleTime = SDL_GetTicks();
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+                TextInput* input = &app->events.textInput;
 
+                if (event->key.mod & SDL_KMOD_SHIFT) {
+                    if (input->nbCharSelected == 0) input->selectionStart = input->cursorIndex;
+                    if (input->selectionStart + input->nbCharSelected < input->text.count) input->nbCharSelected++;
+                    input->cursorIndex = SDL_min(input->cursorIndex + 1, input->text.count);
+                }
+                else {
+                    // If shift has stopped being held and something is selected unselect
+                    // it and set the cursor position to the start of the selection
+                    if (input->nbCharSelected != 0) {
+                        // We are holding the arrow in the opposite direction of the selection, setting it to the start of the selection
+                        if (input->nbCharSelected < 0) input->cursorIndex = input->selectionStart;
+
+                        input->nbCharSelected = 0;
+                    }
+                    else {
+                        input->cursorIndex = SDL_min(input->cursorIndex + 1, input->text.count);
+                    }
+                }
+                // Resetting blinking cursor
+                input->showCursor = true;
+                input->lastCursorToggleTime = SDL_GetTicks();
+                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
             }
             break;
         }

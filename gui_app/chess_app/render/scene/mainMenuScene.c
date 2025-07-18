@@ -184,8 +184,8 @@ SDL_AppResult computeMainMenuSceneRender(App* app) {
     };
     sceneRender->renderBoxes[STARTING_POSITION].renderRect = startingPosition;
     sceneRender->renderBoxes[STARTING_POSITION].renderFunction = &renderStartingPositionControl;
-    sceneRender->renderBoxes[STARTING_POSITION].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[STARTING_POSITION].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[STARTING_POSITION].onMouseEntered = &enteredStartingPosition;
+    sceneRender->renderBoxes[STARTING_POSITION].onMouseExited = &exitedStartingPosition;
     sceneRender->renderBoxes[STARTING_POSITION].onMouseButtonDown = &clickedStartingPosition;
 
     y += buttonHeight + padding;

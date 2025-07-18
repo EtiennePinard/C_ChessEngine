@@ -83,6 +83,12 @@ typedef struct Text_da {
     size_t capacity;
 } Text_da;
 
+typedef struct Rect_da {
+    SDL_FRect* data;
+    size_t count;
+    size_t capacity;
+} Rect_da;
+
 typedef struct TextInput {
     bool isActive;
     
@@ -92,9 +98,15 @@ typedef struct TextInput {
     Text_da text;
     bool keepOnlyAscii;
 
+    SDL_Cursor* cursor;
     size_t cursorIndex;
     Uint64 lastCursorToggleTime;
     bool showCursor;
+
+    size_t selectionStart;
+    int nbCharSelected;    
+
+    Rect_da glyphRects;
 } TextInput;
 
 typedef struct AppEvents {

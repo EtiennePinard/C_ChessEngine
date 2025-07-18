@@ -278,49 +278,67 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
     SDL_RenderRect(renderer, &rect);
 
     float totalWidth = 0.0f;
-    float maxHeight = 0.0f;
 
     size_t textLen = app->events.textInput.text.count;
     size_t cursorIndex = app->events.textInput.cursorIndex;
 
+    int advance;
     // First pass: measure total width
-    for (size_t i = 0; i < textLen; ++i) {
-        int minx, maxx, miny, maxy, advance;
-        if (!TTF_GetGlyphMetrics(tempFont, (Uint8)text[i], &minx, &maxx, &miny, &maxy, &advance)) return SDL_APP_FAILURE;
+    for (size_t i = 0; i < textLen; i++) {
+        if (!TTF_GetGlyphMetrics(tempFont, (Uint8)text[i], NULL, NULL, NULL, NULL, &advance)) return SDL_APP_FAILURE;
         totalWidth += (float)advance;
-        float height = (float)(maxy - miny);
-        if (height > maxHeight) maxHeight = height;
     }
 
     // Starting point for centered rendering
     float startX = rect.x + (rect.w - totalWidth) / 2.0f;
-    float baselineY = rect.y + (rect.h + TTF_GetFontAscent(tempFont)) / 2.0f;
+    float baselineY = rect.y + (rect.h - TTF_GetFontAscent(tempFont)) / 2.0f;
 
     float penX = startX;
     float caretX = startX;
 
-    for (size_t i = 0; i < textLen; ++i) {
+    // Resetting the glyph rects
+    app->events.textInput.glyphRects.count = 0;
+
+    // Selection background color
+    SDL_Color selectionBg = { 30, 120, 230, 255 }; // Blue-ish
+    SDL_Color selectionText = { 255, 255, 255, 255 }; // White text over selected background
+
+    // Normalize selection range
+    size_t selectionStart = SDL_min(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+    size_t selectionEnd = SDL_max(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+
+    for (size_t i = 0; i < textLen; i++) {
         Uint8 ch = (Uint8)text[i];
 
-        int minx, maxx, miny, maxy, advance;
-        if (!TTF_GetGlyphMetrics(tempFont, ch, &minx, &maxx, &miny, &maxy, &advance)) return SDL_APP_FAILURE;
+        if (!TTF_GetGlyphMetrics(tempFont, ch, NULL, NULL, NULL, NULL, &advance)) return SDL_APP_FAILURE;
 
-        // Store caret position before drawing character
+        // Set the correct caret position
         if (i == cursorIndex) caretX = penX;
+
+        if (selectionStart <= i && i < selectionEnd) textColor = selectionText;
+        else textColor = BUTTON_TEXT_COLOR;
 
         SDL_Surface* glyphSurface = TTF_RenderGlyph_Blended(tempFont, ch, textColor);
         if (!glyphSurface) return SDL_APP_FAILURE;
 
         SDL_Texture* glyphTexture = SDL_CreateTextureFromSurface(renderer, glyphSurface);
-        SDL_DestroySurface(glyphSurface);
-        if (!glyphTexture) return SDL_APP_FAILURE;
+        if (!glyphTexture) { SDL_DestroySurface(glyphSurface); return SDL_APP_FAILURE; }
 
         SDL_FRect dst = {
-            .x = penX + minx,
-            .y = baselineY - maxy,
-            .w = (float)(maxx - minx),
-            .h = (float)(maxy - miny)
+            .x = penX,
+            .y = baselineY,
+            .w = (float)glyphSurface->w,
+            .h = (float)glyphSurface->h
         };
+        da_append((&app->events.textInput.glyphRects), dst);
+
+        // Render the selection color behind the text
+        if (selectionStart <= i && i < selectionEnd) {
+            SDL_SetRenderDrawColor(renderer, selectionBg.r, selectionBg.g, selectionBg.b, selectionBg.a);
+            const float selectionPadding = 2.0f;
+            SDL_FRect selectionRect = { penX, rect.y + selectionPadding, (float)glyphSurface->w, rect.h - 2.0f * selectionPadding };
+            SDL_RenderFillRect(renderer, &selectionRect);
+        }
 
         SDL_RenderTexture(renderer, glyphTexture, NULL, &dst);
         SDL_DestroyTexture(glyphTexture);
@@ -330,8 +348,7 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
 
     // If cursor is at end of string
     if (cursorIndex == textLen) caretX = penX;
-    
-    // Draw the blinking caret
+
     SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
     SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)(caretX - rect.x));
     return drawCaret(app, textColor, rect, caretX);

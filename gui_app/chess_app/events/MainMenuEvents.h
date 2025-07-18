@@ -10,6 +10,8 @@ SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app
 SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app);
 
 SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult enteredStartingPosition(SDL_Event* event, SDL_FRect rect, App* app);
+SDL_AppResult exitedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app);
 
 SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app);
 

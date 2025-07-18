@@ -1,43 +1,7 @@
 #include <stdlib.h>
 
+#include "TextInput.h"
 #include "EventHandler.h"
-
-void appendTextToTextInput(App* app, const char* text) {
-    TextInput* ti = &app->events.textInput;
-    size_t insertCount = 0;
-
-    for (const char* t = text; *t; t++) {
-        // Append only ASCII characters or keep everything if we do not keep only ascii
-        // To see why this filtering works, see https://en.wikipedia.org/wiki/UTF-8#Description
-        if ((unsigned char)*t < 0x80 || !ti->keepOnlyAscii) insertCount++;
-    }
-
-    // Make room in the buffer
-    size_t needed = ti->text.count + insertCount + 1;
-    if (needed > ti->text.capacity) {
-        size_t newCap = needed * 2;
-        char* newData = realloc(ti->text.data, newCap);
-        SDL_assert(newData);
-        ti->text.data = newData;
-        ti->text.capacity = newCap;
-    }
-
-    // Shift existing data after cursorIndex to the right
-    SDL_memmove(
-        ti->text.data + ti->cursorIndex + insertCount,
-        ti->text.data + ti->cursorIndex,
-        ti->text.count - ti->cursorIndex + 1
-    );
-
-    // Insert characters
-    for (const char* t = text; *t; t++) {
-        // Append only ASCII characters or keep everything if we do not keep only ascii
-        if ((unsigned char)*text < 0x80 || !ti->keepOnlyAscii) {
-            ti->text.data[ti->cursorIndex++] = *t;
-            ti->text.count++;
-        }
-    }
-}
 
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     if (!app->events.shouldHandleEvents) return SDL_APP_CONTINUE;
@@ -135,6 +99,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
                 SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
             }
         }
+        if (textInputMouseMotion(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
 
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -192,16 +157,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (appResult != SDL_APP_CONTINUE) return appResult;
         }
 
-        if (app->events.textInput.isActive) {
-            if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                if (event->button.button == SDL_BUTTON_LEFT) {
-                    // Reset the nbCharSelected and the selectionStart
-                    app->events.textInput.nbCharSelected = 0;
-                    app->events.textInput.selectionStart = app->events.textInput.cursorIndex;
-                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-                }
-            }
-        }
+        if (textInputMouseButtonPressed(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
 
         break;
 
@@ -239,114 +195,24 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         if (app->events.onKeyDown) appResult = app->events.onKeyDown(event, app);
         if (appResult != SDL_APP_CONTINUE) return appResult;
 
-        // Then cancelling/closing any other active events
+        // Handling text input events
+        if (textInputKeyDown(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+
+        // Handling modal events
         switch (event->key.key) {
         case SDLK_ESCAPE:
-            // We first start by cancelling the text input
-            if (app->events.textInput.isActive && app->events.textInput.onEscape) {
-                app->events.textInput.onEscape(event, app);
-            }
-            // Then we cancel the modal
+            // We cancel the modal
             if (app->events.modal.isActive && app->events.modal.onEscape) {
                 app->events.modal.onEscape(event, app);
             }
             break;
         case SDLK_RETURN:
-            // We first start by closing the text input
-            if (app->events.textInput.isActive && app->events.textInput.onReturn) {
-                app->events.textInput.onReturn(event, app);
-            }
-            // Then we close the modal
+            // We close the modal
             if (app->events.modal.isActive && app->events.modal.onReturn) {
                 app->events.modal.onReturn(event, app);
             }
             break;
-        case SDLK_BACKSPACE:
-            if (app->events.textInput.isActive) {
-                TextInput* ti = &app->events.textInput;
-
-                if (ti->cursorIndex > 0 && ti->text.count > 0) {
-                    // Move text after cursor one char to the left
-                    memmove(
-                        ti->text.data + ti->cursorIndex - 1,
-                        ti->text.data + ti->cursorIndex,
-                        ti->text.count - ti->cursorIndex + 1 // includes null terminator
-                    );
-
-                    ti->cursorIndex--;
-                    ti->text.count--;
-
-                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-                }
-            }
-            break;
-        case SDLK_V:
-            if (app->events.textInput.isActive && (event->key.mod & SDL_KMOD_CTRL)) {
-                char* clipboard = SDL_GetClipboardText();
-                if (clipboard) {
-                    appendTextToTextInput(app, clipboard);
-                    SDL_free(clipboard);
-                    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-                }
-            }
-            break;
-        case SDLK_LEFT:
-            if (app->events.textInput.isActive) {
-                TextInput* input = &app->events.textInput;
-
-                if (event->key.mod & SDL_KMOD_SHIFT) {
-                    if (input->nbCharSelected == 0) input->selectionStart = input->cursorIndex;
-                    if ((int)input->selectionStart + input->nbCharSelected > 0) input->nbCharSelected--;
-                    input->cursorIndex = SDL_max((int)input->cursorIndex - 1, 0);
-                }
-                else {
-                    // If shift has stopped being held and something is selected unselect
-                    // it and set the cursor position to the start of the selection
-                    if (input->nbCharSelected != 0) {
-                        // We are holding the arrow in the opposite direction of the selection, setting it to the start of the selection
-                        if (input->nbCharSelected > 0) input->cursorIndex = input->selectionStart;
-
-                        input->nbCharSelected = 0;
-
-                    }
-                    else {
-                        input->cursorIndex = SDL_max((int)input->cursorIndex - 1, 0);
-                    }
-                }
-                // Resetting blinking cursor
-                input->showCursor = true;
-                input->lastCursorToggleTime = SDL_GetTicks();
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-            }
-            break;
-        case SDLK_RIGHT:
-            if (app->events.textInput.isActive) {
-                TextInput* input = &app->events.textInput;
-
-                if (event->key.mod & SDL_KMOD_SHIFT) {
-                    if (input->nbCharSelected == 0) input->selectionStart = input->cursorIndex;
-                    if (input->selectionStart + input->nbCharSelected < input->text.count) input->nbCharSelected++;
-                    input->cursorIndex = SDL_min(input->cursorIndex + 1, input->text.count);
-                }
-                else {
-                    // If shift has stopped being held and something is selected unselect
-                    // it and set the cursor position to the start of the selection
-                    if (input->nbCharSelected != 0) {
-                        // We are holding the arrow in the opposite direction of the selection, setting it to the start of the selection
-                        if (input->nbCharSelected < 0) input->cursorIndex = input->selectionStart;
-
-                        input->nbCharSelected = 0;
-                    }
-                    else {
-                        input->cursorIndex = SDL_min(input->cursorIndex + 1, input->text.count);
-                    }
-                }
-                // Resetting blinking cursor
-                input->showCursor = true;
-                input->lastCursorToggleTime = SDL_GetTicks();
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-            }
-            break;
+        default: break;
         }
 
         break;
@@ -355,11 +221,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         if (app->events.onTextInput) appResult = app->events.onTextInput(event, app);
 
         // Then handling events from the textinput
-        if (app->events.textInput.isActive) {
-            appendTextToTextInput(app, event->text.text);
-            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-        }
-
+        if (textInputTextInputEvent(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
         break;
     default: break;
     }

@@ -117,7 +117,8 @@ sdlFramework_SRC = \
     gui_app/sdl_framework/eventHandler.c \
     gui_app/sdl_framework/render.c \
     gui_app/sdl_framework/appCleanup.c \
-    gui_app/sdl_framework/commonEvents.c
+    gui_app/sdl_framework/commonEvents.c \
+    gui_app/sdl_framework/textInput.c
 
 app_SRC = \
     engine/src/moveHandler/movePlayer.c \

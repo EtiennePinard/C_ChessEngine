@@ -1,17 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../../../engine/src/utils/Math.h"
-#include "../../../../engine/src/utils/AlgebraicNotation.h"
+#include "../../../engine/src/utils/Math.h"
+#include "../../../engine/src/utils/AlgebraicNotation.h"
 
-#include "../../../sdl_framework/AppCleanup.h"
-#include "../../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/AppCleanup.h"
+#include "../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "../../events/GameEvents.h"
-#include "../../AppStyle.h"
+#include "../AppUtils.h"
+#include "../AppStyle.h"
 
-#include "../RenderUtils.h"
-#include "GameScene.h"
+#include "GameEvents.h"
+#include "GameRender.h"
 
 void renderDraggedPiece(SDL_Renderer* renderer, const Textures* textures, Piece selectedPiece, float squareSize, SDL_FPoint mousePoint) {
     int indexOffset = Piece_color(selectedPiece) == WHITE ? 9 : 11;
@@ -325,15 +326,15 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
 
 
 SDL_AppResult renderRestartButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, RESTART_BUTTON, "Restart");
+    return renderButton(rect, app, RESTART_BUTTON, "Restart", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderBackButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, BACK_BUTTON, "Back");
+    return renderButton(rect, app, BACK_BUTTON, "Back", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board");
+    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 #define BOARD_SIZE_PERCENT (0.75f)

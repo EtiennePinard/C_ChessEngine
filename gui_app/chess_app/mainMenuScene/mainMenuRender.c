@@ -1,17 +1,17 @@
 #include <stdlib.h>
 
-#include "../../../../engine/src/utils/FenString.h"
+#include "../../../engine/src/utils/FenString.h"
 
-#include "../../../sdl_framework/AppCleanup.h"
-#include "../../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/AppCleanup.h"
+#include "../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "../../events/MainMenuEvents.h"
+#include "../Config.h"
+#include "../AppStyle.h"
+#include "../AppUtils.h"
 
-#include "../../Config.h"
-#include "../../AppStyle.h"
-
-#include "../RenderUtils.h"
-#include "MainMenuScene.h"
+#include "MainMenuEvents.h"
+#include "MainMenuRender.h"
 
 SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engineConfig, SDL_Color textureColor, int hoverIndex) {
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
@@ -45,7 +45,7 @@ SDL_AppResult renderBlackPlayerInfoIcon(SDL_FRect rect, App* app) {
 SDL_AppResult renderTimeControl(SDL_FRect rect, App* app, TimeControl timeControl, int hoverIndex) {
     char buffer[11];
     formatTimeControl(timeControl, buffer, 11);
-    return renderButton(rect, app, hoverIndex, buffer);
+    return renderButton(rect, app, hoverIndex, buffer, BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderWhiteTimeControl(SDL_FRect rect, App* app) {
@@ -81,17 +81,12 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
         return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
             data->gameInfo.startingPositionFen, textColor, rect);
     }
-    else {
-        // Text input is active
-        return renderTextInputCenteredToFit(rect, app);
-    }
 
-    // unreachable
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult renderStartGameButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, START_GAME, "Start Game");
+    return renderButton(rect, app, START_GAME, "Start Game", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 #define MM_IMAGE_SIZE_PERCENT (0.12f)

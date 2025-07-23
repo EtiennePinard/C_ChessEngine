@@ -1,7 +1,7 @@
-#ifndef DDB8F9F1_B4AC_462A_883D_545E82BB7F71
-#define DDB8F9F1_B4AC_462A_883D_545E82BB7F71
+#ifndef EB87E2EB_70FD_4BED_BC65_62901812984A
+#define EB87E2EB_70FD_4BED_BC65_62901812984A
 
-#include "../AppState.h"
+#include "State.h"
 
 /**
  * @brief Finds the best font size so that the text takes the most 
@@ -50,44 +50,34 @@ SDL_AppResult renderSingleLineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font
  * 
  * @param rect The rectangle to render the text into
  * @param app The app's data
+ * @param hoverColor The color to fill the rect when the mouse hovers the text input
+ * @param unselectedTextColor The color of unselected text
+ * @param selectedTextColor The color of selected text
+ * @param selectedTextBgColor The background color of selected text
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app);
+SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app, SDL_Color hoverColor, SDL_Color unselectedTextColor, SDL_Color selectedTextColor, SDL_Color selectedTextBgColor);
 
 /**
- * @brief Formats the time in the min:sec format and writes it to a buffer
- *
- * @param milliseconds The milliseconds to format
- * @param output A buffer which contains the formatted time
- * @param outputSize The size of the buffer used for the output
- * @return SDL_AppResult If the app should continue or terminate with failure or success
- */
-SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize);
-
-/**
- * @brief Formats the time control in the "m:ss | s" format and writes it to a buffer
- *
- * @param timeControl The time control to format
- * @param output A buffer which contains the formatted time control
- * @param outputSize The size of the buffer used for the output
- * @return SDL_AppResult If the app should continue or terminate with failure or success
- */
-SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t outputSize);
-
-/**
- * @brief Renders a button to the window
+ * @brief Renders a labeled button to the window. Note that for
+ * highlighting to function the scene must be rerender at least on
+ * entering and exiting the button.
  * 
  * @param rect The rectangle to render the button to
  * @param app The app's data
  * @param hoverIndex The index of the render box this button is associated to.
  * This will be used for a hovering effect.
  * @param text The text to be displayed in the button
+ * @param hoverColor The color to fill the rect when the mouse hovers the button
+ * @param textColor The color of the text of the labeled button
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text);
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text, SDL_Color hoverColor, SDL_Color textColor);
 
 /**
- * @brief Renders a labeled checkbox to the window
+ * @brief Renders a labeled checkbox to the window. Note that for
+ * highlighting to function the scene must be rerender at least on
+ * entering and exiting the button.
  * 
  * @param rect The rect to contain the checkbox and the label
  * @param app The app's data
@@ -95,9 +85,14 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
  * @param label The checkbox's label
  * @param hoverIndex The index of the render box this button is associated to.
  * This will be used for a hovering effect.
+ * @param borderColor The color of the checkbox border
+ * @param hoverColor The color to draw the border of the checkbox when the mouse hovers the button
+ * @param checkedColor The color of the checkbox when checked is true
+ * @param textColor The color of the text of the labeled button
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex);
+SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex,
+    SDL_Color borderColor, SDL_Color hoverColor, SDL_Color checkedColor, SDL_Color textColor);
 
 /**
  * @brief Draws a filled circle
@@ -110,13 +105,5 @@ SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked
  */
 SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius);
 
-/**
- * @brief The render function for the credits of the app
- * 
- * @param rect The rectangle to draw the credits in
- * @param app The data associated with this app
- * @return SDL_AppResult If the app should continue or terminate with failure or success 
- */
-SDL_AppResult renderCredits(SDL_FRect rect, App* app);
 
-#endif /* DDB8F9F1_B4AC_462A_883D_545E82BB7F71 */
+#endif /* EB87E2EB_70FD_4BED_BC65_62901812984A */

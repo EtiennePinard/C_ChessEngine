@@ -39,9 +39,9 @@ SDL_AppResult SDL_AppIterate(void* globalAppObject) {
     // Handling flashing cursor logic
     if (app->events.textInput.isActive) {
         Uint64 now = SDL_GetTicks();
-        if (now - app->events.textInput.lastCursorToggleTime >= 500) {
-            app->events.textInput.showCursor = !app->events.textInput.showCursor;
-            app->events.textInput.lastCursorToggleTime = now;
+        if (now - app->events.textInput.cursor.lastCursorToggleTime >= 500) {
+            app->events.textInput.cursor.showCursor = !app->events.textInput.cursor.showCursor;
+            app->events.textInput.cursor.lastCursorToggleTime = now;
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
     }

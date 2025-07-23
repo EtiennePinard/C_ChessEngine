@@ -3,9 +3,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "../AppStyle.h"
-
-#include "RenderUtils.h"
+#include "CommonRenderFunctions.h"
 
 SDL_AppResult findFontSizeToFit(const char* textString, SDL_FRect rectToFit, TTF_Font* baseFont, bool isTextMultiLine, float* resultingFontSize) {
     SDL_AppResult result = SDL_APP_FAILURE;
@@ -145,12 +143,9 @@ SDL_AppResult renderSingleLineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text) {
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text, SDL_Color highlightColor, SDL_Color textColor) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
-
-    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
 
     // If this is the currently hovered box, highlight it
     if (app->events.mouseState.hoveredIndex == hoverIndex &&
@@ -163,14 +158,12 @@ SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char*
     return renderSingleLineTextCenteredToFit(renderer, font, text, textColor, rect);
 }
 
-SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex) {
+SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex,
+    SDL_Color borderColor, SDL_Color highlightColor, SDL_Color checkedColor, SDL_Color textColor) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    SDL_Color borderColor = BUTTON_HIGHLIGHT_COLOR;
-    SDL_Color highlightColor = BUTTON_BORDER_COLOR;
-    SDL_Color fillColor = checked ? CHECKBOX_FILLED_COLOR : (SDL_Color) { 0, 0, 0, 0 };
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
+    SDL_Color fillColor = checked ? checkedColor : (SDL_Color) { 0, 0, 0, 0 };
 
     const float boxSize = rect.h * 0.8f;
     const float boxX = rect.x;
@@ -231,7 +224,7 @@ SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float
 
 SDL_AppResult drawCaret(App* app, SDL_Color color, SDL_FRect rect, float caretX) {
     // Draw the blinking caret
-    if (app->events.textInput.showCursor) {
+    if (app->events.textInput.cursor.showCursor) {
         const float caretPadding = 2.0f;
         SDL_SetRenderDrawColor(app->state.sdlState.renderer, color.r, color.g, color.b, color.a);
 
@@ -247,19 +240,16 @@ SDL_AppResult drawCaret(App* app, SDL_Color color, SDL_FRect rect, float caretX)
     return SDL_APP_CONTINUE;
 }
 
-// TODO: This is broken...
-// Fix later when you have some sleep and nothing to prepare/do the next day
-SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
+SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app, SDL_Color highlightColor, 
+    SDL_Color unselectedTextColor, SDL_Color selectedTextColor, SDL_Color selectedTextBgColor) {
     if (!app->events.textInput.isActive) return SDL_APP_CONTINUE;
 
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
-    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
     if (app->events.textInput.text.count == 0) {
         // There is no characters to draw, only draw the cursor
         float caretX = rect.x + rect.w / 2.0;
         SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
         SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)(caretX - rect.x));
-        return drawCaret(app, textColor, rect, caretX);
+        return drawCaret(app, unselectedTextColor, rect, caretX);
     }
 
     TTF_Font* font = app->state.sdlState.font;
@@ -280,7 +270,7 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
     float totalWidth = 0.0f;
 
     size_t textLen = app->events.textInput.text.count;
-    size_t cursorIndex = app->events.textInput.cursorIndex;
+    size_t cursorIndex = app->events.textInput.cursor.index;
 
     int advance;
     // First pass: measure total width
@@ -299,13 +289,11 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
     // Resetting the glyph rects
     app->events.textInput.glyphRects.count = 0;
 
-    // Selection background color
-    SDL_Color selectionBg = { 30, 120, 230, 255 }; // Blue-ish
-    SDL_Color selectionText = { 255, 255, 255, 255 }; // White text over selected background
-
     // Normalize selection range
     size_t selectionStart = SDL_min(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
     size_t selectionEnd = SDL_max(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+
+    SDL_Color textColor = unselectedTextColor;
 
     for (size_t i = 0; i < textLen; i++) {
         Uint8 ch = (Uint8)text[i];
@@ -315,8 +303,8 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
         // Set the correct caret position
         if (i == cursorIndex) caretX = penX;
 
-        if (selectionStart <= i && i < selectionEnd) textColor = selectionText;
-        else textColor = BUTTON_TEXT_COLOR;
+        if (selectionStart <= i && i < selectionEnd) textColor = selectedTextColor;
+        else textColor = unselectedTextColor;
 
         SDL_Surface* glyphSurface = TTF_RenderGlyph_Blended(tempFont, ch, textColor);
         if (!glyphSurface) return SDL_APP_FAILURE;
@@ -334,7 +322,7 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
 
         // Render the selection color behind the text
         if (selectionStart <= i && i < selectionEnd) {
-            SDL_SetRenderDrawColor(renderer, selectionBg.r, selectionBg.g, selectionBg.b, selectionBg.a);
+            SDL_SetRenderDrawColor(renderer, selectedTextBgColor.r, selectedTextBgColor.g, selectedTextBgColor.b, selectedTextBgColor.a);
             const float selectionPadding = 2.0f;
             SDL_FRect selectionRect = { penX, rect.y + selectionPadding, (float)glyphSurface->w, rect.h - 2.0f * selectionPadding };
             SDL_RenderFillRect(renderer, &selectionRect);
@@ -351,40 +339,5 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app) {
 
     SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
     SDL_SetTextInputArea(app->state.sdlState.window, &area, (int)(caretX - rect.x));
-    return drawCaret(app, textColor, rect, caretX);
-}
-
-SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
-    if (!output || outputSize < 6) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 6 at " __FILE__);
-        return SDL_APP_FAILURE;
-    }
-
-    u32 totalSeconds = milliseconds / 1000;
-    u32 minutes = totalSeconds / 60;
-    u32 seconds = totalSeconds % 60;
-    // Format the string as "mm:ss"
-    snprintf(output, outputSize, "%02u:%02u", minutes, seconds);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t outputSize) {
-    if (!output || outputSize < 11) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 11 at " __FILE__);
-        return SDL_APP_FAILURE;
-    }
-
-    u32 totalSeconds = timeControl.timeLeft / 1000;
-    u32 minutesTL = totalSeconds / 60;
-    u32 secondsTL = totalSeconds % 60;
-    totalSeconds = timeControl.increment / 1000;
-    u32 secondsIN = totalSeconds % 60;
-    // Format the string as "m:ss + s"
-    snprintf(output, outputSize, "%u:%02u + %u", minutesTL, secondsTL, secondsIN);
-    return SDL_APP_CONTINUE;
-}
-
-
-SDL_AppResult renderCredits(SDL_FRect rect, App* app) {
-    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, CREDIT_COLOR, rect);
+    return drawCaret(app, unselectedTextColor, rect, caretX);
 }

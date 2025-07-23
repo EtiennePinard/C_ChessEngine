@@ -12,11 +12,11 @@
 #include "../../engine/src/utils/FenString.h"
 
 #include "uciEngineCommunication/UCIEngineCommunication.h"
-#include "render/scene/GameScene.h"
-#include "render/scene/MainMenuScene.h"
-#include "render/modal/GameModals.h"
-#include "render/modal/MainMenuModals.h"
-#include "events/GameEvents.h"
+#include "gameScene/GameRender.h"
+#include "mainMenuScene/MainMenuRender.h"
+#include "gameScene/GameModals.h"
+#include "mainMenuScene/MainMenuModals.h"
+#include "gameScene/GameEvents.h"
 #include "Config.h"
 #include "AppState.h"
 

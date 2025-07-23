@@ -1,7 +1,7 @@
 #ifndef C7341AE2_8B99_441E_A1B1_E6E078854516
 #define C7341AE2_8B99_441E_A1B1_E6E078854516
 
-#include "../../AppState.h"
+#include "MainMenuScene.h"
 
 typedef enum MainMenuModalId {
     TIME_CONTROL_MODAL_ID,

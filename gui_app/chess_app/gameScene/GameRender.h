@@ -1,7 +1,7 @@
-#ifndef B4B2C873_427F_42CE_9217_0E2D736F783C
-#define B4B2C873_427F_42CE_9217_0E2D736F783C
+#ifndef A258D4BE_7D1E_4C30_A4FF_3280B81AE3DB
+#define A258D4BE_7D1E_4C30_A4FF_3280B81AE3DB
 
-#include "../../AppState.h"
+#include "GameScene.h"
 
 typedef enum GameSceneRenderBoxIndex {
     CHESSBOARD,
@@ -28,4 +28,4 @@ SDL_AppResult computeGameSceneRender(App* app);
 
 void terminateGameScene(void* data);
 
-#endif /* B4B2C873_427F_42CE_9217_0E2D736F783C */
+#endif /* A258D4BE_7D1E_4C30_A4FF_3280B81AE3DB */

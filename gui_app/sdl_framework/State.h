@@ -54,6 +54,7 @@ typedef SDL_AppResult(*EventCallback)(SDL_Event*, App*);
 
 #define HOVERING_NOTHING (-1)
 #define HOVERING_MODAL (-2)
+#define HOVERING_TEXTINPUT (-3)
 
 typedef struct MouseState {
     int hoveredIndex;
@@ -68,7 +69,7 @@ typedef struct Modal {
     ModalId modalId;
     bool isActive;
     bool canOnlyInteractWithModal;
-    
+
     RenderBox modalRender;
 
     EventCallback onEscape;
@@ -89,24 +90,39 @@ typedef struct Rect_da {
     size_t capacity;
 } Rect_da;
 
-typedef struct TextInput {
-    bool isActive;
-    
-    EventCallback onEscape;
-    EventCallback onReturn;
-
-    Text_da text;
-    bool keepOnlyAscii;
-
-    SDL_Cursor* cursor;
-    size_t cursorIndex;
+typedef struct TextInputCursor {
+    SDL_Cursor* sdlCursor;
+    size_t index;
     Uint64 lastCursorToggleTime;
     bool showCursor;
+} TextInputCursor;
+
+typedef int TextInputId;
+
+// TODO: TextInput ID for when something is selected
+// or if this solution is trash add a TextInput render function 
+// for when the text input is active and the renderer can simply call this function
+// when the text input is active with the correct FRect (This is a better idea)
+typedef struct TextInput {
+    TextInputId modalId;
+    bool isActive;
+
+    RenderBox textInputRender;
+
+    EventCallback onEscape;
+    EventCallback onReturn;
+    EventCallback onKeyDown;
+    EventCallback onTextInputEvent;
+
+    bool keepOnlyAscii;
+    Text_da text;
+    Rect_da glyphRects;
+
+    TextInputCursor cursor;
 
     size_t selectionStart;
-    int nbCharSelected;    
+    int nbCharSelected;
 
-    Rect_da glyphRects;
 } TextInput;
 
 typedef struct AppEvents {

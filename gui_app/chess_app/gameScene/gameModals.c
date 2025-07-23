@@ -1,15 +1,15 @@
 #include <stdlib.h>
 
-#include "../../../../engine/src/utils/Math.h"
+#include "../../../engine/src/utils/Math.h"
 
-#include "../../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "../../AppStyle.h"
-#include "../../events/GameEvents.h"
+#include "../AppStyle.h"
+#include "../AppUtils.h"
 
-#include "../scene/GameScene.h"
-#include "../RenderUtils.h"
-
+#include "GameRender.h"
+#include "GameEvents.h"
 #include "GameModals.h"
 
 SDL_FRect calculatePromotionRect(GameSceneData* data, int promotionSquareTo, SDL_FRect boardRect) {

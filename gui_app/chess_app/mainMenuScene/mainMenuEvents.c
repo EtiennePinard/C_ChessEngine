@@ -5,11 +5,14 @@
 
 #include "../../sdl_framework/AppInit.h"
 #include "../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/TextInput.h"
+#include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "../render/scene/MainMenuScene.h"
-#include "../render/modal/MainMenuModals.h"
-#include "../render/scene/GameScene.h"
-#include "GameEvents.h"
+#include "../AppStyle.h"
+#include "MainMenuRender.h"
+#include "MainMenuModals.h"
+#include "../gameScene/GameRender.h"
+#include "../gameScene/GameEvents.h"
 #include "MainMenuEvents.h"
 
 // TODO: Figure out of the framework will handle errors on close 
@@ -23,10 +26,9 @@ SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {
     SDL_strlcpy(fenCopy, app->events.textInput.text.data, app->events.textInput.text.count + 1);
     if (!FenString_setChessPositionFromFenString(fenCopy, &dummyPosition)) {
         SDL_Log("The inputted fen string, `%s`, is incorrect\n", app->events.textInput.text.data);
-        int messageSize = snprintf(NULL, 0, "The inputted fen string, `%s`, is not a valid fen string", app->events.textInput.text.data) + 1;
+        int messageSize = SDL_snprintf(NULL, 0, "The inputted fen string, `%s`, is not a valid fen string", app->events.textInput.text.data) + 1;
         char message[messageSize];
-        snprintf(message, messageSize, "The inputted fen string, `%s` is not a valid fen string", app->events.textInput.text.data);
-        // TODO: Bug when clicking the return key to exit the popup
+        SDL_snprintf(message, messageSize, "The inputted fen string, `%s` is not a valid fen string", app->events.textInput.text.data);
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Fen string error", message, app->state.sdlState.window);
     }
     else {
@@ -55,11 +57,32 @@ SDL_AppResult exitedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app)
     return resetMouseIconOnExitTextInput(event, rect, app);
 }
 
+SDL_AppResult renderStartingPosition(SDL_FRect rect, App* app) {
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    SDL_Color borderColor = BUTTON_BORDER_COLOR;
+
+    // Border
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+    SDL_RenderRect(renderer, &rect);
+
+    return renderTextInputCenteredToFit(rect, app,
+        BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
+}
+
 SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
 
-    // If the text input is already active, do the click to cursor
-    if (app->events.textInput.isActive) return clickToCursor(app);
+    // If the text input is already active, do nothing
+    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
+
+    app->events.textInput.textInputRender.renderRect = rect;
+    app->events.textInput.textInputRender.renderFunction = &renderStartingPosition;
+    app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
+    app->events.textInput.textInputRender.onMouseButtonUp = NULL;
+    app->events.textInput.textInputRender.onMouseEntered = &changeMouseIconOnEnterTextInput;
+    app->events.textInput.textInputRender.onMouseExited = &resetMouseIconOnExitTextInput;
+    app->events.textInput.textInputRender.onMouseHovered = &updateTextInputSelectionOnMouseHovered;
+    app->events.textInput.textInputRender.onMouseWheelScrolled = NULL;
 
     SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
     app->events.textInput.text.capacity = MAX_FEN_STRING_SIZE;
@@ -71,13 +94,15 @@ SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app
 
     app->events.textInput.onEscape = &closeTextInput;
     app->events.textInput.onReturn = &startingPositionTextInputReturn;
+    app->events.textInput.onKeyDown = &textInputKeyDown;
+    app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;
 
     app->events.textInput.keepOnlyAscii = true;
     app->events.textInput.isActive = true;
 
-    app->events.textInput.cursorIndex = 0;
-    app->events.textInput.cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
-    SDL_SetCursor(app->events.textInput.cursor);
+    app->events.textInput.cursor.index = 0;
+    app->events.textInput.cursor.sdlCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
+    SDL_SetCursor(app->events.textInput.cursor.sdlCursor);
 
     SDL_SetTextInputArea(app->state.sdlState.window,
         &area,

@@ -118,7 +118,8 @@ sdlFramework_SRC = \
     gui_app/sdl_framework/render.c \
     gui_app/sdl_framework/appCleanup.c \
     gui_app/sdl_framework/commonEvents.c \
-    gui_app/sdl_framework/textInput.c
+    gui_app/sdl_framework/textInput.c \
+    gui_app/sdl_framework/commonRenderFunctions.c
 
 app_SRC = \
     engine/src/moveHandler/movePlayer.c \
@@ -133,13 +134,13 @@ app_SRC = \
     engine/src/magicBitBoard/bishop.c \
     engine/src/bot/repetitionTable.c \
     gui_app/chess_app/app.c \
-    gui_app/chess_app/events/gameEvents.c \
-    gui_app/chess_app/events/mainMenuEvents.c \
-    gui_app/chess_app/render/scene/gameScene.c \
-    gui_app/chess_app/render/scene/mainMenuScene.c \
-    gui_app/chess_app/render/renderUtils.c \
-    gui_app/chess_app/render/modal/gameModals.c \
-    gui_app/chess_app/render/modal/mainMenuModals.c \
+    gui_app/chess_app/mainMenuScene/mainMenuEvents.c \
+    gui_app/chess_app/mainMenuScene/mainMenuRender.c \
+    gui_app/chess_app/mainMenuScene/mainMenuModals.c \
+    gui_app/chess_app/gameScene/gameEvents.c \
+    gui_app/chess_app/gameScene/gameRender.c \
+    gui_app/chess_app/gameScene/gameModals.c \
+    gui_app/chess_app/appUtils.c \
     gui_app/chess_app/config.c \
     gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \
 	$(sdlFramework_SRC)

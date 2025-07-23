@@ -1,7 +1,7 @@
 #ifndef AE539C76_7948_4E5B_AFD7_B75D43C5B451
 #define AE539C76_7948_4E5B_AFD7_B75D43C5B451
 
-#include "../AppState.h"
+#include "GameScene.h"
 
 // Chessboard
 SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app);

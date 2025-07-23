@@ -23,6 +23,24 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         break;
     case SDL_EVENT_MOUSE_MOTION:
         int foundIndex = -1;
+
+        // First handling user text input callbacks
+        if (app->events.textInput.isActive) {
+            box = app->events.textInput.textInputRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
+                foundIndex = HOVERING_TEXTINPUT;
+                if (mouseState.hoveredIndex != foundIndex && box.onMouseEntered) {
+                    appResult = box.onMouseEntered(event, box.renderRect, app);
+                }
+                if (box.onMouseHovered) appResult = box.onMouseHovered(event, box.renderRect, app);
+            }
+            // If the scene has changed exit this function
+            if (currentSceneId != app->state.currentScene.sceneId) return appResult;
+            // If the render boxes have changed exit this function
+            if (app->state.currentScene.sceneRender.renderBoxes != sceneRender.renderBoxes) return appResult;
+        }
+
+        // Then handling modal callbacks
         if (app->events.modal.isActive) {
             box = app->events.modal.modalRender;
             if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
@@ -40,6 +58,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (app->events.modal.canOnlyInteractWithModal) goto mouseExited;
         }
 
+        // Then scene callbacks
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
             if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
@@ -71,39 +90,17 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     mouseExited:
         if (mouseState.hoveredIndex != -1 && mouseState.hoveredIndex != foundIndex) {
             RenderBox oldBox;
-            if (mouseState.hoveredIndex != HOVERING_MODAL) oldBox = sceneRender.renderBoxes[mouseState.hoveredIndex];
-            else oldBox = app->events.modal.modalRender;
+            if (mouseState.hoveredIndex == HOVERING_MODAL) oldBox = app->events.modal.modalRender;
+            else if (mouseState.hoveredIndex == HOVERING_TEXTINPUT) oldBox = app->events.textInput.textInputRender;
+            else oldBox = sceneRender.renderBoxes[mouseState.hoveredIndex];
             if (oldBox.onMouseExited) appResult = oldBox.onMouseExited(event, oldBox.renderRect, app);
         }
 
         app->events.mouseState.hoveredIndex = foundIndex;
-
-        if (app->events.textInput.isActive) {
-            if (app->events.mouseState.holdingLeftMouseButton) {
-                // Note: selectionStart is correctly set already
-                float mouseX = (float)event->motion.x;
-
-                size_t hoveredIndex = app->events.textInput.text.count;
-                for (size_t i = 0; i < app->events.textInput.glyphRects.count; ++i) {
-                    SDL_FRect glyphRect = app->events.textInput.glyphRects.data[i];
-                    float midX = glyphRect.x + glyphRect.w / 2.0f;
-                    if (mouseX < midX) {
-                        hoveredIndex = i;
-                        break;
-                    }
-                }
-
-                // Compute selection range
-                app->events.textInput.nbCharSelected = (int)hoveredIndex - (int)app->events.textInput.selectionStart;
-                app->events.textInput.cursorIndex = app->events.textInput.selectionStart + app->events.textInput.nbCharSelected;
-                SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-            }
-        }
-        if (textInputMouseMotion(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-
         break;
     case SDL_EVENT_MOUSE_BUTTON_DOWN:
     case SDL_EVENT_MOUSE_BUTTON_UP:
+        // Starting by updating mouse state
         if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
             if (event->button.button == SDL_BUTTON_LEFT) {
                 app->events.mouseState.holdingLeftMouseButton = event->button.down;
@@ -121,6 +118,20 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             }
         }
 
+        // First handling the text input's callbacks
+        if (app->events.textInput.isActive) {
+            box = app->events.textInput.textInputRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
+                if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                    if (box.onMouseButtonDown) appResult = box.onMouseButtonDown(event, box.renderRect, app);
+                }
+                else {
+                    if (box.onMouseButtonUp) appResult = box.onMouseButtonUp(event, box.renderRect, app);
+                }
+            }
+        }
+
+        // Then handling modal's callbacks
         if (app->events.modal.isActive) {
             box = app->events.modal.modalRender;
             if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
@@ -156,12 +167,19 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             // Return early if we have encountered an error
             if (appResult != SDL_APP_CONTINUE) return appResult;
         }
-
-        if (textInputMouseButtonPressed(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-
         break;
 
     case SDL_EVENT_MOUSE_WHEEL:
+
+        // First handling text input's callbacks
+        if (app->events.textInput.isActive) {
+            box = app->events.textInput.textInputRender;
+            if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
+                if (box.onMouseWheelScrolled) appResult = box.onMouseWheelScrolled(event, box.renderRect, app);
+            }
+        }
+
+        // Then handling modal's callbacks
         if (app->events.modal.isActive) {
             box = app->events.modal.modalRender;
             if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
@@ -171,6 +189,7 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
             if (app->events.modal.canOnlyInteractWithModal) break;
         }
 
+        // Then handling scene's callbacks
         for (index = 0; index < sceneRender.numRenderBox; index++) {
             box = sceneRender.renderBoxes[index];
             if (SDL_PointInRectFloat(&mouseState.mousePoint, &box.renderRect)) {
@@ -191,12 +210,16 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
         if (app->events.onWindowResize) appResult = app->events.onWindowResize(event, app);
         break;
     case SDL_EVENT_KEY_DOWN:
-        // First running the custom event handling code
+        // First running the entire app event handling code
         if (app->events.onKeyDown) appResult = app->events.onKeyDown(event, app);
         if (appResult != SDL_APP_CONTINUE) return appResult;
 
-        // Handling text input events
-        if (textInputKeyDown(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+        // Then running the text input code
+        if (app->events.textInput.isActive && app->events.textInput.onKeyDown) appResult = app->events.textInput.onKeyDown(event, app);
+        if (appResult != SDL_APP_CONTINUE) return appResult;
+
+        // Then running modal event code
+        // TODO: Do like the text input for modals key down
 
         // Handling modal events
         switch (event->key.key) {
@@ -217,11 +240,11 @@ SDL_AppResult handleEvent(App* app, SDL_Event* event) {
 
         break;
     case SDL_EVENT_TEXT_INPUT:
-        // First running the custom event handling code
+        // First running the app event handling code
         if (app->events.onTextInput) appResult = app->events.onTextInput(event, app);
+        if (appResult != SDL_APP_CONTINUE) return appResult;
 
-        // Then handling events from the textinput
-        if (textInputTextInputEvent(event, app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+        if (app->events.textInput.isActive && app->events.textInput.onTextInputEvent) appResult = app->events.textInput.onTextInputEvent(event, app);
         break;
     default: break;
     }

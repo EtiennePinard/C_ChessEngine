@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include "../../engine/src/utils/CharBuffer.h"
+#include "gameScene/GameScene.h"
 #include "Config.h"
 
 bool parseTimeControl(TimeControl* timecontrol, Tokens tokens) {

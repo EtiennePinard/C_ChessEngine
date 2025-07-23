@@ -1,7 +1,7 @@
-#ifndef DC6832D3_BA2C_425A_A3AA_925718E06AF6
-#define DC6832D3_BA2C_425A_A3AA_925718E06AF6
+#ifndef CBB35B3C_4D2D_4A27_B014_BD9BEF5D1F1D
+#define CBB35B3C_4D2D_4A27_B014_BD9BEF5D1F1D
 
-#include "../../AppState.h"
+#include "MainMenuScene.h"
 
 typedef enum MainMenuRenderBoxIndex {
     WHITE_PLAYER_INFO,
@@ -26,4 +26,4 @@ SDL_AppResult computeMainMenuSceneRender(App* app);
 
 void terminateMainMenuScene(void* data);
 
-#endif /* DC6832D3_BA2C_425A_A3AA_925718E06AF6 */
+#endif /* CBB35B3C_4D2D_4A27_B014_BD9BEF5D1F1D */

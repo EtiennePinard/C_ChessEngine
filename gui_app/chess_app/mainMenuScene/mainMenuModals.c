@@ -1,12 +1,15 @@
 #include <stdlib.h>
 
-#include "../../../sdl_framework/CommonEvents.h"
+#include "../../../engine/src/utils/CharBuffer.h"
 
-#include "../../AppStyle.h"
+#include "../../sdl_framework/TextInput.h"
+#include "../../sdl_framework/CommonEvents.h"
+#include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "../scene/MainMenuScene.h"
-#include "../RenderUtils.h"
+#include "../AppStyle.h"
+#include "../AppUtils.h"
 
+#include "MainMenuRender.h"
 #include "MainMenuModals.h"
 
 #define MM_MODAL_SIZE_PERCENT (0.5f)
@@ -244,7 +247,8 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     };
     modalData->checkboxRect = checkboxRect;
     result = renderLabeledCheckboxButton(checkboxRect, app,
-        modalData->currentConfig.isEngine, "Use Engine", HOVERING_MODAL);
+        modalData->currentConfig.isEngine, "Use Engine", HOVERING_MODAL, 
+        CHECKBOX_BORDER_COLOR, CHECKBOX_HOVER_COLOR, CHECKBOX_CHECKED_COLOR, CHECKBOX_TEXT_COLOR);
     if (result != SDL_APP_CONTINUE) return result;
 
     y += buttonHeight + padding;
@@ -272,8 +276,31 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
             .h = buttonHeight
         };
         modalData->thinkTimeRect = timeRect;
-        result = renderButton(timeRect, app, HOVERING_MODAL, "Engine's think time");
-        if (result != SDL_APP_CONTINUE) return result;
+        SDL_Color borderColor = BUTTON_BORDER_COLOR;
+        SDL_Color textColor = BUTTON_TEXT_COLOR;
+        // Border
+        SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+        SDL_RenderRect(renderer, &timeRect);
+        if (!app->events.textInput.isActive) {
+            // Highlight the rectangle if hovered without inputing text
+            if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &timeRect)) {
+                SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
+                SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
+                SDL_RenderFillRect(renderer, &timeRect);
+            }
+
+            if (modalData->currentConfig.timeToThink == 0) {
+                result = renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
+                    "Set engine's think time (ms)", textColor, timeRect);
+            }
+            else {
+                // If there already is a time to think set it
+                int size = SDL_snprintf(NULL, 0, "%u ms", modalData->currentConfig.timeToThink) + 1;
+                char text[size];
+                SDL_snprintf(text, size, "%u ms", modalData->currentConfig.timeToThink);
+                result = renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, textColor, timeRect);
+            }
+        }
     }
 
     // OK and Cancel buttons
@@ -296,10 +323,10 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     modalData->okButtonRect = okRect;
     modalData->cancelButtonRect = cancelRect;
 
-    result = renderButton(okRect, app, HOVERING_MODAL, "OK");
+    result = renderButton(okRect, app, HOVERING_MODAL, "OK", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
     if (result != SDL_APP_CONTINUE) return result;
 
-    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel");
+    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
@@ -397,6 +424,86 @@ SDL_AppResult clickedEnginePath(App* app) {
     return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult thinkTimeTextInputReturn(SDL_Event* event, App* app) {
+    (void)event;
+    int parsedThinkTime = string_parseNumber(app->events.textInput.text.data);
+
+    if (parsedThinkTime == -1) {
+        SDL_Log("The inputted think time, `%s`, is incorrect\n", app->events.textInput.text.data);
+        int messageSize = SDL_snprintf(NULL, 0, "The inputted think time, `%s`, is not a valid think time", app->events.textInput.text.data) + 1;
+        char message[messageSize];
+        SDL_snprintf(message, messageSize, "The inputted think time, `%s`, is not a valid think time", app->events.textInput.text.data);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Think time error", message, app->state.sdlState.window);
+    }
+    else {
+        // The think time is correct, store it into the currentConfig field
+        EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
+        modalData->currentConfig.timeToThink = parsedThinkTime;
+
+        free(app->events.textInput.text.data);
+        free(app->events.textInput.glyphRects.data);
+        app->events.textInput.text.data = NULL;
+
+        SDL_StopTextInput(app->state.sdlState.window);
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult renderThinkTime(SDL_FRect rect, App* app) {
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    SDL_Color borderColor = BUTTON_BORDER_COLOR;
+
+    // Border
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+    SDL_RenderRect(renderer, &rect);
+
+    return renderTextInputCenteredToFit(rect, app, 
+    BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
+}
+
+SDL_AppResult clickedThinkTime(SDL_FRect rect, App* app) {
+// If the text input is already active, do nothing
+    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
+
+    app->events.textInput.textInputRender.renderRect = rect;
+    app->events.textInput.textInputRender.renderFunction = &renderThinkTime;
+    app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
+    app->events.textInput.textInputRender.onMouseButtonUp = NULL;
+    app->events.textInput.textInputRender.onMouseEntered = &changeMouseIconOnEnterTextInput;
+    app->events.textInput.textInputRender.onMouseExited = &resetMouseIconOnExitTextInput;
+    app->events.textInput.textInputRender.onMouseHovered = &updateTextInputSelectionOnMouseHovered;
+    app->events.textInput.textInputRender.onMouseWheelScrolled = NULL;
+
+    SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
+    app->events.textInput.text.capacity = MAX_FEN_STRING_SIZE;
+    app->events.textInput.text.count = 0;
+    // we are guaranteed that the text data is either already freed, or transferred
+    // to the gameInfo field
+    app->events.textInput.text.data = calloc(app->events.textInput.text.capacity, sizeof(char));
+    SDL_assert(app->events.textInput.text.data);
+
+    app->events.textInput.onEscape = &closeTextInput;
+    app->events.textInput.onReturn = &thinkTimeTextInputReturn;
+    app->events.textInput.onKeyDown = &textInputKeyDown;
+    app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;
+
+    app->events.textInput.keepOnlyAscii = true;
+    app->events.textInput.isActive = true;
+
+    app->events.textInput.cursor.index = 0;
+    app->events.textInput.cursor.sdlCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
+    SDL_SetCursor(app->events.textInput.cursor.sdlCursor);
+
+    SDL_SetTextInputArea(app->state.sdlState.window,
+        &area,
+        area.w / 2);
+    SDL_StartTextInput(app->state.sdlState.window);
+
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return SDL_APP_CONTINUE;
+}
+
 SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event, (void)rect;
 
@@ -421,11 +528,11 @@ SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* ap
         modalData->currentConfig.isEngine = !modalData->currentConfig.isEngine;
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->enginePathRect)) {
-        clickedEnginePath(app);
+        return clickedEnginePath(app);
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->thinkTimeRect) &&
         modalData->currentConfig.isEngine) {
-        SDL_Log("Clicked think time!");
+        return clickedThinkTime(modalData->thinkTimeRect, app);
     }
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);

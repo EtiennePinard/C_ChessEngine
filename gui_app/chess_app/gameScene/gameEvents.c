@@ -13,9 +13,9 @@
 #include "../../sdl_framework/AppInit.h"
 
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
-#include "../render/modal/GameModals.h"
-#include "../render/scene/GameScene.h"
-#include "../render/scene/MainMenuScene.h"
+#include "GameModals.h"
+#include "GameRender.h"
+#include "../mainMenuScene/MainMenuRender.h"
 #include "GameEvents.h"
 
 /*

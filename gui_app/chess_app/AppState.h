@@ -38,85 +38,10 @@
 #define HUMAN_ICON_PATH (BASE_ICON_PATH "/human_icon.png")
 #define COMPUTER_ICON_PATH (BASE_ICON_PATH "/computer_icon.png")
 
-#define DEFAULT_TIME_CONTROL ((TimeControl) { .timeLeft = (TimeControl_MS) (5 * 60 * 1000), .increment = (TimeControl_MS) (0) })
-
 typedef struct TimeControl {
     TimeControl_MS timeLeft;
     TimeControl_MS increment;
 } TimeControl;
-
-typedef struct UndoGameState {
-    ChessPosition position;
-    TimeControl whiteTimeControl;
-    TimeControl blackTimeControl;
-} UndoGameState;
-
-typedef struct UndoGameStates {
-    UndoGameState* data;
-    size_t capacity;
-    size_t count;
-} UndoGameStates;
-
-typedef struct Player {
-    TimeControl timeControl;
-
-    struct EngineCommunication* engineCommunication;
-    SDL_AtomicInt isBotThinking;
-} Player;
-
-typedef enum GameResult {
-    GAME_IS_NOT_DONE,
-    THREE_MOVE_REPETITION,
-    STALEMATE,
-    INSUFFICIENT_MATERIAL,
-    FIFTY_MOVE_RULE,
-    WHITE_WON_CHECKMATE,
-    BLACK_WON_CHECKMATE,
-    WHITE_WON_ON_TIME,
-    BLACK_WON_ON_TIME
-} GameResult;
-
-typedef struct GameState {
-    ChessPosition position;
-    Player white;
-    Player black;
-
-    GameResult result;
-
-    u64 previousTick;
-} GameState;
-
-typedef struct Moves {
-    Move* data;
-    size_t capacity;
-    size_t count;
-} Moves;
-
-typedef struct MoveListInfo {
-    Moves movesPlayed;
-
-    SDL_FRect scrollbarFRect;
-    bool isScrolling;
-    float startingDragOffset;
-    float scrollRatio;
-
-    int hoveredMoveIndex;
-} MoveListInfo;
-
-typedef struct GameEndedModalData {
-    GameResult result;
-} GameEndedModalData;
-
-typedef struct PromotionModalData {
-    Square promotionSquareTo;
-    Square promotionSquareFrom;
-} PromotionModalData;
-
-#define NO_SQUARE_SELECTED ((Square)-1)
-
-typedef struct SelectedSquareInfo {
-    Square selectedSquare;
-} SelectedSquareInfo;
 
 typedef struct EngineConfig {
     bool isEngine;
@@ -134,40 +59,6 @@ typedef struct GameConfig {
     PlayerConfig black;
     char* startingPositionFen;
 } GameConfig;
-
-typedef struct GameSceneData {
-    GameState state;
-    
-    bool flipBoard;
-    SelectedSquareInfo selectedSquare;
-    MoveListInfo moveListInfo;
-    UndoGameStates undoGameStates;
-    
-    GameConfig gameInfo;
-    Textures textures;
-} GameSceneData;
-
-typedef struct TimeControlModalData {
-    TimeControl hovered;
-    PieceCharacteristics playerColor;
-} TimeControlModalData;
-
-typedef struct EngineConfigModalData {
-    EngineConfig currentConfig;
-    PieceCharacteristics playerColor;
-
-    SDL_FRect checkboxRect;
-    SDL_FRect enginePathRect;
-    SDL_FRect thinkTimeRect;
-    SDL_FRect okButtonRect;
-    SDL_FRect cancelButtonRect;
-} EngineConfigModalData;
-
-typedef struct MainMenuSceneData {
-    GameConfig gameInfo;
-
-    Textures textures;
-} MainMenuSceneData;
 
 #define GAME_SCENE_ID (0)
 #define MAIN_MENU_SCENE_ID (1)

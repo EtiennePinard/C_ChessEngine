@@ -156,6 +156,9 @@ SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app
 }
 
 void setTimeControlModalActive(App* app, PieceCharacteristics colorToSet) {
+    // Closing the text input if it is active
+    closeTextInput(NULL, app);
+
     TimeControlModalData* modalData = SDL_malloc(sizeof(TimeControlModalData));
     SDL_assert(modalData);
     modalData->playerColor = colorToSet;
@@ -375,6 +378,10 @@ SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
 static void onEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
     (void)filterIndex;
 
+    App* app = (App*)userdata;
+    // Re-enabling events and rendering
+    app->events.shouldHandleEvents = true;
+
     // Handle error
     if (filelist == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "File dialog error: %s", SDL_GetError());
@@ -393,11 +400,8 @@ static void onEnginePathSelected(void* userdata, const char* const* filelist, in
     SDL_strlcpy(enginePath, filelist[0], length);
     enginePath[length] = '\0';
 
-    App* app = (App*)userdata;
     EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 
-    // Re-enabling events and rendering
-    app->events.shouldHandleEvents = true;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     // Saving the enginePath to the current config
@@ -475,6 +479,9 @@ void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
     EngineConfigModalData* modalData = SDL_malloc(sizeof(EngineConfigModalData));
     SDL_assert(modalData);
+
+    // Closing the text input if it is active
+    closeTextInput(NULL, app);
 
     modalData->playerColor = colorToSet;
     if (colorToSet == WHITE) {

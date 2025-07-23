@@ -10,6 +10,7 @@
 #include "../AppStyle.h"
 #include "../AppUtils.h"
 
+#include "MainMenuTextInput.h"
 #include "MainMenuEvents.h"
 #include "MainMenuRender.h"
 
@@ -70,7 +71,7 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &rect);
 
-    if (!app->events.textInput.isActive) {
+    if (!app->events.textInput.isActive || app->events.textInput.textInputId != STARTING_POSITION_TEXT_INPUT_ID) {
         // Highlight the rectangle if hovered without inputing text
         if (app->events.mouseState.hoveredIndex == STARTING_POSITION) {
             SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
@@ -182,6 +183,10 @@ SDL_AppResult computeMainMenuSceneRender(App* app) {
     sceneRender->renderBoxes[STARTING_POSITION].onMouseEntered = &enteredStartingPosition;
     sceneRender->renderBoxes[STARTING_POSITION].onMouseExited = &exitedStartingPosition;
     sceneRender->renderBoxes[STARTING_POSITION].onMouseButtonDown = &clickedStartingPosition;
+
+    if (app->events.textInput.isActive && app->events.textInput.textInputId == STARTING_POSITION_TEXT_INPUT_ID) {
+        app->events.textInput.textInputRender.renderRect = startingPosition;
+    }
 
     y += buttonHeight + padding;
 

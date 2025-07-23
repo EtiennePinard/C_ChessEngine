@@ -27,18 +27,18 @@ SDL_AppResult render(App* app) {
         if (returnValue != SDL_APP_CONTINUE) return returnValue;
     }
 
-    // Rendering the text input if it is active
-    if (app->events.textInput.isActive) {
-        renderFunction = app->events.textInput.textInputRender.renderFunction;
-        if (renderFunction) returnValue = renderFunction(app->events.textInput.textInputRender.renderRect, app);
-        if (returnValue != SDL_APP_CONTINUE) return returnValue;
-    }
-
-    // Finish by drawing the modal if it is active
-    // This means that the modal is on top of the scene
+    // Then draw the modal if it is active
     if (app->events.modal.isActive) {
         renderFunction = app->events.modal.modalRender.renderFunction;
         if (renderFunction) returnValue = renderFunction(app->events.modal.modalRender.renderRect, app);
+        if (returnValue != SDL_APP_CONTINUE) return returnValue;
+    }
+
+    // Finish by drawing the text input if it is active
+    // This means that the text input is on top of the scene
+    if (app->events.textInput.isActive) {
+        renderFunction = app->events.textInput.textInputRender.renderFunction;
+        if (renderFunction) returnValue = renderFunction(app->events.textInput.textInputRender.renderRect, app);
         if (returnValue != SDL_APP_CONTINUE) return returnValue;
     }
 

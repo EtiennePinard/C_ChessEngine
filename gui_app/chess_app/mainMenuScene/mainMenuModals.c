@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "../../../engine/src/utils/CharBuffer.h"
 
 #include "../../sdl_framework/TextInput.h"
@@ -9,6 +7,7 @@
 #include "../AppStyle.h"
 #include "../AppUtils.h"
 
+#include "MainMenuTextInput.h"
 #include "MainMenuRender.h"
 #include "MainMenuModals.h"
 
@@ -157,7 +156,7 @@ SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app
 }
 
 void setTimeControlModalActive(App* app, PieceCharacteristics colorToSet) {
-    TimeControlModalData* modalData = malloc(sizeof(TimeControlModalData));
+    TimeControlModalData* modalData = SDL_malloc(sizeof(TimeControlModalData));
     SDL_assert(modalData);
     modalData->playerColor = colorToSet;
     // Setting the hovered time left to 0 since we did not select any time control yet
@@ -247,7 +246,7 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     };
     modalData->checkboxRect = checkboxRect;
     result = renderLabeledCheckboxButton(checkboxRect, app,
-        modalData->currentConfig.isEngine, "Use Engine", HOVERING_MODAL, 
+        modalData->currentConfig.isEngine, "Use Engine", HOVERING_MODAL,
         CHECKBOX_BORDER_COLOR, CHECKBOX_HOVER_COLOR, CHECKBOX_CHECKED_COLOR, CHECKBOX_TEXT_COLOR);
     if (result != SDL_APP_CONTINUE) return result;
 
@@ -281,7 +280,7 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
         // Border
         SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         SDL_RenderRect(renderer, &timeRect);
-        if (!app->events.textInput.isActive) {
+        if (!app->events.textInput.isActive || app->events.textInput.textInputId != THINK_TIME_TEXT_INPUT_ID) {
             // Highlight the rectangle if hovered without inputing text
             if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &timeRect)) {
                 SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
@@ -300,6 +299,10 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
                 SDL_snprintf(text, size, "%u ms", modalData->currentConfig.timeToThink);
                 result = renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, text, textColor, timeRect);
             }
+        }
+
+        if (app->events.textInput.isActive && app->events.textInput.textInputId == THINK_TIME_TEXT_INPUT_ID) {
+            app->events.textInput.textInputRender.renderRect = timeRect;
         }
     }
 
@@ -363,7 +366,7 @@ SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The player color of the engineConfigModal is %d, which is not white (%d) nor black (%d)\n", data->playerColor, WHITE, BLACK);
         return SDL_APP_FAILURE;
     }
-    if (data->currentConfig.enginePath) free(data->currentConfig.enginePath);
+    if (data->currentConfig.enginePath) SDL_free(data->currentConfig.enginePath);
 
     // Close the modal
     return closeModalEventCallback(event, app);
@@ -385,9 +388,9 @@ static void onEnginePathSelected(void* userdata, const char* const* filelist, in
     }
 
     // Use the first selected file
-    size_t length = strlen(filelist[0]);
-    char* enginePath = malloc(length * sizeof(char) + 1);
-    strncpy(enginePath, filelist[0], length);
+    size_t length = SDL_strlen(filelist[0]);
+    char* enginePath = SDL_malloc(length * sizeof(char) + 1);
+    SDL_strlcpy(enginePath, filelist[0], length);
     enginePath[length] = '\0';
 
     App* app = (App*)userdata;
@@ -398,7 +401,7 @@ static void onEnginePathSelected(void* userdata, const char* const* filelist, in
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     // Saving the enginePath to the current config
-    if (modalData->currentConfig.enginePath != NULL) free(modalData->currentConfig.enginePath);
+    if (modalData->currentConfig.enginePath != NULL) SDL_free(modalData->currentConfig.enginePath);
     modalData->currentConfig.enginePath = enginePath;
 }
 
@@ -424,82 +427,11 @@ SDL_AppResult clickedEnginePath(App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult thinkTimeTextInputReturn(SDL_Event* event, App* app) {
-    (void)event;
-    int parsedThinkTime = string_parseNumber(app->events.textInput.text.data);
-
-    if (parsedThinkTime == -1) {
-        SDL_Log("The inputted think time, `%s`, is incorrect\n", app->events.textInput.text.data);
-        int messageSize = SDL_snprintf(NULL, 0, "The inputted think time, `%s`, is not a valid think time", app->events.textInput.text.data) + 1;
-        char message[messageSize];
-        SDL_snprintf(message, messageSize, "The inputted think time, `%s`, is not a valid think time", app->events.textInput.text.data);
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Think time error", message, app->state.sdlState.window);
-    }
-    else {
-        // The think time is correct, store it into the currentConfig field
-        EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
-        modalData->currentConfig.timeToThink = parsedThinkTime;
-
-        free(app->events.textInput.text.data);
-        free(app->events.textInput.glyphRects.data);
-        app->events.textInput.text.data = NULL;
-
-        SDL_StopTextInput(app->state.sdlState.window);
-    }
-
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult renderThinkTime(SDL_FRect rect, App* app) {
-    SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
-
-    // Border
-    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-    SDL_RenderRect(renderer, &rect);
-
-    return renderTextInputCenteredToFit(rect, app, 
-    BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
-}
-
 SDL_AppResult clickedThinkTime(SDL_FRect rect, App* app) {
-// If the text input is already active, do nothing
+    // If the text input is already active, do nothing
     if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
 
-    app->events.textInput.textInputRender.renderRect = rect;
-    app->events.textInput.textInputRender.renderFunction = &renderThinkTime;
-    app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
-    app->events.textInput.textInputRender.onMouseButtonUp = NULL;
-    app->events.textInput.textInputRender.onMouseEntered = &changeMouseIconOnEnterTextInput;
-    app->events.textInput.textInputRender.onMouseExited = &resetMouseIconOnExitTextInput;
-    app->events.textInput.textInputRender.onMouseHovered = &updateTextInputSelectionOnMouseHovered;
-    app->events.textInput.textInputRender.onMouseWheelScrolled = NULL;
-
-    SDL_Rect area = { (int)rect.x, (int)rect.y, (int)rect.w, (int)rect.h };
-    app->events.textInput.text.capacity = MAX_FEN_STRING_SIZE;
-    app->events.textInput.text.count = 0;
-    // we are guaranteed that the text data is either already freed, or transferred
-    // to the gameInfo field
-    app->events.textInput.text.data = calloc(app->events.textInput.text.capacity, sizeof(char));
-    SDL_assert(app->events.textInput.text.data);
-
-    app->events.textInput.onEscape = &closeTextInput;
-    app->events.textInput.onReturn = &thinkTimeTextInputReturn;
-    app->events.textInput.onKeyDown = &textInputKeyDown;
-    app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;
-
-    app->events.textInput.keepOnlyAscii = true;
-    app->events.textInput.isActive = true;
-
-    app->events.textInput.cursor.index = 0;
-    app->events.textInput.cursor.sdlCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);
-    SDL_SetCursor(app->events.textInput.cursor.sdlCursor);
-
-    SDL_SetTextInputArea(app->state.sdlState.window,
-        &area,
-        area.w / 2);
-    SDL_StartTextInput(app->state.sdlState.window);
-
+    setTimeToThinkTextInputActive(rect, app);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
@@ -541,7 +473,7 @@ SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* ap
 
 void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
-    EngineConfigModalData* modalData = malloc(sizeof(EngineConfigModalData));
+    EngineConfigModalData* modalData = SDL_malloc(sizeof(EngineConfigModalData));
     SDL_assert(modalData);
 
     modalData->playerColor = colorToSet;
@@ -550,7 +482,7 @@ void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
         modalData->currentConfig.timeToThink = data->gameInfo.white.engineConfig.timeToThink;
         if (data->gameInfo.white.engineConfig.enginePath) {
             size_t pathLength = SDL_strlen(data->gameInfo.white.engineConfig.enginePath) + 1;
-            modalData->currentConfig.enginePath = calloc(pathLength, sizeof(char));
+            modalData->currentConfig.enginePath = SDL_calloc(pathLength, sizeof(char));
             SDL_assert(modalData->currentConfig.enginePath);
             SDL_strlcpy(modalData->currentConfig.enginePath, data->gameInfo.white.engineConfig.enginePath, pathLength);
         }
@@ -563,7 +495,7 @@ void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
         modalData->currentConfig.timeToThink = data->gameInfo.black.engineConfig.timeToThink;
         if (data->gameInfo.black.engineConfig.enginePath) {
             size_t pathLength = SDL_strlen(data->gameInfo.black.engineConfig.enginePath) + 1;
-            modalData->currentConfig.enginePath = calloc(pathLength, sizeof(char));
+            modalData->currentConfig.enginePath = SDL_calloc(pathLength, sizeof(char));
             SDL_assert(modalData->currentConfig.enginePath);
             SDL_strlcpy(modalData->currentConfig.enginePath, data->gameInfo.black.engineConfig.enginePath, pathLength);
         }

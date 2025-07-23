@@ -104,7 +104,7 @@ typedef int TextInputId;
 // for when the text input is active and the renderer can simply call this function
 // when the text input is active with the correct FRect (This is a better idea)
 typedef struct TextInput {
-    TextInputId modalId;
+    TextInputId textInputId;
     bool isActive;
 
     RenderBox textInputRender;

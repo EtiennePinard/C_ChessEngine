@@ -137,6 +137,7 @@ app_SRC = \
     gui_app/chess_app/mainMenuScene/mainMenuEvents.c \
     gui_app/chess_app/mainMenuScene/mainMenuRender.c \
     gui_app/chess_app/mainMenuScene/mainMenuModals.c \
+    gui_app/chess_app/mainMenuScene/mainMenuTextInput.c \
     gui_app/chess_app/gameScene/gameEvents.c \
     gui_app/chess_app/gameScene/gameRender.c \
     gui_app/chess_app/gameScene/gameModals.c \

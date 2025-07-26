@@ -17,6 +17,8 @@ typedef struct EngineConfigModalData {
     SDL_FRect thinkTimeRect;
     SDL_FRect okButtonRect;
     SDL_FRect cancelButtonRect;
+
+    bool wasTextInputExited;
 } EngineConfigModalData;
 
 typedef struct MainMenuSceneData {

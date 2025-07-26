@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "../../../engine/src/utils/Math.h"
 
 #include "../../sdl_framework/CommonEvents.h"
@@ -131,7 +129,7 @@ SDL_AppResult clickedDownPromotionModal(SDL_Event* event, SDL_FRect rect, App* a
 
     // Cleaning up the modal
     app->events.modal.isActive = false;
-    free(modalData);
+    SDL_free(modalData);
 
     playMoveOnBoard(data, move);
     // We played a move so we reset the selected square
@@ -148,7 +146,7 @@ SDL_AppResult clickedDownPromotionModal(SDL_Event* event, SDL_FRect rect, App* a
 
 void setPromotionModalActive(App* app, int promotionSquareTo) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    PromotionModalData* modalData = calloc(1, sizeof(PromotionModalData));
+    PromotionModalData* modalData = SDL_calloc(1, sizeof(PromotionModalData));
     SDL_assert(modalData);
 
     modalData->promotionSquareFrom = data->selectedSquare.selectedSquare;
@@ -200,31 +198,31 @@ SDL_AppResult renderGameEndedModal(SDL_FRect rect, App* app) {
 
     switch (modalData->result) {
     case GAME_IS_NOT_DONE:
-        memcpy(text, "Game is on!", 12);
+        SDL_memcpy(text, "Game is on!", 12);
         break;
     case THREE_MOVE_REPETITION:
-        memcpy(text, "Draw by\nrepetition", 20);
+        SDL_memcpy(text, "Draw by\nrepetition", 20);
         break;
     case STALEMATE:
-        memcpy(text, "Stalemate", 10);
+        SDL_memcpy(text, "Stalemate", 10);
         break;
     case INSUFFICIENT_MATERIAL:
-        memcpy(text, "Draw by\ninsufficient material", 30);
+        SDL_memcpy(text, "Draw by\ninsufficient material", 30);
         break;
     case FIFTY_MOVE_RULE:
-        memcpy(text, "Draw by\nfifty move rule", 24);
+        SDL_memcpy(text, "Draw by\nfifty move rule", 24);
         break;
     case WHITE_WON_CHECKMATE:
-        memcpy(text, "White won\nby checkmate", 23);
+        SDL_memcpy(text, "White won\nby checkmate", 23);
         break;
     case BLACK_WON_CHECKMATE:
-        memcpy(text, "Black won\nby checkmate", 23);
+        SDL_memcpy(text, "Black won\nby checkmate", 23);
         break;
     case WHITE_WON_ON_TIME:
-        memcpy(text, "White won\non time", 18);
+        SDL_memcpy(text, "White won\non time", 18);
         break;
     case BLACK_WON_ON_TIME:
-        memcpy(text, "Black won\non time", 18);
+        SDL_memcpy(text, "Black won\non time", 18);
         break;
     default:
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error on switch for a GameResult value of: %d\n", modalData->result);
@@ -244,7 +242,7 @@ SDL_AppResult renderGameEndedModal(SDL_FRect rect, App* app) {
 
 void setGameEndedModalActive(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-    GameEndedModalData* modalData = calloc(1, sizeof(GameEndedModalData));
+    GameEndedModalData* modalData = SDL_calloc(1, sizeof(GameEndedModalData));
     SDL_assert(modalData);
 
     modalData->result = data->state.result;

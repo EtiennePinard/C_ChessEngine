@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "../../../engine/src/utils/FenString.h"
 
 #include "../../sdl_framework/AppCleanup.h"
@@ -106,7 +104,7 @@ SDL_AppResult computeMainMenuSceneRender(App* app) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "renderBoxes is not NULL when re-computing game scene\n");
         return SDL_APP_FAILURE;
     }
-    sceneRender->renderBoxes = calloc(sceneRender->numRenderBox, sizeof(RenderBox));
+    sceneRender->renderBoxes = SDL_calloc(sceneRender->numRenderBox, sizeof(RenderBox));
 
     int windowWidth, windowHeight;
     SDL_GetWindowSize(app->state.sdlState.window, &windowWidth, &windowHeight);
@@ -220,9 +218,9 @@ SDL_AppResult computeMainMenuSceneRender(App* app) {
 void terminateMainMenuScene(void* data) {
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)data;
     if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
-    if (mainMenuData->gameInfo.white.engineConfig.enginePath != NULL) free(mainMenuData->gameInfo.white.engineConfig.enginePath);
-    if (mainMenuData->gameInfo.black.engineConfig.enginePath != NULL) free(mainMenuData->gameInfo.black.engineConfig.enginePath);
+    if (mainMenuData->gameInfo.white.engineConfig.enginePath != NULL) SDL_free(mainMenuData->gameInfo.white.engineConfig.enginePath);
+    if (mainMenuData->gameInfo.black.engineConfig.enginePath != NULL) SDL_free(mainMenuData->gameInfo.black.engineConfig.enginePath);
     cleanupTextures(mainMenuData->textures);
-    free(mainMenuData->textures.data);
-    free(mainMenuData);
+    SDL_free(mainMenuData->textures.data);
+    SDL_free(mainMenuData);
 }

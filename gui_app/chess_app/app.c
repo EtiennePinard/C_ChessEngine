@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "../sdl_framework/AppInit.h"
 #include "../sdl_framework/AppCleanup.h"
 
@@ -23,7 +19,7 @@
 SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
     (void)event;
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        free(app->state.currentScene.sceneRender.renderBoxes);
+        SDL_free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
 
@@ -32,14 +28,6 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
         if (computeMainMenuSceneRender(app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
         if (app->events.modal.isActive) {
             app->events.modal.modalRender.renderRect = computeMainMenuModalRect(app->state.sdlState.window);
-            GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-            if (app->events.modal.modalId == PROMOTION_MODAL_ID) {
-                PromotionModalData* modalData = (PromotionModalData*)app->events.modal.data;
-                app->events.modal.modalRender.renderRect = calculatePromotionRect(data, modalData->promotionSquareTo, app->state.currentScene.sceneRender.renderBoxes[CHESSBOARD].renderRect);
-            }
-            else if (app->events.modal.modalId == GAME_ENDED_MODAL_ID) {
-                app->events.modal.modalRender.renderRect = calculateGameEndedRect(app->state.currentScene.sceneRender.renderBoxes[CHESSBOARD].renderRect);
-            }
         }
         break;
     case GAME_SCENE_ID:
@@ -55,7 +43,9 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
             }
         }
         break;
-    default: break;
+    default: 
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Invalid scene ID %d\n", app->state.currentScene.sceneId);
+        return SDL_APP_FAILURE;
     }
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
@@ -97,7 +87,7 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
 
 bool initializeApp(App* app) {
     // Initializing the SDL libraries and state needed throughout the entire app
-    printf("Initializing SDL libraries... ");
+    SDL_Log("Initializing SDL libraries...\n");
     if (!initializeSDlLibraries(SDL_INIT_VIDEO) ||
         !initializeSDLState(&app->state.sdlState,
             WINDOW_TITLE, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, STARTING_WINDOW_WIDTH, STARTING_WINDOW_HEIGHT, SDL_WINDOW_RESIZABLE,
@@ -105,18 +95,18 @@ bool initializeApp(App* app) {
             FONT_PATH, DEFAULT_FONT_SIZE)) {
         return false;
     }
-    printf("Done!\n");
+    SDL_Log("Done!\n");
 
-    printf("Initializing magic bit boards and Zobrist keys... ");
+    SDL_Log("Initializing magic bit boards and Zobrist keys...\n");
     // We simply need the move generation and repetition table to work for this app
     if (!MagicBitBoard_init() || !ZobristKey_init()) {
-        fprintf(stderr, "Failed to initialize the magic bit boards and/or Zobrist keys\n");
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to initialize the magic bit boards and/or Zobrist keys\n");
         return false;
     }
-    printf("Done!\n");
+    SDL_Log("Done!\n");
 
-    printf("Initializing Main Menu Scene... ");
-    MainMenuSceneData* mainMenu = calloc(1, sizeof(MainMenuSceneData));
+    SDL_Log("Initializing Main Menu Scene...\n");
+    MainMenuSceneData* mainMenu = SDL_calloc(1, sizeof(MainMenuSceneData));
     loadMainMenuConfig(&mainMenu->gameInfo);
     app->events.modal.isActive = false;
 
@@ -134,16 +124,16 @@ bool initializeApp(App* app) {
     app->events.onWindowResize = &onWindowResize;
     app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
 
-    printf("Done!\n");
+    SDL_Log("Done!\n");
 
-    printf("App is initialized!\n");
+    SDL_Log("App is initialized!\n");
     return true;
 }
 
 void cleanupApp(App* app) {
     MagicBitBoard_terminate();
 
-    free(app->state.currentScene.sceneRender.renderBoxes);
+    SDL_free(app->state.currentScene.sceneRender.renderBoxes);
 
     cleanupSDL_State(app->state.sdlState);
     quitSDL();

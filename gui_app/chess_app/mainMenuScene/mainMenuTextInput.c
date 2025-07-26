@@ -94,6 +94,9 @@ SDL_AppResult thinkTimeTextInputReturn(SDL_Event* event, App* app) {
     (void)event;
     int parsedThinkTime = string_parseNumber(app->events.textInput.text.data);
 
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
+    modalData->wasTextInputExited = true;
+
     if (parsedThinkTime == -1) {
         SDL_Log("The inputted think time, `%s`, is incorrect\n", app->events.textInput.text.data);
         int messageSize = SDL_snprintf(NULL, 0, "The inputted think time, `%s`, is not a valid think time", app->events.textInput.text.data) + 1;
@@ -103,17 +106,17 @@ SDL_AppResult thinkTimeTextInputReturn(SDL_Event* event, App* app) {
     }
     else {
         // The think time is correct, store it into the currentConfig field
-        EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
         modalData->currentConfig.timeToThink = parsedThinkTime;
-
-        SDL_free(app->events.textInput.text.data);
-        SDL_free(app->events.textInput.glyphRects.data);
-        app->events.textInput.text.data = NULL;
-
-        SDL_StopTextInput(app->state.sdlState.window);
+        closeTextInput(event, app);
     }
 
     return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult thinkTimeTextInputCancel(SDL_Event* event, App* app) {
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
+    modalData->wasTextInputExited = true;
+    return closeTextInput(event, app);
 }
 
 SDL_AppResult renderThinkTime(SDL_FRect rect, App* app) {
@@ -146,7 +149,7 @@ void setTimeToThinkTextInputActive(SDL_FRect rect, App* app) {
     app->events.textInput.text.data = SDL_calloc(app->events.textInput.text.capacity, sizeof(char));
     SDL_assert(app->events.textInput.text.data);
 
-    app->events.textInput.onEscape = &closeTextInput;
+    app->events.textInput.onEscape = &thinkTimeTextInputCancel;
     app->events.textInput.onReturn = &thinkTimeTextInputReturn;
     app->events.textInput.onKeyDown = &textInputKeyDown;
     app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;

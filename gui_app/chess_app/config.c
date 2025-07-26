@@ -1,5 +1,5 @@
+// TODO: Use SDL's file api instead of stdio
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "../../engine/src/utils/CharBuffer.h"
 #include "gameScene/GameScene.h"
@@ -39,12 +39,12 @@ bool parseEnginePath(char** engineConfigPath, Tokens tokens, size_t read) {
 
     // length of <b | w>EnginePath<space> is 12
     size_t enginePathLength = read - 12 + tokens.length + 1;
-    char* enginePath = calloc(enginePathLength, sizeof(char));
+    char* enginePath = SDL_calloc(enginePathLength, sizeof(char));
     size_t enginePathIndex = 0;
     for (size_t tokenIndex = 2; tokenIndex < tokens.length; tokenIndex++) {
         char* currentToken = tokens.tokens[tokenIndex];
-        memcpy(enginePath + enginePathIndex, currentToken, strlen(currentToken));
-        enginePathIndex += strlen(currentToken);
+        SDL_memcpy(enginePath + enginePathIndex, currentToken, SDL_strlen(currentToken));
+        enginePathIndex += SDL_strlen(currentToken);
         enginePath[enginePathIndex++] = SPACE_CHAR;
     }
     enginePath[enginePathIndex - 1] = '\0';
@@ -69,12 +69,12 @@ bool parseStartingPosition(char** fen, Tokens tokens, size_t read) {
 
     // length of startingPosition<space> is 17
     size_t parsedFenLength = read - 17 + tokens.length + 1;
-    char* parsedFen = calloc(parsedFenLength, sizeof(char));
+    char* parsedFen = SDL_calloc(parsedFenLength, sizeof(char));
     size_t enginePathIndex = 0;
     for (size_t tokenIndex = 1; tokenIndex < tokens.length; tokenIndex++) {
         char* currentToken = tokens.tokens[tokenIndex];
-        memcpy(parsedFen + enginePathIndex, currentToken, strlen(currentToken));
-        enginePathIndex += strlen(currentToken);
+        SDL_memcpy(parsedFen + enginePathIndex, currentToken, SDL_strlen(currentToken));
+        enginePathIndex += SDL_strlen(currentToken);
         parsedFen[enginePathIndex++] = SPACE_CHAR;
     }
     parsedFen[enginePathIndex - 1] = '\0';
@@ -87,14 +87,14 @@ bool parseStartingPosition(char** fen, Tokens tokens, size_t read) {
 #define char_append(element) \
     if (index == capacity) { \
         capacity *= 2; \
-        result = realloc(result, capacity); \
+        result = SDL_realloc(result, capacity); \
     } \
     result[index++] = element; \
 
 char* portableSubsetGetLine(FILE* file) {
     int capacity = STARTING_BUFFER_SIZE;
     int index = 0;
-    char* result = calloc(capacity, sizeof(char));
+    char* result = SDL_calloc(capacity, sizeof(char));
     if (result == NULL) return NULL;
 
     int ch;
@@ -108,13 +108,13 @@ char* portableSubsetGetLine(FILE* file) {
 
     // If nothing was read and EOF is reached, return NULL
     if (index == 0 && ch == EOF) {
-        free(result);
+        SDL_free(result);
         return NULL;
     }
 
     if (index <= capacity) {
         capacity++;
-        result = realloc(result, capacity);
+        result = SDL_realloc(result, capacity);
     }
     result[index] = '\0';
     return result;
@@ -142,7 +142,7 @@ bool loadMainMenuConfigFromFile(FILE* file, GameConfig* data) {
     size_t nbTokens;
 
     while ((line = portableSubsetGetLine(file)) != NULL) {
-        size_t read = strlen(line);
+        size_t read = SDL_strlen(line);
         nbTokens = string_removeUnecessarySpacesAndTabs(line);
         char* tokens_arr[nbTokens];
         tokens.length = nbTokens;
@@ -180,12 +180,12 @@ bool loadMainMenuConfigFromFile(FILE* file, GameConfig* data) {
         else if (string_compareStrings(tokens.tokens[0], "startingPosition")) {
             if (!parseStartingPosition(&data->startingPositionFen, tokens, read)) goto end_of_parsing_file;
         }
-        free(line);
+        SDL_free(line);
     }
 
     result = true;
 end_of_parsing_file:
-    free(line);
+    SDL_free(line);
     return result;
 }
 
@@ -195,7 +195,7 @@ void loadMainMenuConfig(GameConfig* data) {
 
     // Construct the full file path
     size_t length = snprintf(NULL, 0, "%schess.config", basePath) + 1;
-    char* configPath = calloc(length, sizeof(char));
+    char* configPath = SDL_calloc(length, sizeof(char));
     snprintf(configPath, length, "%schess.config", basePath);
     SDL_free(basePath);
 
@@ -203,7 +203,7 @@ void loadMainMenuConfig(GameConfig* data) {
     FILE* file = fopen(configPath, "r");
     if (file && loadMainMenuConfigFromFile(file, data)) {
         fclose(file);
-        free(configPath);
+        SDL_free(configPath);
         return;
     }
 
@@ -253,9 +253,9 @@ bool saveMainMenuConfig(const GameConfig* data) {
     }
 
     // Construct the full file path
-    size_t length = snprintf(NULL, 0, "%schess.config", basePath) + 1;
+    size_t length = SDL_snprintf(NULL, 0, "%schess.config", basePath) + 1;
     char configPath[length];
-    snprintf(configPath, length, "%schess.config", basePath);
+    SDL_snprintf(configPath, length, "%schess.config", basePath);
     SDL_free(basePath);
 
     FILE* file = fopen(configPath, "w");

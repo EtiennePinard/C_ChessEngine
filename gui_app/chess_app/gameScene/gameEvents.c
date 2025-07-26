@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "../../../engine/src/state/Board.h"
 #include "../../../engine/src/state/Move.h"
 #include "../../../engine/src/moveHandler/MoveGenerator.h"
@@ -143,7 +140,6 @@ static int botMove(void* app_pointer) {
 
     if (Move_fromSquare(botMove) == Move_toSquare(botMove) && data->state.result == GAME_IS_NOT_DONE) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The engine gave back a NULL_MOVE and the game is not done\n");
-        exit(EXIT_FAILURE);
         return 1;
     }
 
@@ -344,7 +340,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
     (void)rect;
 
     GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
-    MainMenuSceneData* mainMenuData = calloc(1, sizeof(MainMenuSceneData));
+    MainMenuSceneData* mainMenuData = SDL_calloc(1, sizeof(MainMenuSceneData));
 
     mainMenuData->gameInfo = gameData->gameInfo;
     app->events.modal.isActive = false;
@@ -367,7 +363,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
     app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        free(app->state.currentScene.sceneRender.renderBoxes);
+        SDL_free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
     return computeMainMenuSceneRender(app);
@@ -381,7 +377,7 @@ SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* 
     data->flipBoard = !data->flipBoard;
 
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        free(app->state.currentScene.sceneRender.renderBoxes);
+        SDL_free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
     if (computeGameSceneRender(app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;

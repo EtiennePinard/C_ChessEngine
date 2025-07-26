@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "../../../engine/src/utils/Math.h"
 #include "../../../engine/src/utils/AlgebraicNotation.h"
 
@@ -76,7 +73,7 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
                 squareRect.w - 2 * borderThickness,
                 squareRect.h - 2 * borderThickness
             };
-            SDL_RenderFillRect(renderer, &RECT_TO_FRECT(innerRect));
+            SDL_RenderFillRect(renderer, &innerRect);
         }
         else {
             SDL_Color color = ((row + col) % 2 == 0) ? SQUARE_COLOR_1 : SQUARE_COLOR_2;
@@ -90,9 +87,8 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
         Piece piece = Board_pieceAtIndex(data->state.position.board, squareIndex);
         if (piece != NO_PIECE) {
             SDL_FRect pieceRect = { squareRect.x, squareRect.y, squareSize, squareSize };
-            SDL_FRect pieceFRect = RECT_TO_FRECT(pieceRect);
             int index = piece - (Piece_color(piece) == WHITE ? 9 : 11);
-            SDL_RenderTexture(renderer, data->textures.data[index].texture, NULL, &pieceFRect);
+            SDL_RenderTexture(renderer, data->textures.data[index].texture, NULL, &pieceRect);
         }
     }
 
@@ -135,7 +131,7 @@ SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
     SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
 
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-    SDL_RenderFillRect(renderer, &RECT_TO_FRECT(rect));
+    SDL_RenderFillRect(renderer, &rect);
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
@@ -206,11 +202,11 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
 
     // Draw semi-transparent background
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-    SDL_RenderFillRect(renderer, &RECT_TO_FRECT(rect));
+    SDL_RenderFillRect(renderer, &rect);
 
     // Draw border
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-    SDL_RenderRect(renderer, &RECT_TO_FRECT(rect));
+    SDL_RenderRect(renderer, &rect);
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
@@ -252,7 +248,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
 
         // Move number
         char numberBuffer[8];
-        snprintf(numberBuffer, sizeof(numberBuffer), "%zu.", index / 2 + 1);
+        SDL_snprintf(numberBuffer, sizeof(numberBuffer), "%zu.", index / 2 + 1);
 
         SDL_FRect moveNumberRect = {
             .x = rect.x + padding,
@@ -267,7 +263,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
         if (index < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
             position = data->undoGameStates.data[index].position;
-            memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
+            SDL_memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
             moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[index], moveText);
@@ -293,7 +289,7 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
         if (index + 1 < data->moveListInfo.movesPlayed.count) {
             // We need to do this so that we don't accidentally modify the bitboards of the previous position
             position = data->undoGameStates.data[index + 1].position;
-            memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
+            SDL_memcpy(&board, position.board.bitboards, 14 * sizeof(BitBoard));
             position.board = board;
 
             moveToStandardAlgebraic(position, data->moveListInfo.movesPlayed.data[index + 1], moveText);
@@ -360,7 +356,7 @@ SDL_AppResult computeGameSceneRender(App* app) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "renderBoxes is not NULL when re-computing game scene\n");
         return SDL_APP_FAILURE;
     }
-    sceneRender->renderBoxes = calloc(sceneRender->numRenderBox, sizeof(RenderBox));
+    sceneRender->renderBoxes = SDL_calloc(sceneRender->numRenderBox, sizeof(RenderBox));
 
     int windowWidth, windowHeight;
     SDL_GetWindowSize(app->state.sdlState.window, &windowWidth, &windowHeight);
@@ -486,10 +482,10 @@ void terminateGameScene(void* data) {
     if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
     if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
 
-    free(gameData->undoGameStates.data);
-    free(gameData->moveListInfo.movesPlayed.data);
+    SDL_free(gameData->undoGameStates.data);
+    SDL_free(gameData->moveListInfo.movesPlayed.data);
     cleanupTextures(gameData->textures);
-    free(gameData->textures.data);
+    SDL_free(gameData->textures.data);
 
-    free(gameData);
+    SDL_free(gameData);
 }

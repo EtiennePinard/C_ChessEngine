@@ -1,6 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "../../../engine/src/utils/FenString.h"
 
 #include "../../sdl_framework/AppInit.h"
@@ -65,7 +62,7 @@ SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event, (void)rect;
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
 
-    GameSceneData* gameData = calloc(1, sizeof(GameSceneData));
+    GameSceneData* gameData = SDL_calloc(1, sizeof(GameSceneData));
     gameData->flipBoard = false; // We don't have an option for that yet
 
     const char* filePaths[NB_PIECES] = {
@@ -130,7 +127,7 @@ SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     resetGame(event, app);
 
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        free(app->state.currentScene.sceneRender.renderBoxes);
+        SDL_free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
     return computeGameSceneRender(app);

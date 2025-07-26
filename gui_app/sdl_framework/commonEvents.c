@@ -41,5 +41,5 @@ SDL_AppResult closeTextInput(SDL_Event* event, App* app) {
     app->events.textInput.isActive = false;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     if (!SDL_StopTextInput(app->state.sdlState.window)) return SDL_APP_FAILURE;
-    else return SDL_APP_CONTINUE;
+    return SDL_APP_CONTINUE;
 }

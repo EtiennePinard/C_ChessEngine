@@ -7,10 +7,30 @@
 #include "Scene.h"
 
 /**
- * @brief Useful macro to convert a Rect to a FRect
- *
+ * @brief Macro use for appending a value to a dynamic array.
+ * The dynamic array struct needs to have these fields:
+ * 
+ * typedef struct da {
+ *      type* data; // Pointer to the elements of the dynamic array
+ *      size_t count; // The number of elements of the dynamic array
+ *      size_t capacity; // The total amount of elements that the dynamic array can hold
+ * } da;
+ * 
+ * If your dynamic array have this structure, you can use this macro as such:
+ * 
+ * da dynamic_array = { 0 };
+ * type itemToAdd = ...;
+ * da_append((&dynamic_array), itemToAdd);
+ * 
+ * In this example, the dynamic is 0 initialized and the da_append macro
+ * will allocate an initial buffer and then add the item to the dynamic array.
  */
-#define RECT_TO_FRECT(rect) ((SDL_FRect) { .x = (float) rect.x, .y = (float) rect.y, .w = (float) rect.w, .h = (float) rect.h })
+#define da_append(da, valueToAppend) if (da->count >= da->capacity) { \
+    da->capacity++; \
+    da->capacity *= 2; \
+    da->data = SDL_realloc(da->data, sizeof(valueToAppend) * da->capacity); \
+} \
+da->data[da->count++] = valueToAppend; \
 
 typedef struct SDL_State {
     SDL_Window* window;
@@ -30,12 +50,6 @@ typedef struct Textures {
     size_t capacity;
 } Textures;
 
-#define da_append(da, valueToAppend) if (da->count >= da->capacity) { \
-    da->capacity++; \
-    da->capacity *= 2; \
-    da->data = realloc(da->data, sizeof(valueToAppend) * da->capacity); \
-} \
-da->data[da->count++] = valueToAppend; \
 
 /**
  * @brief The design philosophy of this AppState is to be able
@@ -99,10 +113,6 @@ typedef struct TextInputCursor {
 
 typedef int TextInputId;
 
-// TODO: TextInput ID for when something is selected
-// or if this solution is trash add a TextInput render function 
-// for when the text input is active and the renderer can simply call this function
-// when the text input is active with the correct FRect (This is a better idea)
 typedef struct TextInput {
     TextInputId textInputId;
     bool isActive;

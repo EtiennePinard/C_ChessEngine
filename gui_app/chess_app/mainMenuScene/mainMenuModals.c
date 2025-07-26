@@ -340,12 +340,24 @@ SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
     MainMenuSceneData* data = (MainMenuSceneData*)app->state.currentScene.data;
     EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 
+    if (modalData->wasTextInputExited) {
+        // A text input was exited don't close the modal
+        modalData->wasTextInputExited = false;
+        return SDL_APP_CONTINUE;
+    }
+
     // Clicked ok button, saving settings and leaving
     if (modalData->playerColor == WHITE) {
+        if (data->gameInfo.white.engineConfig.enginePath) {
+            SDL_free(data->gameInfo.white.engineConfig.enginePath);
+        }
         data->gameInfo.white.engineConfig = modalData->currentConfig;
         app->state.currentScene.selectedRenderBoxIndex = WHITE_PLAYER_INFO;
     }
     else if (modalData->playerColor == BLACK) {
+        if (data->gameInfo.black.engineConfig.enginePath) {
+            SDL_free(data->gameInfo.black.engineConfig.enginePath);
+        }
         data->gameInfo.black.engineConfig = modalData->currentConfig;
         app->state.currentScene.selectedRenderBoxIndex = BLACK_PLAYER_INFO;
     }
@@ -361,6 +373,12 @@ SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
 SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
     (void)event;
     EngineConfigModalData* data = (EngineConfigModalData*)app->events.modal.data;
+
+    if (data->wasTextInputExited) {
+        // A text input was exited don't cancel the modal
+        data->wasTextInputExited = false;
+        return SDL_APP_CONTINUE;
+    }
 
     // Resetting the selectedRenderBoxIndex
     if (data->playerColor == WHITE) app->state.currentScene.selectedRenderBoxIndex = WHITE_PLAYER_INFO;
@@ -451,11 +469,18 @@ SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* ap
     SDL_FPoint mousePoint = { event->button.x, event->button.y };
     if (SDL_PointInRectFloat(&mousePoint, &modalData->cancelButtonRect)) {
         // Clicked cancel button, cancelling modal
+        if (app->events.textInput.isActive) closeTextInput(event, app);
         app->events.modal.onEscape(event, app);
         app->events.modal.isActive = false;
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->okButtonRect)) {
         // Clicked ok button, closing modal
+        if (app->events.textInput.isActive) app->events.textInput.onReturn(event, app);
+        if (app->events.textInput.isActive) {
+            // The text input is still active, not closing the modal
+            modalData->wasTextInputExited = false;
+            return SDL_APP_CONTINUE;
+        }
         app->events.modal.onReturn(event, app);
         app->events.modal.isActive = false;
     }
@@ -510,6 +535,8 @@ void setEngineConfigModalActive(App* app, PieceCharacteristics colorToSet) {
             modalData->currentConfig.enginePath = NULL;
         }
     }
+
+    modalData->wasTextInputExited = false;
 
     // Initializing the modal
     app->events.modal.modalRender.renderRect = computeMainMenuModalRect(app->state.sdlState.window);

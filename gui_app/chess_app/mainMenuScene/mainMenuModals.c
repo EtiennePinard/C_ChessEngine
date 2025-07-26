@@ -433,12 +433,14 @@ SDL_AppResult clickedEnginePath(App* app) {
 
     SDL_DialogFileFilter filters[] = { { "All Files", "*" } };
 
+    const char* path = SDL_GetBasePath();
+    if (!path) return SDL_APP_FAILURE;
     SDL_ShowOpenFileDialog(
         &onEnginePathSelected,
         app,
         app->state.sdlState.window,
         filters, 1,
-        NULL,
+        path,
         false
     );
 

@@ -83,12 +83,24 @@ SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
         return SDL_APP_FAILURE;
     }
 
+    // TODO: Make the initialization of engine resistant to errors due to enginePath
     gameData->state.white.timeControl = mainMenuData->gameInfo.white.timeControl;
     if (mainMenuData->gameInfo.white.engineConfig.isEngine) {
+        if (!mainMenuData->gameInfo.white.engineConfig.enginePath) {
+            // Exiting the function
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty white engine path", "The white engine path is not set", app->state.sdlState.window);
+            SDL_free(gameData);
+            return SDL_APP_CONTINUE;
+        }
+
         gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.white.engineConfig.enginePath, "uci_engine_log_white.txt");
         if (!gameData->state.white.engineCommunication) {
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.engineConfig.enginePath);
-            return SDL_APP_FAILURE;
+            size_t messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath) + 1;
+            char message[messageSize];
+            SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath);
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid white engine path", message, app->state.sdlState.window);
+            return SDL_APP_CONTINUE;
         }
     }
     else {
@@ -97,10 +109,20 @@ SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
 
     gameData->state.black.timeControl = mainMenuData->gameInfo.black.timeControl;
     if (mainMenuData->gameInfo.black.engineConfig.isEngine) {
+        if (!mainMenuData->gameInfo.black.engineConfig.enginePath) {
+            // Exiting the function
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty black engine path", "The black engine path is not set", app->state.sdlState.window);
+            SDL_free(gameData);
+            return SDL_APP_CONTINUE;
+        }
         gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.black.engineConfig.enginePath, "uci_engine_log_black.txt");
         if (!gameData->state.black.engineCommunication) {
             SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.engineConfig.enginePath);
-            return SDL_APP_FAILURE;
+            size_t messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath) + 1;
+            char message[messageSize];
+            SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath);
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid black engine path", message, app->state.sdlState.window);
+            return SDL_APP_CONTINUE;
         }
     }
     else {

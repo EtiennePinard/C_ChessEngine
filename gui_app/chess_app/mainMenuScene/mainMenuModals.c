@@ -413,10 +413,9 @@ static void onEnginePathSelected(void* userdata, const char* const* filelist, in
     }
 
     // Use the first selected file
-    size_t length = SDL_strlen(filelist[0]);
-    char* enginePath = SDL_malloc(length * sizeof(char) + 1);
+    size_t length = SDL_strlen(filelist[0]) + 1;
+    char* enginePath = SDL_calloc(length, sizeof(char));
     SDL_strlcpy(enginePath, filelist[0], length);
-    enginePath[length] = '\0';
 
     EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 

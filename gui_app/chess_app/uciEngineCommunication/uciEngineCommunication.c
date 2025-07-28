@@ -57,7 +57,7 @@ bool sendUCICommand(EngineCommunication* engineCommunication) {
 bool sendIsReadyCommand(EngineCommunication* engineCommunication) {
     UCIEngine_sendCommand(engineCommunication, "isready");
     char* data = malloc(sizeof(char) * DEFAULT_BUF_SIZE);
-    
+
     while (true) {
         data = UCIEngine_readResponse(engineCommunication, data, DEFAULT_BUF_SIZE);
         string_removeUnecessarySpacesAndTabs(data);
@@ -67,7 +67,7 @@ bool sendIsReadyCommand(EngineCommunication* engineCommunication) {
     return true;
 }
 
-EngineCommunication* UCIEngine_initialize(const char *enginePath, const char* logFilePath) {
+EngineCommunication* UCIEngine_initialize(const char* enginePath, const char* logFilePath) {
     EngineCommunication* engineCommunication;
 #ifdef __linux__
     engineCommunication = UCIEngine_initialize_posix(enginePath, logFilePath);
@@ -79,9 +79,15 @@ EngineCommunication* UCIEngine_initialize(const char *enginePath, const char* lo
     if (!engineCommunication) return NULL;
 
     if (!sendUCICommand(engineCommunication) || !sendIsReadyCommand(engineCommunication)) {
-        free(engineCommunication);
+#ifdef __linux__
+        UCIEngine_terminate_posix(engineCommunication);
+#elif _WIN32
+        UCIEngine_terminate_windows(engineCommunication);
+#else
+        assert(false && "Invalid architecture, this program only supports POSIX or windows");
+#endif
         return NULL;
-    } 
+    }
 
     return engineCommunication;
 }
@@ -149,7 +155,7 @@ Move bestMoveFromOptions(EngineCommunication* engineCommunication, ChessPosition
     do {
         data = UCIEngine_readResponse(engineCommunication, data, capacity);
         capacity = strlen(data);
-        engineResponse.length = string_removeUnecessarySpacesAndTabs(data);
+        engineResponse.nbTokens = string_removeUnecessarySpacesAndTabs(data);
     } while (
         data[0] != 'b' ||
         data[1] != 'e' ||
@@ -161,7 +167,7 @@ Move bestMoveFromOptions(EngineCommunication* engineCommunication, ChessPosition
         data[7] != 'e'
         );
 
-    char* tokens[engineResponse.length];
+    char* tokens[engineResponse.nbTokens];
     engineResponse.tokens = tokens;
     string_tokenizeStringBySpace(data, &engineResponse);
     // The second tokens should have the best move from the engine

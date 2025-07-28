@@ -130,13 +130,13 @@ static Move findMatchingMove(Move moveToMatch) {
 }
 
 static void processPlayCommand(Tokens* tokens) {
-    if (tokens->length == 1) {
+    if (tokens->nbTokens == 1) {
         // The command is just: play
         // In this case we just do nothing
         return;
     }
     size_t tokenIndex = 1;
-    while (tokenIndex < tokens->length) {
+    while (tokenIndex < tokens->nbTokens) {
         Move moveToMake = findMatchingMove(string_longAlgebraicToMove(tokens->tokens[tokenIndex]));
 
         if (moveToMake == NULL_MOVE) {
@@ -156,7 +156,7 @@ static void processPlayCommand(Tokens* tokens) {
 // Note: 'moves' section is optional
 static void processPositionCommand(Tokens* tokens) {
 
-    if (tokens->length == 1) {
+    if (tokens->nbTokens == 1) {
         // The command is just: position
         // In this case we just do nothing
         return;
@@ -175,7 +175,7 @@ static void processPositionCommand(Tokens* tokens) {
     }
     else if (string_compareStrings(tokens->tokens[tokenIndex], "fen")) {
 
-        if (tokens->length < 8) {
+        if (tokens->nbTokens < 8) {
             UCI_sendResponse("ERROR: Fen string is not long enough in the position command\n");
             return;
         }
@@ -190,7 +190,7 @@ static void processPositionCommand(Tokens* tokens) {
         fenStringTokenize[5] = tokens->tokens[tokenIndex]; // moves made
 
         Tokens fenTokens = {
-            .length = 6,
+            .nbTokens = 6,
             .tokens = fenStringTokenize
         };
 
@@ -208,7 +208,7 @@ static void processPositionCommand(Tokens* tokens) {
     RepetitionTable_clear();
 
     tokenIndex++;
-    if (tokenIndex == tokens->length) {
+    if (tokenIndex == tokens->nbTokens) {
         // There is no `moves` part to this position command
         return;
     }
@@ -222,7 +222,7 @@ static void processPositionCommand(Tokens* tokens) {
     Tokens moveTokens = {
         // We don't increment the tokenIndex because the processPlayCommand function discards the first token
         .tokens = tokens->tokens + tokenIndex,
-        .length = tokens->length - tokenIndex
+        .nbTokens = tokens->nbTokens - tokenIndex
     };
     processPlayCommand(&moveTokens);
 }
@@ -270,7 +270,7 @@ static void* timerThreadFunction(void* arg) {
 }
 
 #define MISSING_VALUE(optionName) \
-    if (tokenIndex == tokens->length) { \
+    if (tokenIndex == tokens->nbTokens) { \
         UCI_sendResponse("Missing value for %s\n", optionName); \
         return; \
     } \
@@ -291,10 +291,10 @@ static void processGoCommand(Tokens* tokens) {
     u64 whiteInc = 0;
     u64 blackInc = 0;
     // If we have no tokens we enter infinite search
-    bool infiniteMode = tokens->length == 1;
+    bool infiniteMode = tokens->nbTokens == 1;
 
     size_t tokenIndex = 1; // The first token is the go command
-    while (tokenIndex < tokens->length) {
+    while (tokenIndex < tokens->nbTokens) {
         const char* token = tokens->tokens[tokenIndex++];
 
         // There are only two options that has only one token: infinite and ponder
@@ -398,11 +398,11 @@ bool UCI_processUCICommand(char* command) {
     Tokens tokens;
     size_t nbTokens = string_removeUnecessarySpacesAndTabs(command);
     char* tokens_arr[nbTokens];
-    tokens.length = nbTokens;
+    tokens.nbTokens = nbTokens;
     tokens.tokens = tokens_arr;
     string_tokenizeStringBySpace(command, &tokens);
 
-    if (tokens.length == 0) {
+    if (tokens.nbTokens == 0) {
         // user sent an empty message, returning but not exiting
         return true;
     }

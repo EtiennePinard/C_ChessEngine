@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "TextInput.h"
 
 void appendTextToTextInput(App* app, const char* text) {
@@ -16,7 +14,7 @@ void appendTextToTextInput(App* app, const char* text) {
     size_t needed = ti->text.count + insertCount + 1;
     if (needed > ti->text.capacity) {
         size_t newCap = needed * 2;
-        char* newData = realloc(ti->text.data, newCap);
+        char* newData = SDL_realloc(ti->text.data, newCap);
         SDL_assert(newData);
         ti->text.data = newData;
         ti->text.capacity = newCap;

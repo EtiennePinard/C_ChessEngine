@@ -5,9 +5,21 @@
 #include "gameScene/GameScene.h"
 #include "Config.h"
 
+#define WHITE_TIME_CONTROL_TOKEN ("wTimeControl")
+#define WHITE_IS_ENGINE_TOKEN ("wIsEngine")
+#define WHITE_ENGINE_PATH_TOKEN ("wEnginePath")
+#define WHITE_THINK_TIME_TOKEN ("wThinkTime")
+
+#define BLACK_TIME_CONTROL_TOKEN ("bTimeControl")
+#define BLACK_IS_ENGINE_TOKEN ("bIsEngine")
+#define BLACK_ENGINE_PATH_TOKEN ("bEnginePath")
+#define BLACK_THINK_TIME_TOKEN ("bThinkTime")
+
+#define STARTING_POSITION_TOKEN ("startingPosition")
+
 bool parseTimeControl(TimeControl* timecontrol, Tokens tokens) {
     // We need at least three tokens for a time control line
-    if (tokens.length < 3) return false;
+    if (tokens.nbTokens < 3) return false;
 
     int timeleft = string_parseNumber(tokens.tokens[1]);
     int increment = string_parseNumber(tokens.tokens[2]);
@@ -19,7 +31,7 @@ bool parseTimeControl(TimeControl* timecontrol, Tokens tokens) {
 
 bool parseIsEngine(bool* isEngine, Tokens tokens) {
     // We need at least two tokens for an isEngine line
-    if (tokens.length < 2) return false;
+    if (tokens.nbTokens < 2) return false;
     if (string_compareStrings("true", tokens.tokens[1])) *isEngine = true;
     else if (string_compareStrings("false", tokens.tokens[1])) *isEngine = false;
     else return false; // Is not "true" nor "false" so we cannot parse it
@@ -29,7 +41,7 @@ bool parseIsEngine(bool* isEngine, Tokens tokens) {
 
 bool parseEnginePath(char** engineConfigPath, Tokens tokens, size_t read) {
     // We need at least two tokens for an engine path line
-    if (tokens.length < 2) return false;
+    if (tokens.nbTokens < 2) return false;
 
     if (string_compareStrings(tokens.tokens[1], "NULL")) {
         // The engine path is NULL
@@ -38,23 +50,22 @@ bool parseEnginePath(char** engineConfigPath, Tokens tokens, size_t read) {
     }
 
     // length of <b | w>EnginePath<space> is 12
-    size_t enginePathLength = read - 12 + tokens.length + 1;
+    size_t enginePathLength = read - 12 + tokens.nbTokens + 1;
     char* enginePath = SDL_calloc(enginePathLength, sizeof(char));
     size_t enginePathIndex = 0;
-    for (size_t tokenIndex = 2; tokenIndex < tokens.length; tokenIndex++) {
+    for (size_t tokenIndex = 1; tokenIndex < tokens.nbTokens; tokenIndex++) {
         char* currentToken = tokens.tokens[tokenIndex];
         SDL_memcpy(enginePath + enginePathIndex, currentToken, SDL_strlen(currentToken));
         enginePathIndex += SDL_strlen(currentToken);
         enginePath[enginePathIndex++] = SPACE_CHAR;
     }
-    enginePath[enginePathIndex - 1] = '\0';
     *engineConfigPath = enginePath;
     return true;
 }
 
 bool parseThinkTime(TimeControl_MS* timeToThink, Tokens tokens) {
     // We need at least two tokens for a time to think line
-    if (tokens.length < 2) return false;
+    if (tokens.nbTokens < 2) return false;
 
     int parsedTimeToThink = string_parseNumber(tokens.tokens[1]);
     // Either the bot decides how much it thinks (0) or it thinks for a specified amount of time
@@ -65,13 +76,13 @@ bool parseThinkTime(TimeControl_MS* timeToThink, Tokens tokens) {
 
 bool parseStartingPosition(char** fen, Tokens tokens, size_t read) {
     // We need at least seven tokens for the startingPosition line
-    if (tokens.length < 7) return false;
+    if (tokens.nbTokens < 7) return false;
 
     // length of startingPosition<space> is 17
-    size_t parsedFenLength = read - 17 + tokens.length + 1;
+    size_t parsedFenLength = read - 17 + tokens.nbTokens + 1;
     char* parsedFen = SDL_calloc(parsedFenLength, sizeof(char));
     size_t enginePathIndex = 0;
-    for (size_t tokenIndex = 1; tokenIndex < tokens.length; tokenIndex++) {
+    for (size_t tokenIndex = 1; tokenIndex < tokens.nbTokens; tokenIndex++) {
         char* currentToken = tokens.tokens[tokenIndex];
         SDL_memcpy(parsedFen + enginePathIndex, currentToken, SDL_strlen(currentToken));
         enginePathIndex += SDL_strlen(currentToken);
@@ -145,39 +156,39 @@ bool loadMainMenuConfigFromFile(FILE* file, GameConfig* data) {
         size_t read = SDL_strlen(line);
         nbTokens = string_removeUnecessarySpacesAndTabs(line);
         char* tokens_arr[nbTokens];
-        tokens.length = nbTokens;
+        tokens.nbTokens = nbTokens;
         tokens.tokens = tokens_arr;
         string_tokenizeStringBySpace(line, &tokens);
 
         // ignore any empty lines
-        if (tokens.length == 0) continue;
+        if (tokens.nbTokens == 0) continue;
 
         // Check if the string starts with any of the character, else we ignore the line
-        if (string_compareStrings(tokens.tokens[0], "wTimeControl")) {
+        if (string_compareStrings(tokens.tokens[0], WHITE_TIME_CONTROL_TOKEN)) {
             if (!parseTimeControl(&data->white.timeControl, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "wIsEngine")) {
+        else if (string_compareStrings(tokens.tokens[0], WHITE_IS_ENGINE_TOKEN)) {
             if (!parseIsEngine(&data->white.engineConfig.isEngine, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "wEnginepath")) {
+        else if (string_compareStrings(tokens.tokens[0], WHITE_ENGINE_PATH_TOKEN)) {
             if (!parseEnginePath(&data->white.engineConfig.enginePath, tokens, read)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "wThinkTime")) {
+        else if (string_compareStrings(tokens.tokens[0], WHITE_THINK_TIME_TOKEN)) {
             if (!parseThinkTime(&data->white.engineConfig.timeToThink, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "bTimeControl")) {
+        else if (string_compareStrings(tokens.tokens[0], BLACK_TIME_CONTROL_TOKEN)) {
             if (!parseTimeControl(&data->black.timeControl, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "bIsEngine")) {
+        else if (string_compareStrings(tokens.tokens[0], BLACK_IS_ENGINE_TOKEN)) {
             if (!parseIsEngine(&data->black.engineConfig.isEngine, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "bEnginepath")) {
+        else if (string_compareStrings(tokens.tokens[0], BLACK_ENGINE_PATH_TOKEN)) {
             if (!parseEnginePath(&data->black.engineConfig.enginePath, tokens, read)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "bThinkTime")) {
+        else if (string_compareStrings(tokens.tokens[0], BLACK_THINK_TIME_TOKEN)) {
             if (!parseThinkTime(&data->black.engineConfig.timeToThink, tokens)) goto end_of_parsing_file;
         }
-        else if (string_compareStrings(tokens.tokens[0], "startingPosition")) {
+        else if (string_compareStrings(tokens.tokens[0], STARTING_POSITION_TOKEN)) {
             if (!parseStartingPosition(&data->startingPositionFen, tokens, read)) goto end_of_parsing_file;
         }
         SDL_free(line);
@@ -201,7 +212,7 @@ void loadMainMenuConfig(GameConfig* data) {
 
     SDL_Log("Reading config from %s\n", configPath);
     FILE* file = fopen(configPath, "r");
-    if (file && loadMainMenuConfigFromFile(file, data)) {
+    if (loadMainMenuConfigFromFile(file, data)) {
         fclose(file);
         SDL_free(configPath);
         return;

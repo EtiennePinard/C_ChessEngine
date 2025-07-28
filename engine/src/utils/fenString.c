@@ -128,8 +128,8 @@ bool FenString_setChessPositionFromFenString(char* fen, ChessPosition* position)
     if (fen == NULL) { return false; }
 
     Tokens tokens;
-    tokens.length = string_removeUnecessarySpacesAndTabs(fen);
-    char* uniqueName[tokens.length];
+    tokens.nbTokens = string_removeUnecessarySpacesAndTabs(fen);
+    char* uniqueName[tokens.nbTokens];
     tokens.tokens = uniqueName;
     string_tokenizeStringBySpace(fen, &tokens);
 
@@ -139,7 +139,7 @@ bool FenString_setChessPositionFromFenString(char* fen, ChessPosition* position)
 bool FenString_setChessPositionFromTokens(Tokens* fenTokenized, ChessPosition* position) {
     if (position == NULL || fenTokenized == NULL) return false;
 
-    if (fenTokenized->length != 6) return false;
+    if (fenTokenized->nbTokens != 6) return false;
 
     // Setting up the board
     Piece boardArray[BOARD_SIZE] = { 0 };

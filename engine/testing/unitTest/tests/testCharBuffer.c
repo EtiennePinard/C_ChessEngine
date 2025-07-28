@@ -216,23 +216,23 @@ bool test_string_removeUnecessarySpacesAndTabs() {
 bool test_string_tokenizeStringBySpace() {
     Tokens expected = {
         .tokens =  (char *[]) { "Hello", "World", "1,", "2,", "3!" },
-        .length = 5
+        .nbTokens = 5
     };
     Tokens actual;
     char test1[] = "        Hello       World     1,     2,    3!    ";
-    actual.length = string_removeUnecessarySpacesAndTabs(test1);
-    char *uniqueName1[actual.length];
+    actual.nbTokens = string_removeUnecessarySpacesAndTabs(test1);
+    char *uniqueName1[actual.nbTokens];
     actual.tokens = uniqueName1;
     string_tokenizeStringBySpace(test1, &actual);
 
 
-    if (actual.length != expected.length) {
+    if (actual.nbTokens != expected.nbTokens) {
         printf("ERROR: string_tokenizeStringBySpace(\"        Hello       World     1,     2,    3!    \", &actual)\n");
-        printf("\tExpected length: %zu\n", expected.length);
-        printf("\tActual length: %zu\n", actual.length);
+        printf("\tExpected length: %zu\n", expected.nbTokens);
+        printf("\tActual length: %zu\n", actual.nbTokens);
         return false;
     }
-    for (size_t index = 0; index < actual.length; index++) {
+    for (size_t index = 0; index < actual.nbTokens; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
             printf("ERROR: string_tokenizeStringBySpace(\"        Hello       World     1,     2,    3!    \", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);
@@ -243,21 +243,21 @@ bool test_string_tokenizeStringBySpace() {
     
     expected = (Tokens) {
         .tokens = (char *[]) { "ThisIsJustOneString" },
-        .length = 1
+        .nbTokens = 1
     };
     char test2[] = "    ThisIsJustOneString      ";
-    actual.length = string_removeUnecessarySpacesAndTabs(test2);
-    char *uniqueName2[actual.length];
+    actual.nbTokens = string_removeUnecessarySpacesAndTabs(test2);
+    char *uniqueName2[actual.nbTokens];
     actual.tokens = uniqueName2;
     string_tokenizeStringBySpace(test2, &actual);
     
-    if (actual.length != expected.length) {
+    if (actual.nbTokens != expected.nbTokens) {
         printf("ERROR: string_tokenizeStringBySpace(\"    ThisIsJustOneString      \", &actual)\n");
-        printf("\tExpected length: %zu\n", expected.length);
-        printf("\tActual length: %zu\n", actual.length);
+        printf("\tExpected length: %zu\n", expected.nbTokens);
+        printf("\tActual length: %zu\n", actual.nbTokens);
         return false;
     }
-    for (size_t index = 0; index < actual.length; index++) {
+    for (size_t index = 0; index < actual.nbTokens; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
             printf("ERROR: string_tokenizeStringBySpace(\"    ThisIsJustOneString      \", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);
@@ -268,21 +268,21 @@ bool test_string_tokenizeStringBySpace() {
 
     expected = (Tokens) {
         .tokens = NULL,
-        .length = 0
+        .nbTokens = 0
     };
     char test3[] = "                   ";
-    actual.length = string_removeUnecessarySpacesAndTabs(test3);
-    char *uniqueName3[actual.length];
+    actual.nbTokens = string_removeUnecessarySpacesAndTabs(test3);
+    char *uniqueName3[actual.nbTokens];
     actual.tokens = uniqueName3;
     string_tokenizeStringBySpace(test3, &actual);
 
-    if (actual.length != expected.length) {
+    if (actual.nbTokens != expected.nbTokens) {
         printf("ERROR: string_tokenizeStringBySpace(\"                   \", &actual)\n");
-        printf("\tExpected length: %zu\n", expected.length);
-        printf("\tActual length: %zu\n", actual.length);
+        printf("\tExpected length: %zu\n", expected.nbTokens);
+        printf("\tActual length: %zu\n", actual.nbTokens);
         return false;
     }
-    for (size_t index = 0; index < actual.length; index++) {
+    for (size_t index = 0; index < actual.nbTokens; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
             printf("ERROR: string_tokenizeStringBySpace(\"                   \", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);
@@ -293,21 +293,21 @@ bool test_string_tokenizeStringBySpace() {
 
     expected = (Tokens) {
         .tokens = (char *[]) { "This", "test", "case", "is", "a", "long", "string", "just", "to", "test", "longer", "inputs" },
-        .length = 12
+        .nbTokens = 12
     };
     char test4[] = "This test case is a long string just to test longer inputs";
-    actual.length = string_removeUnecessarySpacesAndTabs(test4);
-    char *uniqueName4[actual.length];
+    actual.nbTokens = string_removeUnecessarySpacesAndTabs(test4);
+    char *uniqueName4[actual.nbTokens];
     actual.tokens = uniqueName4;
     string_tokenizeStringBySpace(test4, &actual);
 
-    if (actual.length != expected.length) {
+    if (actual.nbTokens != expected.nbTokens) {
         printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
-        printf("\tExpected length: %zu\n", expected.length);
-        printf("\tActual length: %zu\n", actual.length);
+        printf("\tExpected length: %zu\n", expected.nbTokens);
+        printf("\tActual length: %zu\n", actual.nbTokens);
         return false;
     }
-    for (size_t index = 0; index < actual.length; index++) {
+    for (size_t index = 0; index < actual.nbTokens; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
             printf("ERROR: string_tokenizeStringBySpace(\"This test case is a long string just to test longer inputs\", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);
@@ -318,21 +318,21 @@ bool test_string_tokenizeStringBySpace() {
 
     expected = (Tokens) {
         .tokens = (char *[]) { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", "0", "1" },
-        .length = 6
+        .nbTokens = 6
     };
     char test5[] = INITIAL_FEN;
-    actual.length = string_removeUnecessarySpacesAndTabs(test5);
-    char *uniqueName5[actual.length];
+    actual.nbTokens = string_removeUnecessarySpacesAndTabs(test5);
+    char *uniqueName5[actual.nbTokens];
     actual.tokens = uniqueName5;
     string_tokenizeStringBySpace(test5, &actual);
 
-    if (actual.length != expected.length) {
+    if (actual.nbTokens != expected.nbTokens) {
         printf("ERROR: string_tokenizeStringBySpace(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\", &actual)\n");
-        printf("\tExpected length: %zu\n", expected.length);
-        printf("\tActual length: %zu\n", actual.length);
+        printf("\tExpected length: %zu\n", expected.nbTokens);
+        printf("\tActual length: %zu\n", actual.nbTokens);
         return false;
     }
-    for (size_t index = 0; index < actual.length; index++) {
+    for (size_t index = 0; index < actual.nbTokens; index++) {
         if (strcmp(actual.tokens[index], expected.tokens[index]) != 0) {
             printf("ERROR: string_tokenizeStringBySpace(\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\", &actual)\n");
             printf("\tExpected string: %s\n", expected.tokens[index]);

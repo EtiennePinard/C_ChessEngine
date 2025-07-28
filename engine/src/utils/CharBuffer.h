@@ -40,7 +40,7 @@ size_t string_removeUnecessarySpacesAndTabs(char *string);
  */
 typedef struct Tokens {
     char **tokens;
-    size_t length;
+    size_t nbTokens;
 } Tokens;
 
 /**

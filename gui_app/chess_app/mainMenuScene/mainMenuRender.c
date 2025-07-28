@@ -218,8 +218,6 @@ SDL_AppResult computeMainMenuSceneRender(App* app) {
 void terminateMainMenuScene(void* data) {
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)data;
     if (!saveMainMenuConfig(&mainMenuData->gameInfo)) SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error saving the config file\n");
-    if (mainMenuData->gameInfo.white.engineConfig.enginePath != NULL) SDL_free(mainMenuData->gameInfo.white.engineConfig.enginePath);
-    if (mainMenuData->gameInfo.black.engineConfig.enginePath != NULL) SDL_free(mainMenuData->gameInfo.black.engineConfig.enginePath);
     cleanupTextures(mainMenuData->textures);
     SDL_free(mainMenuData->textures.data);
     SDL_free(mainMenuData);

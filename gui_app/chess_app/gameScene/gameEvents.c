@@ -8,11 +8,13 @@
 
 #include "../../sdl_framework/AppCleanup.h"
 #include "../../sdl_framework/AppInit.h"
+#include "../../sdl_framework/CommonEvents.h"
 
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
+#include "../mainMenuScene/MainMenuRender.h"
+
 #include "GameModals.h"
 #include "GameRender.h"
-#include "../mainMenuScene/MainMenuRender.h"
 #include "GameEvents.h"
 
 /*
@@ -168,12 +170,8 @@ SDL_Thread* playBotMove(App* app) {
 }
 
 SDL_AppResult resetGame(SDL_Event* event, App* app) {
-    if (app->events.modal.isActive) {
-        // Cancel the modal
-        if (app->events.modal.onEscape) app->events.modal.onEscape(event, app);
-        app->events.modal.isActive = false;
-    }
-
+    if (app->events.modal.isActive) closeModalEventCallback(event, app);
+    
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     GameState* gameState = &data->state;
     // If we are not already at the beginning go back to the beginning
@@ -339,11 +337,14 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
     (void)event;
     (void)rect;
 
+    if (app->events.textInput.isActive) closeTextInput(event, app);
+    if (app->events.modal.isActive) closeModalEventCallback(event, app);
+    
     GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
     MainMenuSceneData* mainMenuData = SDL_calloc(1, sizeof(MainMenuSceneData));
 
     mainMenuData->gameInfo = gameData->gameInfo;
-    app->events.modal.isActive = false;
+    
 
     const char* mainMenuImages[2] = { HUMAN_ICON_PATH, COMPUTER_ICON_PATH };
     if (!initializeTextures(&mainMenuData->textures, 2) ||
@@ -441,7 +442,7 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_FRect rect, App* app) {
     const float maxScrollY = rect.h - data->moveListInfo.scrollbarFRect.h;
     SDL_FPoint mousePoint = { event->button.x, event->button.y };
 
-    // If we click in the scrollbar do not set the scroll ratio but correctly set the dragoffset
+    // If we click in the scrollbar do not set the scroll ratio but correctly set the drag offset
     if (SDL_PointInRectFloat(&mousePoint, &data->moveListInfo.scrollbarFRect)) {
         data->moveListInfo.startingDragOffset = mousePoint.y - data->moveListInfo.scrollbarFRect.y;
         return SDL_APP_CONTINUE;

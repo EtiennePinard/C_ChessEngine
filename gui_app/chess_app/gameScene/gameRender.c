@@ -344,6 +344,10 @@ SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
 #define MAX_MOVE_LIST_WIDTH (250.0)
 
 SDL_AppResult computeGameSceneRender(App* app) {
+    // Setting the global events for the scene
+    app->events.onKeyDown = NULL;
+    app->events.onTextInput = NULL;
+
     SceneRender* sceneRender = &app->state.currentScene.sceneRender;
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 

@@ -93,6 +93,10 @@ SDL_AppResult renderStartGameButton(SDL_FRect rect, App* app) {
 #define MM_BUTTON_WIDTH_PERCENT (0.3f)
 
 SDL_AppResult computeMainMenuSceneRender(App* app) {
+    // Setting the global events for the scene
+    app->events.onKeyDown = &mainMenuKeyDownEvent;
+    app->events.onTextInput = NULL;
+
     SceneRender* sceneRender = &app->state.currentScene.sceneRender;
 
     // Setting in the background color of the scene

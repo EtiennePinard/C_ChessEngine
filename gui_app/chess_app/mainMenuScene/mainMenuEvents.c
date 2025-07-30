@@ -13,53 +13,7 @@
 #include "MainMenuTextInput.h"
 #include "MainMenuEvents.h"
 
-SDL_AppResult enteredStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    return changeMouseIconOnEnterTextInput(event, rect, app);
-}
-
-SDL_AppResult exitedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    return resetMouseIconOnExitTextInput(event, rect, app);
-}
-
-SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-
-    // If the text input is already active, do nothing
-    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
-
-    setStartingPositionTextInputActive(rect, app);
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
-    setEngineConfigModalActive(app, WHITE);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
-    setEngineConfigModalActive(app, BLACK);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
-    setTimeControlModalActive(app, WHITE);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
-    setTimeControlModalActive(app, BLACK);
-    return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
+SDL_AppResult startGame(App* app) {
     MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
 
     GameSceneData* gameData = SDL_calloc(1, sizeof(GameSceneData));
@@ -146,11 +100,71 @@ SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
 
-    resetGame(event, app);
+    resetGame(NULL, app);
 
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
         SDL_free(app->state.currentScene.sceneRender.renderBoxes);
         app->state.currentScene.sceneRender.renderBoxes = NULL;
     }
     return computeGameSceneRender(app);
+}
+
+SDL_AppResult mainMenuKeyDownEvent(SDL_Event* event, App* app) {
+    if (event->key.key == SDLK_RETURN &&
+        !app->events.modal.isActive &&
+        !app->events.textInput.isActive) {
+        // Start the game
+        return startGame(app);
+    }
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult enteredStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return changeMouseIconOnEnterTextInput(event, rect, app);
+}
+
+SDL_AppResult exitedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return resetMouseIconOnExitTextInput(event, rect, app);
+}
+
+SDL_AppResult clickedStartingPosition(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event;
+
+    // If the text input is already active, do nothing
+    if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
+
+    setStartingPositionTextInputActive(rect, app);
+    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setEngineConfigModalActive(app, WHITE);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setEngineConfigModalActive(app, BLACK);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedWhiteTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setTimeControlModalActive(app, WHITE);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedBlackTimeControl(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setTimeControlModalActive(app, BLACK);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedStartGame(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    return startGame(app);
 }

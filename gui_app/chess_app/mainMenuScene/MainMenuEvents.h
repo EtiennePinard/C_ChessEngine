@@ -3,6 +3,8 @@
 
 #include "MainMenuScene.h"
 
+SDL_AppResult mainMenuKeyDownEvent(SDL_Event* event, App* app);
+
 SDL_AppResult clickedWhiteEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
 SDL_AppResult clickedBlackEngineConfig(SDL_Event* event, SDL_FRect rect, App *app);
 

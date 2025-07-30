@@ -3,6 +3,15 @@
 
 #include "GameScene.h"
 
+typedef struct GameEndedModalData {
+    GameResult result;
+} GameEndedModalData;
+
+typedef struct PromotionModalData {
+    Square promotionSquareTo;
+    Square promotionSquareFrom;
+} PromotionModalData;
+
 typedef enum GameModalId {
     PROMOTION_MODAL_ID,
     GAME_ENDED_MODAL_ID

@@ -6,6 +6,7 @@
 
 #include "../AppStyle.h"
 
+#include "MainMenuModals.h"
 #include "MainMenuTextInput.h"
 
 SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {

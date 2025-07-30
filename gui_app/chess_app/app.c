@@ -53,13 +53,13 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
 
 SDL_AppResult afterRenderAndEventsFunction(App* app) {
     if (app->state.currentScene.sceneId == GAME_SCENE_ID) {
-        // Updating the time controls using SDL_GetTicks
         GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-
+        
         if (data->state.result == GAME_IS_NOT_DONE) {
             Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-
+            
+            // Updating the time controls using SDL_GetTicks
             u64 currentTick = SDL_GetTicks();
             if (currentPlayer->timeControl.timeLeft <= currentTick - data->state.previousTick) {
                 currentPlayer->timeControl.timeLeft = 0;

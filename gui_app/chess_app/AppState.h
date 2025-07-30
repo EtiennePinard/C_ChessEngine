@@ -43,11 +43,16 @@ typedef struct TimeControl {
     TimeControl_MS increment;
 } TimeControl;
 
+#define DEFAULT_TIME_CONTROL ((TimeControl) { .timeLeft = (TimeControl_MS) (5 * 60 * 1000), .increment = (TimeControl_MS) (0) })
+
 typedef struct EngineConfig {
     bool isEngine;
     TimeControl_MS timeToThink; // 0 if the bot thinks by itself
     char* enginePath;
 } EngineConfig;
+
+#define DEFAULT_TIME_TO_THINK ((TimeControl_MS) 200)
+#define ENGINE_THINKS_BY_HIMSELF ((TimeControl_MS) 0)
 
 typedef struct PlayerConfig {
     TimeControl timeControl;

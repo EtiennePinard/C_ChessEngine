@@ -3,24 +3,6 @@
 
 #include "../AppState.h"
 
-typedef struct TimeControlModalData {
-    TimeControl hovered;
-    PieceCharacteristics playerColor;
-} TimeControlModalData;
-
-typedef struct EngineConfigModalData {
-    EngineConfig currentConfig;
-    PieceCharacteristics playerColor;
-
-    SDL_FRect checkboxRect;
-    SDL_FRect enginePathRect;
-    SDL_FRect thinkTimeRect;
-    SDL_FRect okButtonRect;
-    SDL_FRect cancelButtonRect;
-
-    bool wasTextInputExited;
-} EngineConfigModalData;
-
 typedef struct MainMenuSceneData {
     GameConfig gameInfo;
 

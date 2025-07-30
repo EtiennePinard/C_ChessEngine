@@ -99,7 +99,7 @@ void playMoveOnBoard(GameSceneData* data, Move move) {
 
     // We add the time increment
     // Note: We add the increment before checking if we have ran out of time
-    // Maybe verify if this is how a gui is supposed to do it
+    // TODO: Maybe verify if this is how a gui is supposed to do it
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     currentPlayer->timeControl.timeLeft += currentPlayer->timeControl.increment;
     MoveHandler_playMove(move, &gameState->position, true);
@@ -126,29 +126,44 @@ static int botMove(void* app_pointer) {
         data->undoGameStates.data[0].position;
     Player* currentPlayer = gameState->position.colorToGo == WHITE ? &gameState->white : &gameState->black;
     SDL_assert(currentPlayer->engineCommunication != NULL);
+    EngineConfig currentConfig = gameState->position.colorToGo == WHITE ? data->gameInfo.white.engineConfig : data->gameInfo.black.engineConfig;
+    SDL_assert(currentConfig.isEngine);
 
-    Move botMove = UCIEngine_bestMoveTimed(
-        currentPlayer->engineCommunication,
-        startingPosition,
-        data->moveListInfo.movesPlayed.data,
-        data->moveListInfo.movesPlayed.count,
-        200
-        // gameState->white.timeControl.timeLeft,
-        // gameState->white.timeControl.timeLeft,
-        // gameState->white.timeControl.increment,
-        // gameState->black.timeControl.increment,
-        // -1 // We don't have movesToGo for now
-    );
+    Move engineMove;
+    if (currentConfig.timeToThink == 0) {
+        // Engine thinks by himself
+        engineMove = UCIEngine_bestMoveFromTimeControls(
+            currentPlayer->engineCommunication,
+            startingPosition,
+            data->moveListInfo.movesPlayed.data,
+            data->moveListInfo.movesPlayed.count,
+            gameState->white.timeControl.timeLeft,
+            gameState->white.timeControl.timeLeft,
+            gameState->white.timeControl.increment,
+            gameState->black.timeControl.increment,
+            -1 // We don't have movesToGo for now
+        );
+    }
+    else {
+        // Engine thinks for a specific amount of time
+        engineMove = UCIEngine_bestMoveTimed(
+            currentPlayer->engineCommunication,
+            startingPosition,
+            data->moveListInfo.movesPlayed.data,
+            data->moveListInfo.movesPlayed.count,
+            currentConfig.timeToThink
+        );
+    }
 
-    if (Move_fromSquare(botMove) == Move_toSquare(botMove) && data->state.result == GAME_IS_NOT_DONE) {
+    if (Move_fromSquare(engineMove) == Move_toSquare(engineMove) && data->state.result == GAME_IS_NOT_DONE) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "The engine gave back a NULL_MOVE and the game is not done\n");
         return 1;
     }
 
-    botMove = MoveHandler_correctMoveFlag(gameState->position, botMove);
+    engineMove = MoveHandler_correctMoveFlag(gameState->position, engineMove);
     SDL_SetAtomicInt(&currentPlayer->isBotThinking, false);
 
-    playMoveOnBoard(data, botMove);
+    playMoveOnBoard(data, engineMove);
     if (data->state.result != GAME_IS_NOT_DONE) setGameEndedModalActive(app);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, OTHER_THREAD_RERENDER);
 
@@ -158,8 +173,8 @@ static int botMove(void* app_pointer) {
 SDL_Thread* playBotMove(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     Player* currentPlayer = data->state.position.colorToGo == WHITE ? &data->state.white : &data->state.black;
-    SDL_SetAtomicInt(&currentPlayer->isBotThinking, true);
 
+    SDL_SetAtomicInt(&currentPlayer->isBotThinking, true);
     SDL_Thread* thread = SDL_CreateThread(botMove, "botMove", app);
     if (thread == NULL) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create thread: %s\n", SDL_GetError());
@@ -171,7 +186,7 @@ SDL_Thread* playBotMove(App* app) {
 
 SDL_AppResult resetGame(SDL_Event* event, App* app) {
     if (app->events.modal.isActive) closeModalEventCallback(event, app);
-    
+
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     GameState* gameState = &data->state;
     // If we are not already at the beginning go back to the beginning
@@ -306,7 +321,7 @@ SDL_AppResult chessBoardMouseButtonUp(SDL_Event* event, SDL_FRect rect, App* app
 SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     if (data->state.result != GAME_IS_NOT_DONE) return SDL_APP_CONTINUE;
-    
+
     Square square = squareFromxy((int)event->button.x, (int)event->button.y, data->flipBoard, rect);
     if (square == NO_SQUARE_SELECTED) {
         // Probably a floating point error when the mouse is on the edge of the board
@@ -339,12 +354,12 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
 
     if (app->events.textInput.isActive) closeTextInput(event, app);
     if (app->events.modal.isActive) closeModalEventCallback(event, app);
-    
+
     GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
     MainMenuSceneData* mainMenuData = SDL_calloc(1, sizeof(MainMenuSceneData));
 
     mainMenuData->gameInfo = gameData->gameInfo;
-    
+
 
     const char* mainMenuImages[2] = { HUMAN_ICON_PATH, COMPUTER_ICON_PATH };
     if (!initializeTextures(&mainMenuData->textures, 2) ||
@@ -409,7 +424,7 @@ SDL_AppResult clickedDownMoveList(SDL_Event* event, SDL_FRect rect, App* app) {
 
     computeGameEnd(&data->state);
     if (data->state.result != GAME_IS_NOT_DONE) setGameEndedModalActive(app);
-    
+
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
     return SDL_APP_CONTINUE;

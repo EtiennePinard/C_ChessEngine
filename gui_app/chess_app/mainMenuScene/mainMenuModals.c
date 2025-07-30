@@ -293,7 +293,7 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
 
             if (modalData->currentConfig.timeToThink == 0) {
                 result = renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font,
-                    "Set engine's think time (ms)", textColor, timeRect);
+                    "Engine thinks by himself", textColor, timeRect);
             }
             else {
                 // If there already is a time to think set it
@@ -304,9 +304,24 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
             }
         }
 
+        // This is for updating the rectangle when resizing the screen
         if (app->events.textInput.isActive && app->events.textInput.textInputId == THINK_TIME_TEXT_INPUT_ID) {
             app->events.textInput.textInputRender.renderRect = timeRect;
         }
+
+        y += buttonHeight + padding;
+
+        SDL_FRect thinksByHimselfRect = {
+            .x = rect.x + padding,
+            .y = y,
+            .w = rect.w - 2 * padding,
+            .h = buttonHeight
+        };
+        result = renderLabeledCheckboxButton(thinksByHimselfRect, app,
+            modalData->currentConfig.timeToThink == 0, "Engine thinks on its own", HOVERING_MODAL,
+            CHECKBOX_BORDER_COLOR, CHECKBOX_HOVER_COLOR, CHECKBOX_CHECKED_COLOR, CHECKBOX_TEXT_COLOR);
+        modalData->thinkByHimselfRect = thinksByHimselfRect;
+        if (result != SDL_APP_CONTINUE) return result;
     }
 
     // OK and Cancel buttons
@@ -486,15 +501,33 @@ SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* ap
         app->events.modal.isActive = false;
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->checkboxRect)) {
+        if (app->events.textInput.isActive) closeTextInput(event, app);
+
         // Switching isEngine to its opposite value
         modalData->currentConfig.isEngine = !modalData->currentConfig.isEngine;
     }
-    else if (SDL_PointInRectFloat(&mousePoint, &modalData->enginePathRect)) {
+    else if (SDL_PointInRectFloat(&mousePoint, &modalData->enginePathRect) &&
+        modalData->currentConfig.isEngine) {
         return clickedEnginePath(app);
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->thinkTimeRect) &&
         modalData->currentConfig.isEngine) {
+        // If the think time is 0 then set it to the default value
+        if (modalData->currentConfig.timeToThink == 0) {
+            modalData->currentConfig.timeToThink = DEFAULT_TIME_TO_THINK;
+        }
         return clickedThinkTime(modalData->thinkTimeRect, app);
+    }
+    else if (SDL_PointInRectFloat(&mousePoint, &modalData->thinkByHimselfRect) &&
+        modalData->currentConfig.isEngine) {
+        if (modalData->currentConfig.timeToThink == 0) {
+            modalData->currentConfig.timeToThink = DEFAULT_TIME_TO_THINK;
+            clickedThinkTime(modalData->thinkTimeRect, app);
+        }
+        else {
+            // Put think time to 0
+            modalData->currentConfig.timeToThink = 0;
+        }
     }
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);

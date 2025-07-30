@@ -59,6 +59,8 @@ bool parseEnginePath(char** engineConfigPath, Tokens tokens, size_t read) {
         enginePathIndex += SDL_strlen(currentToken);
         enginePath[enginePathIndex++] = SPACE_CHAR;
     }
+    // Removing the last space char
+    enginePath[enginePathIndex - 1] = '\0';
     *engineConfigPath = enginePath;
     return true;
 }
@@ -81,16 +83,16 @@ bool parseStartingPosition(char** fen, Tokens tokens, size_t read) {
     // length of startingPosition<space> is 17
     size_t parsedFenLength = read - 17 + tokens.nbTokens + 1;
     char* parsedFen = SDL_calloc(parsedFenLength, sizeof(char));
-    size_t enginePathIndex = 0;
+    size_t parsedFenIndex = 0;
     for (size_t tokenIndex = 1; tokenIndex < tokens.nbTokens; tokenIndex++) {
         char* currentToken = tokens.tokens[tokenIndex];
-        SDL_memcpy(parsedFen + enginePathIndex, currentToken, SDL_strlen(currentToken));
-        enginePathIndex += SDL_strlen(currentToken);
-        parsedFen[enginePathIndex++] = SPACE_CHAR;
+        SDL_memcpy(parsedFen + parsedFenIndex, currentToken, SDL_strlen(currentToken));
+        parsedFenIndex += SDL_strlen(currentToken);
+        parsedFen[parsedFenIndex++] = SPACE_CHAR;
     }
-    parsedFen[enginePathIndex - 1] = '\0';
+    // Removing the last space char
+    parsedFen[parsedFenIndex - 1] = '\0';
     *fen = parsedFen;
-
     return true;
 }
 
@@ -225,12 +227,12 @@ fallback:
     SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not load settings from file\n");
     data->white.engineConfig.isEngine = false;
     data->white.engineConfig.enginePath = NULL;
-    data->white.engineConfig.timeToThink = 0;
+    data->white.engineConfig.timeToThink = DEFAULT_TIME_TO_THINK;
     data->white.timeControl = DEFAULT_TIME_CONTROL;
 
     data->black.engineConfig.isEngine = false;
     data->black.engineConfig.enginePath = NULL;
-    data->black.engineConfig.timeToThink = 0;
+    data->black.engineConfig.timeToThink = DEFAULT_TIME_TO_THINK;
     data->black.timeControl = DEFAULT_TIME_CONTROL;
 
     data->startingPositionFen = INITIAL_FEN;
@@ -283,6 +285,6 @@ bool saveMainMenuConfig(const GameConfig* data) {
     fclose(file);
     if (success) SDL_Log("Saved file to %s\n", configPath);
     else SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not save file to %s\n", configPath);
-    
+
     return success;
 }

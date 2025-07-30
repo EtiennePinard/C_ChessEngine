@@ -3,8 +3,6 @@
 
 #include "../AppState.h"
 
-#define DEFAULT_TIME_CONTROL ((TimeControl) { .timeLeft = (TimeControl_MS) (5 * 60 * 1000), .increment = (TimeControl_MS) (0) })
-
 typedef struct UndoGameState {
     ChessPosition position;
     TimeControl whiteTimeControl;
@@ -62,15 +60,6 @@ typedef struct MoveListInfo {
 
     int hoveredMoveIndex;
 } MoveListInfo;
-
-typedef struct GameEndedModalData {
-    GameResult result;
-} GameEndedModalData;
-
-typedef struct PromotionModalData {
-    Square promotionSquareTo;
-    Square promotionSquareFrom;
-} PromotionModalData;
 
 #define NO_SQUARE_SELECTED ((Square)-1)
 

@@ -336,12 +336,14 @@ SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
 #define BOARD_SIZE_PERCENT (0.75f)
 #define CLOCK_HEIGHT_PERCENT (0.07f)
 #define CLOCK_WIDTH_PERCENT (0.1f)
+#define ICON_BUTTON_WIDTH_PERCENT (0.1f)
 #define GAME_BUTTON_HEIGHT_PERCENT CLOCK_HEIGHT_PERCENT
 #define GAME_BUTTON_WIDTH_PERCENT CLOCK_WIDTH_PERCENT
 #define SCROLL_BAR_WIDTH_PERCENT (0.02f)
 
 #define MAX_SCROLL_BAR_WIDTH (20.0)
 #define MAX_MOVE_LIST_WIDTH (250.0)
+#define MAX_ICON_BUTTON_WIDTH (200.0)
 
 SDL_AppResult computeGameSceneRender(App* app) {
     // Setting the global events for the scene
@@ -366,16 +368,69 @@ SDL_AppResult computeGameSceneRender(App* app) {
     SDL_GetWindowSize(app->state.sdlState.window, &windowWidth, &windowHeight);
 
     const float padding = PADDING_PERCENT * windowHeight;
+    const float iconButtonWidth = SDL_min(ICON_BUTTON_WIDTH_PERCENT * windowWidth, MAX_ICON_BUTTON_WIDTH);
     const float clockHeight = CLOCK_HEIGHT_PERCENT * windowHeight;
     const float clockWidth = CLOCK_WIDTH_PERCENT * windowWidth;
     const float boardSize = min(windowHeight, windowWidth) * BOARD_SIZE_PERCENT;
     const float moveListScrollWidth = SDL_min(SCROLL_BAR_WIDTH_PERCENT * windowWidth, MAX_SCROLL_BAR_WIDTH);
 
-    const float maxGameSceneWidth = boardSize + padding + MAX_MOVE_LIST_WIDTH + moveListScrollWidth;
+    const float maxGameSceneWidth = iconButtonWidth + padding + boardSize + padding + MAX_MOVE_LIST_WIDTH + moveListScrollWidth;
 
     // If we have too much space simply center the game scene
-    const float boardX = (float)windowWidth > maxGameSceneWidth ? (windowWidth - maxGameSceneWidth) / 2.0 : padding;
+    const float iconButtonListX = (float)windowWidth > maxGameSceneWidth ? (windowWidth - maxGameSceneWidth) / 2.0 : 0.0;
 
+    // Icons Buttons
+    const float buttonWidth = iconButtonWidth - padding;
+    const float buttonHeight = GAME_BUTTON_HEIGHT_PERCENT * windowHeight;
+
+    const float iconButtonX = iconButtonListX < padding ? padding : iconButtonListX;
+    float iconButtonY = padding;
+
+    // Rendering back button in icon list
+    SDL_FRect backButtonRect = (SDL_FRect){
+        iconButtonX,
+        iconButtonY,
+        buttonWidth,
+        buttonHeight
+    };
+    sceneRender->renderBoxes[BACK_BUTTON].renderRect = backButtonRect;
+    sceneRender->renderBoxes[BACK_BUTTON].renderFunction = &renderBackButton;
+    sceneRender->renderBoxes[BACK_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[BACK_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[BACK_BUTTON].onMouseButtonDown = &clickedDownBackButton;
+
+    iconButtonY += buttonHeight + padding;
+
+    // Rendering flip board button in icon list
+    SDL_FRect flipBoardButton = (SDL_FRect){
+        iconButtonX,
+        iconButtonY,
+        buttonWidth,
+        buttonHeight
+    };
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderRect = flipBoardButton;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderFunction = &renderFlipBoardButton;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseButtonDown = &clickedDownFlipBoardButton;
+
+    iconButtonY += buttonHeight + padding;
+
+    // Rendering restart button in icon list
+    SDL_FRect restartButtonRect = (SDL_FRect){
+        iconButtonX,
+        iconButtonY,
+        buttonWidth,
+        buttonHeight
+    };
+    sceneRender->renderBoxes[RESTART_BUTTON].renderRect = restartButtonRect;
+    sceneRender->renderBoxes[RESTART_BUTTON].renderFunction = &renderRestartButton;
+    sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedRestartButton;
+
+
+    const float boardX = iconButtonListX + iconButtonWidth + padding;
     const float moveListX = boardX + boardSize + padding;
     const float moveListWidth = SDL_min(windowWidth - moveListX - moveListScrollWidth, MAX_MOVE_LIST_WIDTH);
 
@@ -435,48 +490,6 @@ SDL_AppResult computeGameSceneRender(App* app) {
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseButtonDown = &clickedDownScrollbar;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseHovered = &rerenderScene;
     sceneRender->renderBoxes[MOVE_LIST_SCROLLBAR].onMouseWheelScrolled = &movelistMouseWheelScrolled;
-
-    // Buttons
-    const float buttonWidth = GAME_BUTTON_WIDTH_PERCENT * windowWidth;
-    const float buttonHeight = GAME_BUTTON_HEIGHT_PERCENT * windowHeight;
-
-    // Back button
-    SDL_FRect backButtonRect = (SDL_FRect){
-        boardX,
-        padding,
-        buttonWidth,
-        buttonHeight
-    };
-    sceneRender->renderBoxes[BACK_BUTTON].renderRect = backButtonRect;
-    sceneRender->renderBoxes[BACK_BUTTON].renderFunction = &renderBackButton;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseButtonDown = &clickedDownBackButton;
-
-    SDL_FRect restartButtonRect = (SDL_FRect){
-        boardX,
-        boardY + boardSize + padding,
-        buttonWidth,
-        buttonHeight
-    };
-    sceneRender->renderBoxes[RESTART_BUTTON].renderRect = restartButtonRect;
-    sceneRender->renderBoxes[RESTART_BUTTON].renderFunction = &renderRestartButton;
-    sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedRestartButton;
-
-
-    SDL_FRect flipBoardButton = (SDL_FRect){
-        moveListX + (moveListWidth - buttonWidth) / 2,
-        restartButtonRect.y,
-        buttonWidth,
-        buttonHeight
-    };
-    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderRect = flipBoardButton;
-    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].renderFunction = &renderFlipBoardButton;
-    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[FLIP_BOARD_BUTTON].onMouseButtonDown = &clickedDownFlipBoardButton;
 
     return SDL_APP_CONTINUE;
 }

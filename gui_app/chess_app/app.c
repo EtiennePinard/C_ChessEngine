@@ -85,6 +85,8 @@ SDL_AppResult afterRenderAndEventsFunction(App* app) {
     return SDL_APP_CONTINUE;
 }
 
+// TODO: Make only one scene, the game scene and add the main menu as a settings modal
+// This will make the app much more intuitive and make the user understand the app without having to poke around too much
 bool initializeApp(App* app) {
     // Initializing the SDL libraries and state needed throughout the entire app
     SDL_Log("Initializing SDL libraries...\n");

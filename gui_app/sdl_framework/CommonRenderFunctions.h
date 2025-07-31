@@ -105,5 +105,4 @@ SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked
  */
 SDL_AppResult drawFilledCircle(SDL_Renderer* renderer, float cx, float cy, float radius);
 
-
 #endif /* EB87E2EB_70FD_4BED_BC65_62901812984A */

@@ -10,7 +10,7 @@
 #include "uciEngineCommunication/UCIEngineCommunication.h"
 #include "gameScene/GameRender.h"
 #include "mainMenuScene/MainMenuRender.h"
-#include "gameScene/GameModals.h"
+#include "gameScene/modals/GameModals.h"
 #include "mainMenuScene/MainMenuModals.h"
 #include "gameScene/GameEvents.h"
 #include "Config.h"

@@ -15,6 +15,7 @@ typedef enum GameSceneRenderBoxIndex {
     RESTART_BUTTON,
     BACK_BUTTON,
     FLIP_BOARD_BUTTON,
+    SETTINGS_BUTTON,
     TOTAL_GAME_SCENE_RENDER_BOX
 } GameSceneRenderBoxIndex;
 

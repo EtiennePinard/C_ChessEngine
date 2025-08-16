@@ -5,6 +5,7 @@
 #include "../../sdl_framework/CommonEvents.h"
 #include "../../sdl_framework/CommonRenderFunctions.h"
 
+#include "GameEvents.h"
 #include "../AppUtils.h"
 #include "../AppStyle.h"
 
@@ -333,6 +334,10 @@ SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
     return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
+SDL_AppResult renderSettingsButton(SDL_FRect rect, App* app) {
+    return renderButton(rect, app, SETTINGS_BUTTON, "Settings", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+}
+
 #define BOARD_SIZE_PERCENT (0.75f)
 #define CLOCK_HEIGHT_PERCENT (0.07f)
 #define CLOCK_WIDTH_PERCENT (0.1f)
@@ -429,6 +434,20 @@ SDL_AppResult computeGameSceneRender(App* app) {
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedRestartButton;
 
+    iconButtonY += buttonHeight + padding;
+
+    // Rendering settings button in icon list
+    SDL_FRect settingsButtonRect = (SDL_FRect){
+        iconButtonX,
+        iconButtonY,
+        buttonWidth,
+        buttonHeight
+    };
+    sceneRender->renderBoxes[SETTINGS_BUTTON].renderRect = settingsButtonRect;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].renderFunction = &renderSettingsButton;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseButtonDown = &clickedSettingsButton;
 
     const float boardX = iconButtonListX + iconButtonWidth + padding;
     const float moveListX = boardX + boardSize + padding;

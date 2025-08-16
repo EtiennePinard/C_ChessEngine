@@ -13,7 +13,7 @@
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
 #include "../mainMenuScene/MainMenuRender.h"
 
-#include "GameModals.h"
+#include "modals/GameModals.h"
 #include "GameRender.h"
 #include "GameEvents.h"
 
@@ -364,7 +364,7 @@ SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) 
     const char* mainMenuImages[2] = { HUMAN_ICON_PATH, COMPUTER_ICON_PATH };
     if (!initializeTextures(&mainMenuData->textures, 2) ||
         !loadImageFromFilePath(&app->state.sdlState, &mainMenuData->textures, mainMenuImages, 2)) {
-        return false;
+        return SDL_APP_FAILURE;
     }
 
     app->state.currentScene.selectedRenderBoxIndex = -1;
@@ -399,6 +399,12 @@ SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* 
     if (computeGameSceneRender(app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult clickedSettingsButton(SDL_Event* event, SDL_FRect rect, App* app) {
+    (void)event, (void)rect;
+    setSettingsModalActive(app);
     return SDL_APP_CONTINUE;
 }
 

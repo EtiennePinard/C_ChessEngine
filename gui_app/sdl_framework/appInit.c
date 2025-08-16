@@ -1,18 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <SDL3_image/SDL_image.h>
 
 #include "AppInit.h"
 
 bool initializeSDlLibraries(u32 sdlFlags) {
     if (!SDL_Init(sdlFlags)) {
-        fprintf(stderr, "SDL_Init Error: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_Init Error: %s\n", SDL_GetError());
         return false;
     }
 
     if (!TTF_Init()) {
-        fprintf(stderr, "TTF_Init Error: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_Init Error: %s\n", SDL_GetError());
         SDL_Quit();
         return false;
     }
@@ -27,7 +24,7 @@ bool initializeSDLState(SDL_State* sdlState,
     sdlState->window = SDL_CreateWindow(windowTitle, windowWidth, windowHeight, windowFlags);
     SDL_SetWindowPosition(sdlState->window, windowX, windowY);
     if (sdlState->window == NULL) {
-        fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_CreateWindow Error: %s\n", SDL_GetError());
         TTF_Quit();
         SDL_Quit();
         return false;
@@ -35,7 +32,7 @@ bool initializeSDLState(SDL_State* sdlState,
 
     sdlState->renderer = SDL_CreateRenderer(sdlState->window, rendererName);
     if (sdlState->renderer == NULL) {
-        fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
         SDL_DestroyWindow(sdlState->window);
         TTF_Quit();
         SDL_Quit();
@@ -44,7 +41,7 @@ bool initializeSDLState(SDL_State* sdlState,
 
     sdlState->font = TTF_OpenFont(fontPath, fontSize);
     if (sdlState->font == NULL) {
-        fprintf(stderr, "TTF_OpenFont Error: %s\n", SDL_GetError());
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "TTF_OpenFont Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(sdlState->renderer);
         SDL_DestroyWindow(sdlState->window);
         TTF_Quit();
@@ -59,7 +56,7 @@ bool initializeTextures(Textures* textures, size_t initialCapacity) {
     if (textures->data != NULL) return true; // textures is already initialized
 
     textures->capacity = initialCapacity;
-    textures->data = calloc(textures->capacity, sizeof(TextureState));
+    textures->data = SDL_calloc(textures->capacity, sizeof(TextureState));
     return textures->data != NULL;
 }
 
@@ -68,7 +65,7 @@ bool loadImageFromFilePath(SDL_State* sdlState, Textures* textures, const char**
         SDL_IOStream* ioStream = SDL_IOFromFile(filePaths[index], "rb");
         SDL_Surface* surface = IMG_Load_IO(ioStream, 1);
         if (surface == NULL) {
-            fprintf(stderr, "Failed to load image %s: %s\n", filePaths[index], SDL_GetError());
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to load image %s: %s\n", filePaths[index], SDL_GetError());
             return false;
         }
 
@@ -76,7 +73,7 @@ bool loadImageFromFilePath(SDL_State* sdlState, Textures* textures, const char**
 
         textureState.texture = SDL_CreateTextureFromSurface(sdlState->renderer, surface);
         if (textureState.texture == NULL) {
-            fprintf(stderr, "Failed to create texture for %s: %s\n", filePaths[index], SDL_GetError());
+            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create texture for %s: %s\n", filePaths[index], SDL_GetError());
             SDL_DestroySurface(surface);
             return false;
         }

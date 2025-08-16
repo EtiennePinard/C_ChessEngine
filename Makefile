@@ -140,7 +140,11 @@ app_SRC = \
     gui_app/chess_app/mainMenuScene/mainMenuTextInput.c \
     gui_app/chess_app/gameScene/gameEvents.c \
     gui_app/chess_app/gameScene/gameRender.c \
-    gui_app/chess_app/gameScene/gameModals.c \
+    gui_app/chess_app/gameScene/modals/gameEndModal.c \
+    gui_app/chess_app/gameScene/modals/promotionModal.c \
+    gui_app/chess_app/gameScene/modals/settings/settingsModal.c \
+    gui_app/chess_app/gameScene/modals/settings/settingsRender.c \
+    gui_app/chess_app/gameScene/modals/settings/settingsTextInput.c \
     gui_app/chess_app/appUtils.c \
     gui_app/chess_app/config.c \
     gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \

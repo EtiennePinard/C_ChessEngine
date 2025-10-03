@@ -129,10 +129,6 @@ app_SRC = \
     engine/src/magicBitBoard/bishop.c \
     engine/src/bot/repetitionTable.c \
     gui_app/chess_app/app.c \
-    gui_app/chess_app/mainMenuScene/mainMenuEvents.c \
-    gui_app/chess_app/mainMenuScene/mainMenuRender.c \
-    gui_app/chess_app/mainMenuScene/mainMenuModals.c \
-    gui_app/chess_app/mainMenuScene/mainMenuTextInput.c \
     gui_app/chess_app/gameScene/gameEvents.c \
     gui_app/chess_app/gameScene/gameRender.c \
     gui_app/chess_app/gameScene/modals/gameEndModal.c \

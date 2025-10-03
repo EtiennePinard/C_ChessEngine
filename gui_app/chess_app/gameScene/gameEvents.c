@@ -11,7 +11,6 @@
 #include "../../sdl_framework/CommonEvents.h"
 
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
-#include "../mainMenuScene/MainMenuRender.h"
 
 #include "modals/GameModals.h"
 #include "GameRender.h"

@@ -8,9 +8,6 @@
 #include "gameScene/modals/GameModals.h"
 #include "gameScene/GameEvents.h"
 
-#include "mainMenuScene/MainMenuRender.h"
-#include "mainMenuScene/MainMenuModals.h"
-
 #include "Config.h"
 #include "AppUtils.h"
 #include "AppState.h"
@@ -23,12 +20,6 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
     }
 
     switch (app->state.currentScene.sceneId) {
-    case MAIN_MENU_SCENE_ID:
-        if (computeMainMenuSceneRender(app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-        if (app->events.modal.isActive) {
-            app->events.modal.modalRender.renderRect = computeMainMenuModalRect(app->state.sdlState.window);
-        }
-        break;
     case GAME_SCENE_ID:
         if (computeGameSceneRender(app) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
         if (app->events.modal.isActive) {
@@ -130,12 +121,6 @@ void cleanupApp(App* app) {
 
     // Freeing the allocated engine config strings
     switch (app->state.currentScene.sceneId) {
-    case MAIN_MENU_SCENE_ID:
-        MainMenuSceneData* mainMenuData = (MainMenuSceneData*)app->state.currentScene.data;
-        if (mainMenuData->gameInfo.white.engineConfig.enginePath) SDL_free(mainMenuData->gameInfo.white.engineConfig.enginePath);
-        if (mainMenuData->gameInfo.black.engineConfig.enginePath) SDL_free(mainMenuData->gameInfo.black.engineConfig.enginePath);
-        if (mainMenuData->gameInfo.startingPositionFen) SDL_free(mainMenuData->gameInfo.startingPositionFen);
-        break;
     case GAME_SCENE_ID:
         GameSceneData* gameSceneData = (GameSceneData*)app->state.currentScene.data;
         if (gameSceneData->gameInfo.white.engineConfig.enginePath) SDL_free(gameSceneData->gameInfo.white.engineConfig.enginePath);

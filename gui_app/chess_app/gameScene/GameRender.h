@@ -12,10 +12,9 @@ typedef enum GameSceneRenderBoxIndex {
     // with the scrollbar will not work
     MOVE_LIST_SCROLLBAR,
     MOVE_LIST,
-    RESTART_BUTTON,
-    BACK_BUTTON,
-    FLIP_BOARD_BUTTON,
     SETTINGS_BUTTON,
+    FLIP_BOARD_BUTTON,
+    RESTART_BUTTON,
     TOTAL_GAME_SCENE_RENDER_BOX
 } GameSceneRenderBoxIndex;
 

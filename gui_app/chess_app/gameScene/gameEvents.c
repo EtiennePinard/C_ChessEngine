@@ -347,43 +347,6 @@ SDL_AppResult chessBoardMouseButtonDown(SDL_Event* event, SDL_FRect rect, App* a
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event;
-    (void)rect;
-
-    if (app->events.textInput.isActive) closeTextInput(event, app);
-    if (app->events.modal.isActive) closeModalEventCallback(event, app);
-
-    GameSceneData* gameData = (GameSceneData*)app->state.currentScene.data;
-    MainMenuSceneData* mainMenuData = SDL_calloc(1, sizeof(MainMenuSceneData));
-
-    mainMenuData->gameInfo = gameData->gameInfo;
-
-
-    const char* mainMenuImages[2] = { HUMAN_ICON_PATH, COMPUTER_ICON_PATH };
-    if (!initializeTextures(&mainMenuData->textures, 2) ||
-        !loadImageFromFilePath(&app->state.sdlState, &mainMenuData->textures, mainMenuImages, 2)) {
-        return SDL_APP_FAILURE;
-    }
-
-    app->state.currentScene.selectedRenderBoxIndex = -1;
-    app->events.mouseState.hoveredIndex = -1;
-
-    // Calling the main menu terminating scene function
-    app->state.currentScene.terminateSceneFunction(gameData);
-
-    // Setting the current scene to the game scene
-    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
-    app->state.currentScene.data = mainMenuData;
-    app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
-    SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
-    if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
-        SDL_free(app->state.currentScene.sceneRender.renderBoxes);
-        app->state.currentScene.sceneRender.renderBoxes = NULL;
-    }
-    return computeMainMenuSceneRender(app);
-}
-
 SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event;
     (void)rect;

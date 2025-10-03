@@ -326,10 +326,6 @@ SDL_AppResult renderRestartButton(SDL_FRect rect, App* app) {
     return renderButton(rect, app, RESTART_BUTTON, "Restart", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
-SDL_AppResult renderBackButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, BACK_BUTTON, "Back", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
-}
-
 SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
     return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
@@ -391,20 +387,19 @@ SDL_AppResult computeGameSceneRender(App* app) {
     const float iconButtonX = iconButtonListX < padding ? padding : iconButtonListX;
     float iconButtonY = padding;
 
-    // Rendering back button in icon list
-    SDL_FRect backButtonRect = (SDL_FRect){
+    // Rendering settings button in icon list
+    SDL_FRect settingsButtonRect = (SDL_FRect){
         iconButtonX,
         iconButtonY,
         buttonWidth,
         buttonHeight
     };
-    sceneRender->renderBoxes[BACK_BUTTON].renderRect = backButtonRect;
-    sceneRender->renderBoxes[BACK_BUTTON].renderFunction = &renderBackButton;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[BACK_BUTTON].onMouseButtonDown = &clickedDownBackButton;
-
     iconButtonY += buttonHeight + padding;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].renderRect = settingsButtonRect;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].renderFunction = &renderSettingsButton;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseEntered = &rerenderScene;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseExited = &rerenderScene;
+    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseButtonDown = &clickedSettingsButton;
 
     // Rendering flip board button in icon list
     SDL_FRect flipBoardButton = (SDL_FRect){
@@ -433,21 +428,6 @@ SDL_AppResult computeGameSceneRender(App* app) {
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseExited = &rerenderScene;
     sceneRender->renderBoxes[RESTART_BUTTON].onMouseButtonDown = &clickedRestartButton;
-
-    iconButtonY += buttonHeight + padding;
-
-    // Rendering settings button in icon list
-    SDL_FRect settingsButtonRect = (SDL_FRect){
-        iconButtonX,
-        iconButtonY,
-        buttonWidth,
-        buttonHeight
-    };
-    sceneRender->renderBoxes[SETTINGS_BUTTON].renderRect = settingsButtonRect;
-    sceneRender->renderBoxes[SETTINGS_BUTTON].renderFunction = &renderSettingsButton;
-    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseEntered = &rerenderScene;
-    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseExited = &rerenderScene;
-    sceneRender->renderBoxes[SETTINGS_BUTTON].onMouseButtonDown = &clickedSettingsButton;
 
     const float boardX = iconButtonListX + iconButtonWidth + padding;
     const float moveListX = boardX + boardSize + padding;

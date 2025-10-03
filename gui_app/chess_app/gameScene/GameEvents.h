@@ -12,7 +12,6 @@ SDL_AppResult clickedDownPromotionModal(SDL_Event* event, SDL_FRect rect, App* a
 
 // Buttons
 SDL_AppResult clickedRestartButton(SDL_Event* event, SDL_FRect rect, App* app);
-SDL_AppResult clickedDownBackButton(SDL_Event* event, SDL_FRect rect, App* app);
 SDL_AppResult clickedDownFlipBoardButton(SDL_Event* event, SDL_FRect rect, App* app);
 SDL_AppResult clickedSettingsButton(SDL_Event* event, SDL_FRect rect, App* app);
 

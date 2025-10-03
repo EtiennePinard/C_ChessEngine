@@ -2,7 +2,9 @@
 #include <stdio.h>
 
 #include "../../engine/src/utils/CharBuffer.h"
+
 #include "gameScene/GameScene.h"
+
 #include "Config.h"
 
 #define WHITE_TIME_CONTROL_TOKEN ("wTimeControl")
@@ -207,9 +209,9 @@ void loadMainMenuConfig(GameConfig* data) {
     if (!basePath) goto fallback;
 
     // Construct the full file path
-    size_t length = snprintf(NULL, 0, "%schess.config", basePath) + 1;
+    int length = SDL_snprintf(NULL, 0, "%schess.config", basePath) + 1;
     char* configPath = SDL_calloc(length, sizeof(char));
-    snprintf(configPath, length, "%schess.config", basePath);
+    SDL_snprintf(configPath, length, "%schess.config", basePath);
     SDL_free(basePath);
 
     SDL_Log("Reading config from %s\n", configPath);

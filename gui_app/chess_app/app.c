@@ -3,17 +3,16 @@
 
 #include "../../engine/src/magicBitBoard/MagicBitBoard.h"
 #include "../../engine/src/state/ZobristKey.h"
-#include "../../engine/src/bot/PieceSquareTable.h"
-#include "../../engine/src/bot/TranspositionTable.h"
-#include "../../engine/src/utils/FenString.h"
 
-#include "uciEngineCommunication/UCIEngineCommunication.h"
 #include "gameScene/GameRender.h"
-#include "mainMenuScene/MainMenuRender.h"
 #include "gameScene/modals/GameModals.h"
-#include "mainMenuScene/MainMenuModals.h"
 #include "gameScene/GameEvents.h"
+
+#include "mainMenuScene/MainMenuRender.h"
+#include "mainMenuScene/MainMenuModals.h"
+
 #include "Config.h"
+#include "AppUtils.h"
 #include "AppState.h"
 
 SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
@@ -111,22 +110,12 @@ bool initializeApp(App* app) {
     }
     SDL_Log("Done!\n");
 
-    SDL_Log("Initializing Main Menu Scene...\n");
-    MainMenuSceneData* mainMenu = SDL_calloc(1, sizeof(MainMenuSceneData));
-    loadMainMenuConfig(&mainMenu->gameInfo);
+    SDL_Log("Initializing Game Scene...\n");
+    GameConfig gameConfig; 
+    loadMainMenuConfig(&gameConfig);
+    setGameSceneFromGameConfig(app, &gameConfig);
+
     app->events.modal.isActive = false;
-
-    const char* mainMenuImages[2] = { HUMAN_ICON_PATH, COMPUTER_ICON_PATH };
-    if (!initializeTextures(&mainMenu->textures, 2) ||
-        !loadImageFromFilePath(&app->state.sdlState, &mainMenu->textures, mainMenuImages, 2)) {
-        return false;
-    }
-
-    app->state.currentScene.data = mainMenu;
-    app->state.currentScene.sceneId = MAIN_MENU_SCENE_ID;
-    app->state.currentScene.terminateSceneFunction = &terminateMainMenuScene;
-    if (computeMainMenuSceneRender(app) != SDL_APP_CONTINUE) return false;
-
     app->events.onWindowResize = &onWindowResize;
     app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
 

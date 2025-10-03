@@ -4,6 +4,15 @@
 #include "AppState.h"
 
 /**
+ * @brief Sets the game scene from a game config
+ * 
+ * @param app The app's data
+ * @param gameConfig The game config which will determine the starting conditions of the game
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
+SDL_AppResult setGameSceneFromGameConfig(App* app, GameConfig* gameConfig);
+
+/**
  * @brief Copies a string to a heap allocated piece of memory
  * 
  * @param stringToCopy The string to copy

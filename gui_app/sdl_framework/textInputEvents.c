@@ -1,4 +1,4 @@
-#include "TextInput.h"
+#include "TextInputEvents.h"
 
 void appendTextToTextInput(App* app, const char* text) {
     TextInput* ti = &app->events.textInput;

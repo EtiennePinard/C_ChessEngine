@@ -1,6 +1,6 @@
 #include "../../../../sdl_framework/CommonEvents.h"
 #include "../../../../sdl_framework/AppCleanup.h"
-#include "../../../../sdl_framework/TextInput.h"
+#include "../../../../sdl_framework/TextInputEvents.h"
 
 #include "../../GameEvents.h"
 

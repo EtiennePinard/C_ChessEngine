@@ -2,10 +2,11 @@
 #include <SDL3/SDL_main.h>
 
 #include "AppInit.h"
-#include "EventHandler.h"
 #include "CommonEvents.h"
-#include "Render.h"
 #include "AppCleanup.h"
+
+#include "eventHandler.c"
+#include "render.c"
 
 SDL_AppResult SDL_AppInit(void** globalAppObject, int argc, char** argv) {
     (void)argc;

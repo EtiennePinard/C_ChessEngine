@@ -1,7 +1,7 @@
 #include "../../../engine/src/utils/FenString.h"
 
 #include "../../sdl_framework/CommonEvents.h"
-#include "../../sdl_framework/TextInput.h"
+#include "../../sdl_framework/TextInputEvents.h"
 #include "../../sdl_framework/CommonRenderFunctions.h"
 
 #include "../AppStyle.h"

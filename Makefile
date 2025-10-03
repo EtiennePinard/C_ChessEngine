@@ -111,11 +111,9 @@ chessEngine_SRC = \
 sdlFramework_SRC = \
 	gui_app/sdl_framework/appInit.c \
     gui_app/sdl_framework/appRunner.c \
-    gui_app/sdl_framework/eventHandler.c \
-    gui_app/sdl_framework/render.c \
     gui_app/sdl_framework/appCleanup.c \
     gui_app/sdl_framework/commonEvents.c \
-    gui_app/sdl_framework/textInput.c \
+    gui_app/sdl_framework/textInputEvents.c \
     gui_app/sdl_framework/commonRenderFunctions.c
 
 app_SRC = \

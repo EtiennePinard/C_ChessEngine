@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <stdbool.h>
 #include <limits.h>
-#include <math.h>
 
 #include "../../engine/src/utils/Math.h"
 #include "../../engine/src/bot/PieceSquareTable.h"
@@ -88,7 +85,7 @@ SDL_AppResult visualizePieceSquareTable(SDL_Renderer* renderer, TTF_Font* font,
                 .h = square.h - 4 * textRectPadding
             };
             char number[6];
-            snprintf(number, sizeof(number), "%d", squareScore);
+            SDL_snprintf(number, sizeof(number), "%d", squareScore);
             renderSingleLineTextCenteredToFit(renderer, font, number, TEXT_COLOR, textRect);
         }
     }

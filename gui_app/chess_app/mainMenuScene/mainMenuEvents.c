@@ -2,7 +2,7 @@
 
 #include "../../sdl_framework/AppInit.h"
 #include "../../sdl_framework/CommonEvents.h"
-#include "../../sdl_framework/TextInput.h"
+#include "../../sdl_framework/TextInputEvents.h"
 #include "../../sdl_framework/AppCleanup.h"
 
 #include "../AppStyle.h"

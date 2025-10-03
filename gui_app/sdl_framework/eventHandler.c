@@ -1,8 +1,12 @@
-#include <stdlib.h>
+#include "State.h"
 
-#include "TextInput.h"
-#include "EventHandler.h"
-
+/**
+ * @brief Called every times an event happens.
+ *
+ * @param app The state and events of the app
+ * @param event The event that was fired
+ * @return SDL_AppResult If the app should continue or terminate with failure or success
+ */
 SDL_AppResult handleEvent(App* app, SDL_Event* event) {
     if (!app->events.shouldHandleEvents) return SDL_APP_CONTINUE;
 

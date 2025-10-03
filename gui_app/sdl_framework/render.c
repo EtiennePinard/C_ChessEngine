@@ -1,5 +1,12 @@
-#include "Render.h"
+#include "State.h"
 
+/**
+ * @brief This function gets called every frame right after all 
+ * events in the app were handled.
+ * 
+ * @param app The state and events of the app
+ * @return If the app should continue or terminate with failure or success
+ */
 SDL_AppResult render(App* app) {
     // We only render if we are told so
     if (SDL_GetAtomicInt(&app->state.currentScene.shouldRender) == NO_RERENDER) {

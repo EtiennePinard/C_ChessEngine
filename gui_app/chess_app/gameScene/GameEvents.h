@@ -50,7 +50,24 @@ SDL_Thread* playBotMove(App* app);
  * @param data The game scene data
  * @return SDL_AppResult If the app should continue or terminate with success or failure
  */
-SDL_AppResult resetGame(SDL_Event* event, App* app);
+SDL_AppResult resetGame(App* app);
+
+typedef enum LoadGameInfoResult {
+    SUCCESS,
+    INVALID_FEN_STRING,
+    EMPTY_WHITE_ENGINE_PATH,
+    INVALID_WHITE_ENGINE_PATH,
+    EMPTY_BLACK_ENGINE_PATH,
+    INVALID_BLACK_ENGINE_PATH
+} LoadGameInfoResult;
+
+/**
+ * @brief Loads the gameInfo field from the GameSceneData struct
+ * 
+ * @param app The app state
+ * @return LoadGameInfoResult The result of this operation
+ */
+LoadGameInfoResult loadGameInfo(App* app);
 
 void playMoveOnBoard(GameSceneData* data, Move move);
 

@@ -40,6 +40,10 @@ SDL_AppResult onWindowResize(SDL_Event* event, App* app) {
             }
             else if (app->events.modal.modalId == GAME_ENDED_MODAL_ID) {
                 app->events.modal.modalRender.renderRect = calculateGameEndedRect(app->state.currentScene.sceneRender.renderBoxes[CHESSBOARD].renderRect);
+            } else if (app->events.modal.modalId == SETTINGS_MODAL_ID) {
+                app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
+            } else if (app->events.modal.modalId == TIME_CONTROL_MODAL_ID2) {
+                app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
             }
         }
         break;

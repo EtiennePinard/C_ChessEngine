@@ -2,6 +2,7 @@
 #define B8A31D74_EDB3_4C47_A179_16C371768CA7
 
 #include "../AppState.h"
+#include "../uciEngineCommunication/UCIEngineCommunication.h"
 
 typedef struct UndoGameState {
     ChessPosition position;

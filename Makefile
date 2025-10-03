@@ -19,8 +19,7 @@ BUILD_RULES = \
 	build_perft \
 	build_engine \
 	build_app \
-	build_visualizePST \
-	build_visualizeEval
+	build_visualizePST
 
 RUN_RULES = test perft engine app visualizePST visualizeEval
 
@@ -32,7 +31,6 @@ UNAME_S := $(shell uname -s)
 SDL_INCLUDE_FLAGS = -I"${SDL_INCLUDE_PATH}" -I"${SDL_TTF_INCLUDE_PATH}" -I"${SDL_IMAGE_INCLUDE_PATH}"
 app_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
 visualizePST_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
-visualizeEval_INCLUDEFLAGS = $(SDL_INCLUDE_FLAGS)
 
 # LDFLAGS
 SDL_LDFLAGS = -L${SDL_LIBRARY_PATH} -L${SDL_TTF_LIBRARY_PATH} -L${SDL_IMAGE_LIBRARY_PATH} -lSDL3 -lSDL3_ttf -lSDL3_image
@@ -44,8 +42,7 @@ else ifeq ($(OS),Windows_NT)
 endif
 
 app_LDFLAGS = $(SDL_LDFLAGS) -lm
-visualizePST_LDFLAGS = $(SDL_LDFLAGS)
-visualizeEval_LDFLAGS = $(SDL_LDFLAGS)
+visualizePST_LDFLAGS = $(SDL_LDFLAGS) -lm
 chessEngine_LDFLAGS = -pthread 
 
 # Program arguments
@@ -144,31 +141,16 @@ app_SRC = \
     gui_app/chess_app/gameScene/modals/promotionModal.c \
     gui_app/chess_app/gameScene/modals/settings/settingsModal.c \
     gui_app/chess_app/gameScene/modals/settings/settingsRender.c \
+    gui_app/chess_app/gameScene/modals/settings/settingsEvents.c \
     gui_app/chess_app/gameScene/modals/settings/settingsTextInput.c \
+    gui_app/chess_app/gameScene/modals/settings/timeControlModal.c \
+    gui_app/chess_app/gameScene/modals/settings/engineConfigModal.c \
     gui_app/chess_app/appUtils.c \
     gui_app/chess_app/config.c \
     gui_app/chess_app/uciEngineCommunication/uciEngineCommunication.c \
 	$(sdlFramework_SRC)
 
 visualizePST_SRC = $(sdlFramework_SRC) gui_app/visualize_pst/visualizePieceSquareTable.c engine/src/bot/pieceSquareTable.c
-
-visualizeEval_SRC = \
-	gui_app/visualize_static_evaluation/visualizeStaticEvaluation.c \
-	engine/src/bot/pieceSquareTable.c \
-	engine/src/bot/transpositionTable.c \
-	engine/src/bot/repetitionTable.c \
-	engine/src/bot/evaluation.c \
-	engine/src/moveHandler/movePlayer.c \
-	engine/src/moveHandler/moveGenerator.c \
-    engine/src/utils/fenString.c \
-    engine/src/utils/charBuffer.c \
-    engine/src/state/board.c \
-    engine/src/state/zobristKey.c \
-    engine/src/magicBitBoard/magicBitBoard.c \
-    engine/src/magicBitBoard/rook.c \
-    engine/src/magicBitBoard/bishop.c \
-	engine/src/moveHandler/moveGenerator.c \
-	$(sdlFramework_SRC)
 
 # Convert .c files to .o in build/ directory
 engineTest_OBJ = $(patsubst %.c,build/%.o,$(engineTest_SRC))
@@ -198,7 +180,6 @@ $(eval $(call build_template,perft))
 $(eval $(call build_template,chessEngine))
 $(eval $(call build_template,app))
 $(eval $(call build_template,visualizePST))
-$(eval $(call build_template,visualizeEval))
 
 # Symlink for the chess pieces images and font assets
 build/assets:
@@ -230,21 +211,19 @@ app: build_app build_chessEngine build/assets
 endif
 	@cd build && ./app
 
+ifdef OS
 visualizePST: build_visualizePST build/assets SDL-dlls-copy
+else
+visualizePST: build_visualizePST build/assets
+endif
 	@cd build && ./visualizePST
-
-visualizeEval: build_visualizeEval build/assets SDL-dlls-copy
-	@cd build && ./visualizeEval
-
 
 # Include dependency files if they exist
 -include $(engineTest_OBJ:.o=.d) \
           $(perft_OBJ:.o=.d) \
           $(chessEngine_OBJ:.o=.d) \
           $(app_OBJ:.o=.d) \
-          $(visualizePST_OBJ:.o=.d) \
-          $(visualizeEval_OBJ:.o=.d)
-
+          $(visualizePST_OBJ:.o=.d)
 
 # Help rule
 help:
@@ -253,7 +232,6 @@ help:
 	@echo "make engine           - Build and run chess engine (UCI)"
 	@echo "make app              - Build and run SDL3 GUI app" 
 	@echo "make visualizePST     - Build and run an app to visualize the piece square table"
-	@echo "make visualizeEval    - Build and run an app to visualize the static evaluation"
 	@echo "make all              - Executes all build rules. This is the default rule"
 	@echo "make clean            - Remove build directory"
 	@echo "make help             - Prints this help message"

@@ -6,14 +6,14 @@
 #include "../../../engine/src/state/ChessPosition.h"
 #include "../../../engine/src/state/Move.h"
 
+#include "../AppState.h"
+
 /**
  * @brief Opaque struct which contains information
  * used for communicating with the engine
  * 
  */
 typedef struct EngineCommunication EngineCommunication;
-
-typedef u32 TimeControl_MS;
 
 /**
  * @brief Initializes the communication with the engine

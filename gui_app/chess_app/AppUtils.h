@@ -4,6 +4,14 @@
 #include "AppState.h"
 
 /**
+ * @brief Copies a string to a heap allocated piece of memory
+ * 
+ * @param stringToCopy The string to copy
+ * @return char* The heap allocated piece of memory containing the data from stringToCopy
+ */
+char* copyString(const char* stringToCopy);
+
+/**
  * @brief Formats the time in the min:sec format and writes it to a buffer
  *
  * @param milliseconds The milliseconds to format

@@ -9,6 +9,14 @@
 
 #include "AppUtils.h"
 
+char* copyString(const char* stringToCopy) {
+    if (!stringToCopy) return NULL;
+    size_t length = SDL_strlen(stringToCopy) + 1;
+    char* result = SDL_calloc(length, sizeof(char));
+    SDL_assert(SDL_strlcpy(result, stringToCopy, length) == length - 1);
+    return result;
+}
+
 SDL_AppResult formatTime(TimeControl_MS milliseconds, char* output, size_t outputSize) {
     if (!output || outputSize < 6) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "NULL parameter or outputSize less than 6 at " __FILE__);

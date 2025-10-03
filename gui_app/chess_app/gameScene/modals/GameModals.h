@@ -25,18 +25,46 @@ typedef struct SettingsData {
     SDL_FRect cancelButton;
 
     Textures textures;
+
+    bool wasInStartingPositionBefore;
+    bool wasTextInputExited;
 } SettingsData;
+
+typedef struct TimeControlModalData2 {
+    TimeControl hovered;
+
+    SettingsData* savedSettingsData;
+} TimeControlModalData2;
+
+typedef struct EngineConfigModalData2 {
+    EngineConfig currentConfig;
+
+    SDL_FRect checkboxRect;
+    SDL_FRect enginePathRect;
+    SDL_FRect thinkTimeRect;
+    SDL_FRect okButtonRect;
+    SDL_FRect cancelButtonRect;
+    SDL_FRect thinkByHimselfRect;
+
+    bool wasTextInputExited;
+
+    SettingsData* savedSettingsData;
+} EngineConfigModalData2;
 
 typedef enum GameModalId {
     PROMOTION_MODAL_ID,
     GAME_ENDED_MODAL_ID,
-    SETTINGS_MODAL_ID
+    SETTINGS_MODAL_ID,
+    TIME_CONTROL_MODAL_ID2,
+    ENGINE_CONFIG_MODAL_ID2
 } GameModal;
-
 
 void setPromotionModalActive(App* app, int promotionSquareTo);
 void setGameEndedModalActive(App* app);
 SDL_AppResult setSettingsModalActive(App* app);
+SDL_AppResult setSettingsModalActiveFromCopy(App* app, SettingsData* settingsData);
+void setTimeControlModalActive2(App* app);
+void setEngineConfigModalActive2(App* app);
 
 SDL_FRect calculatePromotionRect(GameSceneData* data, int promotionSquareTo, SDL_FRect boardRect);
 SDL_FRect calculateGameEndedRect(SDL_FRect boardRect);

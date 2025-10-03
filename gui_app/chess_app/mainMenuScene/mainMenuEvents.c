@@ -3,6 +3,7 @@
 #include "../../sdl_framework/AppInit.h"
 #include "../../sdl_framework/CommonEvents.h"
 #include "../../sdl_framework/TextInput.h"
+#include "../../sdl_framework/AppCleanup.h"
 
 #include "../AppStyle.h"
 #include "../gameScene/GameRender.h"
@@ -30,69 +31,72 @@ SDL_AppResult startGame(App* app) {
         return SDL_APP_FAILURE;
     }
 
-    gameData->state.result = GAME_IS_NOT_DONE;
-
-    if (!FenString_setChessPositionFromCopiedFenString(mainMenuData->gameInfo.startingPositionFen, &gameData->state.position)) {
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the position\n");
-        return SDL_APP_FAILURE;
-    }
-
-    // TODO: Make the initialization of engine resistant to errors due to enginePath
-    gameData->state.white.timeControl = mainMenuData->gameInfo.white.timeControl;
-    if (mainMenuData->gameInfo.white.engineConfig.isEngine) {
-        if (!mainMenuData->gameInfo.white.engineConfig.enginePath) {
-            // Exiting the function
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty white engine path", "The white engine path is not set", app->state.sdlState.window);
-            SDL_free(gameData);
-            return SDL_APP_CONTINUE;
-        }
-
-        gameData->state.white.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.white.engineConfig.enginePath, "uci_engine_log_white.txt");
-        if (!gameData->state.white.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.engineConfig.enginePath);
-            size_t messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath) + 1;
-            char message[messageSize];
-            SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath);
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid white engine path", message, app->state.sdlState.window);
-            return SDL_APP_CONTINUE;
-        }
-    }
-    else {
-        gameData->state.white.engineCommunication = NULL;
-    }
-
-    gameData->state.black.timeControl = mainMenuData->gameInfo.black.timeControl;
-    if (mainMenuData->gameInfo.black.engineConfig.isEngine) {
-        if (!mainMenuData->gameInfo.black.engineConfig.enginePath) {
-            // Exiting the function
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty black engine path", "The black engine path is not set", app->state.sdlState.window);
-            SDL_free(gameData);
-            return SDL_APP_CONTINUE;
-        }
-        gameData->state.black.engineCommunication = UCIEngine_initialize(mainMenuData->gameInfo.black.engineConfig.enginePath, "uci_engine_log_black.txt");
-        if (!gameData->state.black.engineCommunication) {
-            SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.engineConfig.enginePath);
-            size_t messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath) + 1;
-            char message[messageSize];
-            SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath);
-            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid black engine path", message, app->state.sdlState.window);
-            return SDL_APP_CONTINUE;
-        }
-    }
-    else {
-        gameData->state.black.engineCommunication = NULL;
-    }
-
-    gameData->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
-
+    // Loading the new game info
     gameData->gameInfo = mainMenuData->gameInfo;
-
-    // Calling the main menu terminating scene function
-    app->state.currentScene.terminateSceneFunction(mainMenuData);
 
     // Setting the current scene to the game scene
     app->state.currentScene.sceneId = GAME_SCENE_ID;
     app->state.currentScene.data = gameData;
+
+    LoadGameInfoResult loadGameInfoResult = loadGameInfo(app);
+
+    size_t messageSize;
+    char* message;
+    switch (loadGameInfoResult) {
+    case INVALID_FEN_STRING:
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error when loading the position\n");
+        cleanupTextures(gameData->textures);
+        SDL_free(gameData->textures.data);
+        SDL_free(gameData);
+        return SDL_APP_FAILURE;
+
+    case EMPTY_WHITE_ENGINE_PATH:
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty white engine path", "The white engine path is not set", app->state.sdlState.window);
+        cleanupTextures(gameData->textures);
+        SDL_free(gameData->textures.data);
+        SDL_free(gameData);
+        return SDL_APP_CONTINUE;
+
+    case INVALID_WHITE_ENGINE_PATH:
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for white at path `%s`\n", mainMenuData->gameInfo.white.engineConfig.enginePath);
+        messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath) + 1;
+        message = SDL_calloc(messageSize, sizeof(char));
+        SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.white.engineConfig.enginePath);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid white engine path", message, app->state.sdlState.window);
+        SDL_free(message);
+        cleanupTextures(gameData->textures);
+        SDL_free(gameData->textures.data);
+        SDL_free(gameData);
+        return SDL_APP_CONTINUE;
+
+    case EMPTY_BLACK_ENGINE_PATH:
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Empty black engine path", "The black engine path is not set", app->state.sdlState.window);
+        cleanupTextures(gameData->textures);
+        SDL_free(gameData->textures.data);
+        SDL_free(gameData);
+        return SDL_APP_CONTINUE;
+
+    case INVALID_BLACK_ENGINE_PATH:
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Could not initialize the engine for black at path `%s`\n", mainMenuData->gameInfo.black.engineConfig.enginePath);
+        messageSize = SDL_snprintf(NULL, 0, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath) + 1;
+        message = SDL_calloc(messageSize, sizeof(char));
+        SDL_snprintf(message, messageSize, "The engine path %s is invalid", mainMenuData->gameInfo.black.engineConfig.enginePath);
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Invalid black engine path", message, app->state.sdlState.window);
+        SDL_free(message);
+        cleanupTextures(gameData->textures);
+        SDL_free(gameData->textures.data);
+        SDL_free(gameData);
+        return SDL_APP_CONTINUE;
+
+    case SUCCESS:
+    default:
+        break;
+    }
+
+    // Calling the main menu terminating scene function
+    app->state.currentScene.terminateSceneFunction(mainMenuData);
+
+    // Setting the new terminateSceneFunction
     app->state.currentScene.terminateSceneFunction = &terminateGameScene;
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
@@ -100,7 +104,7 @@ SDL_AppResult startGame(App* app) {
     app->state.currentScene.selectedRenderBoxIndex = -1;
     app->events.mouseState.hoveredIndex = -1;
 
-    resetGame(NULL, app);
+    resetGame(app);
 
     if (app->state.currentScene.sceneRender.renderBoxes != NULL) {
         SDL_free(app->state.currentScene.sceneRender.renderBoxes);

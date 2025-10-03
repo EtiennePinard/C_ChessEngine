@@ -184,8 +184,7 @@ SDL_Thread* playBotMove(App* app) {
     return thread;
 }
 
-SDL_AppResult resetGame(SDL_Event* event, App* app) {
-    if (app->events.modal.isActive) closeModalEventCallback(event, app);
+SDL_AppResult resetGame(App* app) {
 
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     GameState* gameState = &data->state;
@@ -238,8 +237,8 @@ SDL_AppResult resetGame(SDL_Event* event, App* app) {
 // }
 
 SDL_AppResult clickedRestartButton(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)rect;
-    return resetGame(event, app);
+    (void)rect, (void)event;
+    return resetGame(app);
 }
 
 SDL_AppResult findAndPlayHumanMove(App* app, Square draggingTo) {
@@ -478,4 +477,38 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_FRect rect, App* app) {
         data->moveListInfo.scrollRatio = (mousePoint.y - data->moveListInfo.startingDragOffset - rect.y) / maxScrollY;
     }
     return SDL_APP_CONTINUE;
+}
+
+LoadGameInfoResult loadGameInfo(App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+
+    if (!FenString_setChessPositionFromCopiedFenString(data->gameInfo.startingPositionFen, &data->state.position)) {
+        return INVALID_FEN_STRING;
+    }
+
+    data->state.white.timeControl = data->gameInfo.white.timeControl;
+    if (data->gameInfo.white.engineConfig.isEngine) {
+        if (!data->gameInfo.white.engineConfig.enginePath) return EMPTY_WHITE_ENGINE_PATH;
+        data->state.white.engineCommunication = UCIEngine_initialize(data->gameInfo.white.engineConfig.enginePath, "uci_engine_log_white.txt");
+        if (!data->state.white.engineCommunication) return INVALID_WHITE_ENGINE_PATH;
+    }
+    else {
+        data->state.white.engineCommunication = NULL;
+    }
+
+    data->state.black.timeControl = data->gameInfo.black.timeControl;
+    if (data->gameInfo.black.engineConfig.isEngine) {
+        if (!data->gameInfo.black.engineConfig.enginePath) return EMPTY_BLACK_ENGINE_PATH;
+        data->state.black.engineCommunication = UCIEngine_initialize(data->gameInfo.black.engineConfig.enginePath, "uci_engine_log_black.txt");
+        if (!data->state.black.engineCommunication) return INVALID_BLACK_ENGINE_PATH;
+    }
+    else {
+        data->state.black.engineCommunication = NULL;
+    }
+
+    data->state.result = GAME_IS_NOT_DONE;
+
+    data->selectedSquare.selectedSquare = NO_SQUARE_SELECTED;
+
+    return SUCCESS;
 }

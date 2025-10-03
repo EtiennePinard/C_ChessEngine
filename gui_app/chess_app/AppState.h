@@ -5,7 +5,6 @@
 
 #include "../../engine/src/state/ChessPosition.h"
 #include "../../engine/src/state/Move.h"
-#include "uciEngineCommunication/UCIEngineCommunication.h"
 
 #define APP_VERSION "dev"
 #define APP_AUTHOR "Etienne Pinard"
@@ -37,6 +36,8 @@
 #define BASE_ICON_PATH BASE_IMG_PATH "/icons"
 #define HUMAN_ICON_PATH (BASE_ICON_PATH "/human_icon.png")
 #define COMPUTER_ICON_PATH (BASE_ICON_PATH "/computer_icon.png")
+
+typedef u32 TimeControl_MS;
 
 typedef struct TimeControl {
     TimeControl_MS timeLeft;

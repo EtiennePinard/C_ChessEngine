@@ -39,7 +39,7 @@ void appendTextToTextInput(App* app, const char* text) {
 
 /**
  * @brief Removes amountToRemove number of characters from startingIndex to the text input.
- * 
+ *
  * @param app The app's data
  * @param startingIndex The index to start from to remove characters
  * @param amountToRemove The amount of characters to remove, can be negative
@@ -49,7 +49,7 @@ void removeTextFromSelectionStartToTextInput(App* app, size_t startingIndex, int
 
     size_t start = SDL_min(startingIndex, startingIndex + amountToRemove);
     size_t end = SDL_max(startingIndex, startingIndex + amountToRemove);
-    
+
     SDL_assert(start < input->text.count && end <= input->text.count);
 
     // Move text after selectionEnd to selectionEnd
@@ -95,16 +95,16 @@ SDL_AppResult updateTextInputSelectionOnMouseHovered(SDL_Event* event, SDL_FRect
 SDL_AppResult textInputKeyDown(SDL_Event* event, App* app) {
     if (!app->events.textInput.isActive) return SDL_APP_CONTINUE;
 
-    TextInput* input = &app->events.textInput;;
+    TextInput* input = &app->events.textInput;
 
     switch (event->key.key) {
     case SDLK_ESCAPE:
         // We first start by cancelling the text input
-        if (app->events.textInput.onEscape) app->events.textInput.onEscape(event, app);
+        if (input->onEscape) input->onEscape(event, app);
         break;
     case SDLK_RETURN:
         // We first start by closing the text input
-        if (app->events.textInput.onReturn) app->events.textInput.onReturn(event, app);
+        if (input->onReturn) input->onReturn(event, app);
         break;
     case SDLK_BACKSPACE:
         if (input->nbCharSelected != 0) {
@@ -138,14 +138,22 @@ SDL_AppResult textInputKeyDown(SDL_Event* event, App* app) {
         if (event->key.mod & SDL_KMOD_CTRL) {
             if (input->nbCharSelected != 0) {
                 // Normalize selection range
-                size_t selectionStart = SDL_min(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
-                size_t selectionEnd = SDL_max(app->events.textInput.selectionStart, app->events.textInput.selectionStart + app->events.textInput.nbCharSelected);
+                size_t selectionStart = SDL_min(input->selectionStart, input->selectionStart + input->nbCharSelected);
+                size_t selectionEnd = SDL_max(input->selectionStart, input->selectionStart + input->nbCharSelected);
                 size_t size = selectionEnd - selectionStart;
                 char copiedText[size + 1];
                 SDL_memcpy(copiedText, input->text.data + selectionStart, size);
                 copiedText[size] = '\0';
                 if (!SDL_SetClipboardText(copiedText)) return SDL_APP_FAILURE;
             }
+        }
+        break;
+    case SDLK_A:
+        if (event->key.mod & SDL_KMOD_CTRL) {
+            // Selecting everything with ctrl+a
+            input->nbCharSelected = input->text.count;
+            input->selectionStart = 0;
+            SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
         break;
     case SDLK_LEFT:

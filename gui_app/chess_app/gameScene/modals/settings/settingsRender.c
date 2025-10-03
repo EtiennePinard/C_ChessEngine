@@ -6,7 +6,7 @@
 #include "SettingsTextInput.h"
 #include "SettingsRender.h"
 
-SDL_AppResult renderPlayerInfoIcon_2(SDL_FRect rect, App* app, EngineConfig engineConfig, SDL_Color textureColor, int hoverIndex) {
+SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engineConfig, SDL_Color textureColor, int hoverIndex) {
     SettingsData* data = (SettingsData*)app->events.modal.data;
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     SDL_Color hightLightColor = BUTTON_HIGHLIGHT_COLOR;
@@ -33,13 +33,13 @@ SDL_AppResult renderPlayerInfoIcon_2(SDL_FRect rect, App* app, EngineConfig engi
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderTimeControl_2(SDL_FRect rect, App* app, TimeControl timeControl, int hoverIndex) {
+SDL_AppResult renderTimeControl(SDL_FRect rect, App* app, TimeControl timeControl, int hoverIndex) {
     char buffer[11];
     formatTimeControl(timeControl, buffer, 11);
     return renderButton(rect, app, hoverIndex, buffer, BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
-SDL_AppResult renderStartingPositionControl_2(SDL_FRect rect, App* app) {
+SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
 
     SettingsData* data = (SettingsData*)app->events.modal.data;
@@ -112,13 +112,13 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     x += timeControlRect.w + columnPadding;
     SDL_FRect colorToggleRect = { x, y, colorToggleWidth, rowHeight };
     if (data->currentColor == WHITE) {
-        renderPlayerInfoIcon_2(engineConfigRect, app, data->gameInfo.white.engineConfig, WHITE_COLOR, HOVERING_MODAL);
-        renderTimeControl_2(timeControlRect, app, data->gameInfo.white.timeControl, HOVERING_MODAL);
+        renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.white.engineConfig, WHITE_COLOR, HOVERING_MODAL);
+        renderTimeControl(timeControlRect, app, data->gameInfo.white.timeControl, HOVERING_MODAL);
         renderButton(colorToggleRect, app, HOVERING_MODAL, "White", BUTTON_HIGHLIGHT_COLOR, WHITE_COLOR);
     }
     else {
-        renderPlayerInfoIcon_2(engineConfigRect, app, data->gameInfo.black.engineConfig, BLACK_COLOR, HOVERING_MODAL);
-        renderTimeControl_2(timeControlRect, app, data->gameInfo.black.timeControl, HOVERING_MODAL);
+        renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.black.engineConfig, BLACK_COLOR, HOVERING_MODAL);
+        renderTimeControl(timeControlRect, app, data->gameInfo.black.timeControl, HOVERING_MODAL);
         renderButton(colorToggleRect, app, HOVERING_MODAL, "Black", BUTTON_HIGHLIGHT_COLOR, BLACK_COLOR);
     }
     data->engineConfig = engineConfigRect;
@@ -128,7 +128,7 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     y += rowHeight + rowPadding;
     x = rect.x + padding;
     SDL_FRect startingPositionRect = { x, y, rect.w - 2 * padding, rowHeight };
-    renderStartingPositionControl_2(startingPositionRect, app);
+    renderStartingPositionControl(startingPositionRect, app);
     data->startingPosition = startingPositionRect;
 
     y += rowHeight + rowPadding;

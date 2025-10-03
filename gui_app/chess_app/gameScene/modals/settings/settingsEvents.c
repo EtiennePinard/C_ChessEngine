@@ -110,14 +110,14 @@ SDL_AppResult clickedSettingsModal(SDL_Event* event, SDL_FRect rect, App* app) {
         data->currentColor = data->currentColor == WHITE ? BLACK : WHITE;
     }
     else if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->engineConfig)) {
-        setEngineConfigModalActive2(app);
+        setEngineConfigModalActive(app);
     }
     else if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->timeControl)) {
-        setTimeControlModalActive2(app);
+        setTimeControlModalActive(app);
     }
     else if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->startingPosition)) {
         if (!app->events.textInput.isActive) {
-            setStartingPositionTextInputActive_2(data->startingPosition, app);
+            setStartingPositionTextInputActive(data->startingPosition, app);
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
     }

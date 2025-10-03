@@ -26,8 +26,8 @@ const TimeControl timeControlOptions2[NUM_TIME_CONTROL_STYLE][NUM_TIME_CONTROL_O
 }
 };
 
-SDL_AppResult renderTimeControlModal2(SDL_FRect rect, App* app) {
-    TimeControlModalData2* modalData = (TimeControlModalData2*)app->events.modal.data;
+SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
+    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
     modalData->hovered = (TimeControl){ 0, 0 };
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
@@ -94,9 +94,9 @@ SDL_AppResult renderTimeControlModal2(SDL_FRect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult onTimeControlModalCancel2(SDL_Event* event, App* app) {
+SDL_AppResult onTimeControlModalCancel(SDL_Event* event, App* app) {
     (void)event;
-    TimeControlModalData2* modalData = (TimeControlModalData2*)app->events.modal.data;
+    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
     
     SDL_AppResult result = setSettingsModalActiveFromCopy(app, modalData->savedSettingsData);
 
@@ -107,7 +107,7 @@ SDL_AppResult onTimeControlModalCancel2(SDL_Event* event, App* app) {
 SDL_AppResult clickedTimeControlModal2(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event, (void)rect;
 
-    TimeControlModalData2* modalData = (TimeControlModalData2*)app->events.modal.data;
+    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
     // A timeleft of 0 means no time controls were selected
     if (modalData->hovered.timeLeft == 0) return SDL_APP_CONTINUE;
 
@@ -115,10 +115,10 @@ SDL_AppResult clickedTimeControlModal2(SDL_Event* event, SDL_FRect rect, App* ap
     else if (modalData->savedSettingsData->currentColor == BLACK) modalData->savedSettingsData->gameInfo.black.timeControl = modalData->hovered;
 
     // Close the modal
-    return onTimeControlModalCancel2(event, app);
+    return onTimeControlModalCancel(event, app);
 }
 
-void setTimeControlModalActive2(App* app) {
+void setTimeControlModalActive(App* app) {
     // Closing the text input if it is active
     closeTextInput(NULL, app);
 
@@ -126,7 +126,7 @@ void setTimeControlModalActive2(App* app) {
     SDL_assert(app->events.modal.modalId == SETTINGS_MODAL_ID);
     SettingsData* settingsData = (SettingsData*)app->events.modal.data;
 
-    TimeControlModalData2* modalData = SDL_malloc(sizeof(TimeControlModalData2));
+    TimeControlModalData* modalData = SDL_malloc(sizeof(TimeControlModalData));
     SDL_assert(modalData);
     // Setting the hovered time left to 0 since we did not select any time control yet
     modalData->hovered.timeLeft = 0;
@@ -134,7 +134,7 @@ void setTimeControlModalActive2(App* app) {
 
     // Initializing the time control modal
     app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
-    app->events.modal.modalRender.renderFunction = &renderTimeControlModal2;
+    app->events.modal.modalRender.renderFunction = &renderTimeControlModal;
     app->events.modal.modalRender.onMouseButtonDown = &clickedTimeControlModal2;
     app->events.modal.modalRender.onMouseHovered = &rerenderScene;
     app->events.modal.modalRender.onMouseButtonUp = NULL;
@@ -144,7 +144,7 @@ void setTimeControlModalActive2(App* app) {
 
     app->events.modal.data = modalData;
     app->events.modal.canOnlyInteractWithModal = true;
-    app->events.modal.onEscape = &onTimeControlModalCancel2;
+    app->events.modal.onEscape = &onTimeControlModalCancel;
     app->events.modal.onReturn = NULL;
     app->events.modal.modalId = TIME_CONTROL_MODAL_ID2;
     app->events.modal.isActive = true;

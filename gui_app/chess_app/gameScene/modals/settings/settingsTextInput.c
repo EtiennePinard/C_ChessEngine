@@ -9,7 +9,7 @@
 #include "../GameModals.h"
 #include "SettingsTextInput.h"
 
-SDL_AppResult startingPositionTextInputReturn_2(SDL_Event* event, App* app) {
+SDL_AppResult startingPositionTextInputReturn(SDL_Event* event, App* app) {
     (void)event;
     SettingsData* data = (SettingsData*)app->events.modal.data;
     data->wasTextInputExited = true;
@@ -41,7 +41,7 @@ SDL_AppResult startingPositionTextInputCancel(SDL_Event* event, App* app) {
     return closeTextInput(event, app);
 }
 
-SDL_AppResult renderStartingPosition_2(SDL_FRect rect, App* app) {
+SDL_AppResult renderStartingPosition(SDL_FRect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     SDL_Color borderColor = BUTTON_BORDER_COLOR;
 
@@ -53,9 +53,9 @@ SDL_AppResult renderStartingPosition_2(SDL_FRect rect, App* app) {
         BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
 }
 
-void setStartingPositionTextInputActive_2(SDL_FRect rect, App* app) {
+void setStartingPositionTextInputActive(SDL_FRect rect, App* app) {
     app->events.textInput.textInputRender.renderRect = rect;
-    app->events.textInput.textInputRender.renderFunction = &renderStartingPosition_2;
+    app->events.textInput.textInputRender.renderFunction = &renderStartingPosition;
     app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
     app->events.textInput.textInputRender.onMouseButtonUp = NULL;
     app->events.textInput.textInputRender.onMouseEntered = &changeMouseIconOnEnterTextInput;
@@ -72,7 +72,7 @@ void setStartingPositionTextInputActive_2(SDL_FRect rect, App* app) {
     SDL_assert(app->events.textInput.text.data);
 
     app->events.textInput.onEscape = &startingPositionTextInputCancel;
-    app->events.textInput.onReturn = &startingPositionTextInputReturn_2;
+    app->events.textInput.onReturn = &startingPositionTextInputReturn;
     app->events.textInput.onKeyDown = &textInputKeyDown;
     app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;
 
@@ -92,11 +92,11 @@ void setStartingPositionTextInputActive_2(SDL_FRect rect, App* app) {
 }
 
 
-SDL_AppResult thinkTimeTextInputReturn2(SDL_Event* event, App* app) {
+SDL_AppResult thinkTimeTextInputReturn(SDL_Event* event, App* app) {
     (void)event;
     int parsedThinkTime = string_parseNumber(app->events.textInput.text.data);
 
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
     modalData->wasTextInputExited = true;
 
     if (parsedThinkTime == -1) {
@@ -115,8 +115,8 @@ SDL_AppResult thinkTimeTextInputReturn2(SDL_Event* event, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult thinkTimeTextInputCancel2(SDL_Event* event, App* app) {
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+SDL_AppResult thinkTimeTextInputCancel(SDL_Event* event, App* app) {
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
     modalData->wasTextInputExited = true;
     return closeTextInput(event, app);
 }
@@ -133,7 +133,7 @@ SDL_AppResult renderThinkTime2(SDL_FRect rect, App* app) {
         BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
 }
 
-void setTimeToThinkTextInputActive_2(SDL_FRect rect, App* app) {
+void setTimeToThinkTextInputActive(SDL_FRect rect, App* app) {
     app->events.textInput.textInputRender.renderRect = rect;
     app->events.textInput.textInputRender.renderFunction = &renderThinkTime2;
     app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
@@ -151,8 +151,8 @@ void setTimeToThinkTextInputActive_2(SDL_FRect rect, App* app) {
     app->events.textInput.text.data = SDL_calloc(app->events.textInput.text.capacity, sizeof(char));
     SDL_assert(app->events.textInput.text.data);
 
-    app->events.textInput.onEscape = &thinkTimeTextInputCancel2;
-    app->events.textInput.onReturn = &thinkTimeTextInputReturn2;
+    app->events.textInput.onEscape = &thinkTimeTextInputCancel;
+    app->events.textInput.onReturn = &thinkTimeTextInputReturn;
     app->events.textInput.onKeyDown = &textInputKeyDown;
     app->events.textInput.onTextInputEvent = &appendTextToTextInputOnTextInputEvent;
 

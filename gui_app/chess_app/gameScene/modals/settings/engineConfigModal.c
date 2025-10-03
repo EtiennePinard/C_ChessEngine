@@ -8,8 +8,8 @@
 
 #include "SettingsTextInput.h"
 
-SDL_AppResult renderEnginePathButton2(SDL_FRect rect, App* app, SDL_Color highlightColor, SDL_Color textColor) {
-    EngineConfigModalData2* data = (EngineConfigModalData2*)app->events.modal.data;
+SDL_AppResult renderEnginePathButton(SDL_FRect rect, App* app, SDL_Color highlightColor, SDL_Color textColor) {
+    EngineConfigModalData* data = (EngineConfigModalData*)app->events.modal.data;
     char* label = data->currentConfig.enginePath ? data->currentConfig.enginePath : "Set engine's path";
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
@@ -25,8 +25,8 @@ SDL_AppResult renderEnginePathButton2(SDL_FRect rect, App* app, SDL_Color highli
     return renderSingleLineTextCenteredToFit(renderer, font, label, textColor, rect);
 }
 
-SDL_AppResult renderEngineConfigModal2(SDL_FRect rect, App* app) {
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
@@ -87,7 +87,7 @@ SDL_AppResult renderEngineConfigModal2(SDL_FRect rect, App* app) {
             .h = buttonHeight
         };
         modalData->enginePathRect = pathRect;
-        result = renderEnginePathButton2(pathRect, app, highlightColor, textColor);
+        result = renderEnginePathButton(pathRect, app, highlightColor, textColor);
         if (result != SDL_APP_CONTINUE) return result;
 
         y += buttonHeight + padding;
@@ -172,9 +172,9 @@ SDL_AppResult renderEngineConfigModal2(SDL_FRect rect, App* app) {
     return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
 }
 
-SDL_AppResult onEngineConfigModalClose2(SDL_Event* event, App* app) {
+SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
     (void)event;
-    EngineConfigModalData2* data = (EngineConfigModalData2*)app->events.modal.data;
+    EngineConfigModalData* data = (EngineConfigModalData*)app->events.modal.data;
 
     if (data->wasTextInputExited) {
         // A text input was exited don't close the modal
@@ -202,9 +202,9 @@ SDL_AppResult onEngineConfigModalClose2(SDL_Event* event, App* app) {
     return result;
 }
 
-SDL_AppResult onEngineConfigModalCancel2(SDL_Event* event, App* app) {
+SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
     (void)event;
-    EngineConfigModalData2* data = (EngineConfigModalData2*)app->events.modal.data;
+    EngineConfigModalData* data = (EngineConfigModalData*)app->events.modal.data;
 
     if (data->wasTextInputExited) {
         // A text input was exited don't cancel the modal
@@ -220,7 +220,7 @@ SDL_AppResult onEngineConfigModalCancel2(SDL_Event* event, App* app) {
     return result;
 }
 
-static void onEnginePathSelected2(void* userdata, const char* const* filelist, int filterIndex) {
+static void onEnginePathSelected(void* userdata, const char* const* filelist, int filterIndex) {
     (void)filterIndex;
 
     App* app = (App*)userdata;
@@ -244,7 +244,7 @@ static void onEnginePathSelected2(void* userdata, const char* const* filelist, i
     char* enginePath = SDL_calloc(length, sizeof(char));
     SDL_strlcpy(enginePath, filelist[0], length);
 
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 
@@ -253,8 +253,8 @@ static void onEnginePathSelected2(void* userdata, const char* const* filelist, i
     modalData->currentConfig.enginePath = enginePath;
 }
 
-SDL_AppResult clickedEnginePath2(App* app) {
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+SDL_AppResult clickedEnginePath(App* app) {
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
     if (!modalData->currentConfig.isEngine) return SDL_APP_CONTINUE;
 
     SDL_DialogFileFilter filters[] = { { "All Files", "*" } };
@@ -262,7 +262,7 @@ SDL_AppResult clickedEnginePath2(App* app) {
     const char* path = SDL_GetBasePath();
     if (!path) return SDL_APP_FAILURE;
     SDL_ShowOpenFileDialog(
-        &onEnginePathSelected2,
+        &onEnginePathSelected,
         app,
         app->state.sdlState.window,
         filters, 1,
@@ -277,19 +277,19 @@ SDL_AppResult clickedEnginePath2(App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedThinkTime2(SDL_FRect rect, App* app) {
+SDL_AppResult clickedThinkTime(SDL_FRect rect, App* app) {
     // If the text input is already active, do nothing
     if (app->events.textInput.isActive) return SDL_APP_CONTINUE;
 
-    setTimeToThinkTextInputActive_2(rect, app);
+    setTimeToThinkTextInputActive(rect, app);
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult clickedEngineConfigModal2(SDL_Event* event, SDL_FRect rect, App* app) {
+SDL_AppResult clickedEngineConfigModal(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event, (void)rect;
 
-    EngineConfigModalData2* modalData = (EngineConfigModalData2*)app->events.modal.data;
+    EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
 
     SDL_FPoint mousePoint = { event->button.x, event->button.y };
     if (SDL_PointInRectFloat(&mousePoint, &modalData->cancelButtonRect)) {
@@ -315,7 +315,7 @@ SDL_AppResult clickedEngineConfigModal2(SDL_Event* event, SDL_FRect rect, App* a
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->enginePathRect) &&
         modalData->currentConfig.isEngine) {
-        return clickedEnginePath2(app);
+        return clickedEnginePath(app);
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->thinkTimeRect) &&
         modalData->currentConfig.isEngine) {
@@ -323,13 +323,13 @@ SDL_AppResult clickedEngineConfigModal2(SDL_Event* event, SDL_FRect rect, App* a
         if (modalData->currentConfig.timeToThink == 0) {
             modalData->currentConfig.timeToThink = DEFAULT_TIME_TO_THINK;
         }
-        return clickedThinkTime2(modalData->thinkTimeRect, app);
+        return clickedThinkTime(modalData->thinkTimeRect, app);
     }
     else if (SDL_PointInRectFloat(&mousePoint, &modalData->thinkByHimselfRect) &&
         modalData->currentConfig.isEngine) {
         if (modalData->currentConfig.timeToThink == 0) {
             modalData->currentConfig.timeToThink = DEFAULT_TIME_TO_THINK;
-            clickedThinkTime2(modalData->thinkTimeRect, app);
+            clickedThinkTime(modalData->thinkTimeRect, app);
         }
         else {
             // Put think time to 0
@@ -341,9 +341,9 @@ SDL_AppResult clickedEngineConfigModal2(SDL_Event* event, SDL_FRect rect, App* a
     return SDL_APP_CONTINUE;
 }
 
-void setEngineConfigModalActive2(App* app) {
+void setEngineConfigModalActive(App* app) {
     SettingsData* data = (SettingsData*)app->events.modal.data;
-    EngineConfigModalData2* modalData = SDL_malloc(sizeof(EngineConfigModalData2));
+    EngineConfigModalData* modalData = SDL_malloc(sizeof(EngineConfigModalData));
     SDL_assert(modalData);
 
     // Closing the text input if it is active
@@ -367,8 +367,8 @@ void setEngineConfigModalActive2(App* app) {
 
     // Initializing the modal
     app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
-    app->events.modal.modalRender.renderFunction = &renderEngineConfigModal2;
-    app->events.modal.modalRender.onMouseButtonDown = &clickedEngineConfigModal2;
+    app->events.modal.modalRender.renderFunction = &renderEngineConfigModal;
+    app->events.modal.modalRender.onMouseButtonDown = &clickedEngineConfigModal;
     app->events.modal.modalRender.onMouseHovered = &rerenderScene;
     app->events.modal.modalRender.onMouseButtonUp = NULL;
     app->events.modal.modalRender.onMouseWheelScrolled = NULL;
@@ -377,8 +377,8 @@ void setEngineConfigModalActive2(App* app) {
 
     app->events.modal.canOnlyInteractWithModal = true;
     app->events.modal.data = modalData;
-    app->events.modal.onEscape = &onEngineConfigModalCancel2;
-    app->events.modal.onReturn = &onEngineConfigModalClose2;
+    app->events.modal.onEscape = &onEngineConfigModalCancel;
+    app->events.modal.onReturn = &onEngineConfigModalClose;
 
     app->events.modal.modalId = ENGINE_CONFIG_MODAL_ID2;
     app->events.modal.isActive = true;

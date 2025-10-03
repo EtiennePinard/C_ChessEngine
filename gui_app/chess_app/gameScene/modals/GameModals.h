@@ -30,13 +30,13 @@ typedef struct SettingsData {
     bool wasTextInputExited;
 } SettingsData;
 
-typedef struct TimeControlModalData2 {
+typedef struct TimeControlModalData {
     TimeControl hovered;
 
     SettingsData* savedSettingsData;
-} TimeControlModalData2;
+} TimeControlModalData;
 
-typedef struct EngineConfigModalData2 {
+typedef struct EngineConfigModalData {
     EngineConfig currentConfig;
 
     SDL_FRect checkboxRect;
@@ -49,7 +49,7 @@ typedef struct EngineConfigModalData2 {
     bool wasTextInputExited;
 
     SettingsData* savedSettingsData;
-} EngineConfigModalData2;
+} EngineConfigModalData;
 
 typedef enum GameModalId {
     PROMOTION_MODAL_ID,
@@ -63,8 +63,8 @@ void setPromotionModalActive(App* app, int promotionSquareTo);
 void setGameEndedModalActive(App* app);
 SDL_AppResult setSettingsModalActive(App* app);
 SDL_AppResult setSettingsModalActiveFromCopy(App* app, SettingsData* settingsData);
-void setTimeControlModalActive2(App* app);
-void setEngineConfigModalActive2(App* app);
+void setTimeControlModalActive(App* app);
+void setEngineConfigModalActive(App* app);
 
 SDL_FRect calculatePromotionRect(GameSceneData* data, int promotionSquareTo, SDL_FRect boardRect);
 SDL_FRect calculateGameEndedRect(SDL_FRect boardRect);

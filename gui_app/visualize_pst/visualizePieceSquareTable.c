@@ -20,8 +20,11 @@
 
 #define SQUARE_COLOR ((SDL_Color) {255, 0, 0, 255}) // red
 #define TEXT_COLOR ((SDL_Color) {0, 0, 0, 255}) // black
-#define BUTTON_COLOR ((SDL_Color) {100, 100, 100, 255})
-#define BUTTON_HIGHLIGHT_COLOR ((SDL_Color){ 200, 200, 200, 120 }) // Bright gray
+
+#define BUTTON_BORDER_COLOR ((SDL_Color) { 0, 0, 0, 255 })
+#define BUTTON_IDLE_COLOR ((SDL_Color){ 200, 200, 200, 255 }) // Bright gray
+#define BUTTON_HIGHLIGHT_COLOR ((SDL_Color) {100, 100, 100, 255}) // Dark gray
+#define BUTTON_CLICKED_COLOR ((SDL_Color){ 120, 120, 120, 255 }) // Bright gray
 
 #define DEFAULT_FONT_SIZE (20.0f)
 #define FONT_PATH ("./assets/font/Edwin-Roman.ttf")
@@ -177,19 +180,13 @@ void updatePSTPParam(PST_State* pstState) {
 }
 
 SDL_AppResult renderSwitchButton(SDL_FRect rect, App* app) {
-    // SDL_SetRenderDrawBlendMode(app->state.sdlState.renderer, SDL_BLENDMODE_NONE);
+    SDL_SetRenderDrawBlendMode(app->state.sdlState.renderer, SDL_BLENDMODE_NONE);
     
-    // // Draw button background and border
-    // SDL_SetRenderDrawColor(app->state.sdlState.renderer, BUTTON_COLOR.r, BUTTON_COLOR.g, BUTTON_COLOR.b, BUTTON_COLOR.a);
-    // SDL_RenderFillRect(app->state.sdlState.renderer, &rect);
-    // SDL_SetRenderDrawColor(app->state.sdlState.renderer, 0, 0, 0, 255);
-    // SDL_RenderRect(app->state.sdlState.renderer, &rect);
-
     char text[21];
     PST_State* pstState = (PST_State*)app->state.currentScene.data;
     getButtonText(text, pstState);
-    return renderButton(rect, app,
-        BUTTON_SCENE_INDEX, text, BUTTON_HIGHLIGHT_COLOR, TEXT_COLOR);
+    return renderButton(rect, app, BUTTON_SCENE_INDEX, text, 
+        BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_IDLE_COLOR, BUTTON_BORDER_COLOR, TEXT_COLOR);
 }
 
 SDL_AppResult clickedSwitchButton(SDL_Event* event, SDL_FRect rect, App* app) {
@@ -242,6 +239,7 @@ SDL_AppResult computePSTSceneRender(App* app) {
     sceneRender->renderBoxes[BUTTON_SCENE_INDEX].renderRect = buttonRect;
     sceneRender->renderBoxes[BUTTON_SCENE_INDEX].renderFunction = &renderSwitchButton;
     sceneRender->renderBoxes[BUTTON_SCENE_INDEX].onMouseButtonDown = &clickedSwitchButton;
+    sceneRender->renderBoxes[BUTTON_SCENE_INDEX].onMouseButtonUp = &rerenderScene;
     sceneRender->renderBoxes[BUTTON_SCENE_INDEX].onMouseEntered = &rerenderScene;
     sceneRender->renderBoxes[BUTTON_SCENE_INDEX].onMouseExited = &rerenderScene;
     

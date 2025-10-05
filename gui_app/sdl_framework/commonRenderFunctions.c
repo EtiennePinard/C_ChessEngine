@@ -143,19 +143,43 @@ SDL_AppResult renderSingleLineTextCenteredToFit(SDL_Renderer* renderer, TTF_Font
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text, SDL_Color highlightColor, SDL_Color textColor) {
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text,
+    SDL_Color hoverColor, SDL_Color clickedColor, SDL_Color idleColor, SDL_Color borderColor, SDL_Color textColor) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    // If this is the currently hovered box, highlight it
+    // Background
     if (app->events.mouseState.hoveredIndex == hoverIndex &&
         SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &rect)) {
-        SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
-        SDL_RenderFillRect(renderer, &rect);
+        if (app->events.mouseState.holdingLeftMouseButton) {
+            // Rect is being currently clicked, use clickedColor 
+            SDL_SetRenderDrawColor(renderer, clickedColor.r, clickedColor.g, clickedColor.b, clickedColor.a);
+        }
+        else {
+            // This is the currently hovered box, use highlight color
+            SDL_SetRenderDrawColor(renderer, hoverColor.r, hoverColor.g, hoverColor.b, hoverColor.a);
+        }
     }
+    else {
+        // Use idle color if not hoverered by mouse
+        SDL_SetRenderDrawColor(renderer, idleColor.r, idleColor.g, idleColor.b, idleColor.a);
+    }
+    SDL_RenderFillRect(renderer, &rect);
 
-    // Render button text
-    return renderSingleLineTextCenteredToFit(renderer, font, text, textColor, rect);
+    // Border
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+    SDL_RenderRect(renderer, &rect);
+
+    // Render text with only width padding
+    const float textWidthPaddingPercent = 0.1f;
+    const float textWidthPadding = textWidthPaddingPercent * rect.w;
+    SDL_FRect paddedRect = {
+        rect.x + textWidthPadding / 2,
+        rect.y,
+        rect.w - textWidthPadding,
+        rect.h
+    };
+    return renderSingleLineTextCenteredToFit(renderer, font, text, textColor, paddedRect);
 }
 
 SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked, const char* label, int hoveredIndex,
@@ -240,7 +264,7 @@ SDL_AppResult drawCaret(App* app, SDL_Color color, SDL_FRect rect, float caretX)
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app, SDL_Color highlightColor, 
+SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app, SDL_Color highlightColor,
     SDL_Color unselectedTextColor, SDL_Color selectedTextColor, SDL_Color selectedTextBgColor) {
     if (!app->events.textInput.isActive) return SDL_APP_CONTINUE;
 

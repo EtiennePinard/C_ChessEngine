@@ -69,10 +69,14 @@ SDL_AppResult renderTextInputCenteredToFit(SDL_FRect rect, App* app, SDL_Color h
  * This will be used for a hovering effect.
  * @param text The text to be displayed in the button
  * @param hoverColor The color to fill the rect when the mouse hovers the button
+ * @param clickedColor The color to fill the rect when the mouse clicks the button
+ * @param idleColor The color to fill the rect when the mouse does not hover over the button
+ * @param borderColor The color of the rect's border
  * @param textColor The color of the text of the labeled button
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text, SDL_Color hoverColor, SDL_Color textColor);
+SDL_AppResult renderButton(SDL_FRect rect, App* app, int hoverIndex, const char* text, 
+    SDL_Color hoverColor, SDL_Color clickedColor, SDL_Color idleColor, SDL_Color borderColor, SDL_Color textColor);
 
 /**
  * @brief Renders a labeled checkbox to the window. Note that for

@@ -323,27 +323,27 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
 
 
 SDL_AppResult renderRestartButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, RESTART_BUTTON, "Restart", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(rect, app, RESTART_BUTTON, "Restart", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderSettingsButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, SETTINGS_BUTTON, "Settings", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(rect, app, SETTINGS_BUTTON, "Settings", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
 }
 
 #define BOARD_SIZE_PERCENT (0.75f)
 #define CLOCK_HEIGHT_PERCENT (0.07f)
 #define CLOCK_WIDTH_PERCENT (0.1f)
-#define ICON_BUTTON_WIDTH_PERCENT (0.1f)
+#define ICON_BUTTON_WIDTH_PERCENT (0.15f)
 #define GAME_BUTTON_HEIGHT_PERCENT CLOCK_HEIGHT_PERCENT
 #define GAME_BUTTON_WIDTH_PERCENT CLOCK_WIDTH_PERCENT
 #define SCROLL_BAR_WIDTH_PERCENT (0.02f)
 
 #define MAX_SCROLL_BAR_WIDTH (20.0)
-#define MAX_MOVE_LIST_WIDTH (250.0)
+#define MAX_MOVE_LIST_WIDTH (200.0)
 #define MAX_ICON_BUTTON_WIDTH (200.0)
 
 SDL_AppResult computeGameSceneRender(App* app) {

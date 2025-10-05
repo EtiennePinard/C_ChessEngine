@@ -36,7 +36,7 @@ SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engine
 SDL_AppResult renderTimeControl(SDL_FRect rect, App* app, TimeControl timeControl, int hoverIndex) {
     char buffer[11];
     formatTimeControl(timeControl, buffer, 11);
-    return renderButton(rect, app, hoverIndex, buffer, BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(rect, app, hoverIndex, buffer, BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
@@ -114,12 +114,14 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     if (data->currentColor == WHITE) {
         renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.white.engineConfig, WHITE_COLOR, HOVERING_MODAL);
         renderTimeControl(timeControlRect, app, data->gameInfo.white.timeControl, HOVERING_MODAL);
-        renderButton(colorToggleRect, app, HOVERING_MODAL, "White", BUTTON_HIGHLIGHT_COLOR, WHITE_COLOR);
+        renderButton(colorToggleRect, app, HOVERING_MODAL, "White", 
+            BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR, BUTTON_BORDER_COLOR, WHITE_COLOR);
     }
     else {
         renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.black.engineConfig, BLACK_COLOR, HOVERING_MODAL);
         renderTimeControl(timeControlRect, app, data->gameInfo.black.timeControl, HOVERING_MODAL);
-        renderButton(colorToggleRect, app, HOVERING_MODAL, "Black", BUTTON_HIGHLIGHT_COLOR, BLACK_COLOR);
+        renderButton(colorToggleRect, app, HOVERING_MODAL, "Black", 
+            BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR, BUTTON_BORDER_COLOR, BLACK_COLOR);
     }
     data->engineConfig = engineConfigRect;
     data->timeControl = timeControlRect;
@@ -139,8 +141,8 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     SDL_FRect saveButtonRect = { x, y, buttonWidth, rowHeight };
     x += saveButtonRect.w + columnPadding;
     SDL_FRect cancelButtonRect = { x, y, buttonWidth, rowHeight };
-    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
-    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
     data->saveButton = saveButtonRect;
     data->cancelButton = cancelButtonRect;
 

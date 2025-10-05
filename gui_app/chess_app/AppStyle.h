@@ -5,10 +5,10 @@
 #define CREDITS_HEIGHT_PERCENT (0.05f)
 #define CREDITS_WIDTH_PERCENT (0.5f)
 
-#define BACKGROUND_COLOR ((SDL_Color) {30, 30, 30, 255})  // Very dark gray
-
 #define WHITE_COLOR ((SDL_Color) {255, 255, 255, 255})
 #define BLACK_COLOR ((SDL_Color) { 0, 0, 0, 255 })
+
+#define BACKGROUND_COLOR ((SDL_Color) {30, 30, 30, 255})  // Very dark gray
 
 #define SQUARE_COLOR_1 ((SDL_Color) {100, 100, 100, 255})  // Medium gray
 #define SQUARE_COLOR_2 ((SDL_Color) {50, 50, 50, 255})     // Darker gray
@@ -18,8 +18,9 @@
 #define OVERLAY_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray background
 
 #define BUTTON_BORDER_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray
-#define BUTTON_BG_COLOR ((SDL_Color) {0, 102, 204, 255})         // Dark blue
+#define BUTTON_BG_COLOR ((SDL_Color) {40, 40, 40, 255})          // Dark blue
 #define BUTTON_HIGHLIGHT_COLOR ((SDL_Color){ 80, 80, 120, 255 }) // Bright gray
+#define BUTTON_CLICKED_COLOR ((SDL_Color){ 120, 120, 160, 255 }) // Bright gray
 #define BUTTON_TEXT_COLOR WHITE_COLOR  
 
 #define SELECTED_TEXT_COLOR WHITE_COLOR

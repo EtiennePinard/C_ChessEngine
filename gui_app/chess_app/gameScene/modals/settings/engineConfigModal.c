@@ -166,10 +166,10 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     modalData->okButtonRect = okRect;
     modalData->cancelButtonRect = cancelRect;
 
-    result = renderButton(okRect, app, HOVERING_MODAL, "OK", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    result = renderButton(okRect, app, HOVERING_MODAL, "OK", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
     if (result != SDL_APP_CONTINUE) return result;
 
-    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
 }
 
 SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {

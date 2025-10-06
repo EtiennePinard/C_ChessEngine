@@ -6,31 +6,24 @@
 
 #include "../GameModals.h"
 
-#define NUM_TIME_CONTROL_STYLE (3)
-#define NUM_TIME_CONTROL_OPTIONS_PER_STYLE (3)
-const TimeControl timeControlOptions2[NUM_TIME_CONTROL_STYLE][NUM_TIME_CONTROL_OPTIONS_PER_STYLE] = {
+typedef struct StringKeyAppStyleValue {
+    char* appStyleName;
+    AppStyle* styleValue;
+} StringKeyAppStyleValue;
+
+#define STYLE_ROW (1)
+#define STYLE_COLUMN (1)
+const StringKeyAppStyleValue stringKeyStyleValueMap[STYLE_ROW][STYLE_COLUMN] = {
 {
-    {.timeLeft = 60 * 1000, .increment = 0 },
-    {.timeLeft = 60 * 1000, .increment = 1000 },
-    {.timeLeft = 2 * 60 * 1000, .increment = 1000 },
+    {.appStyleName = "default style", .styleValue = &defaultStyle },
 },
-{
-    {.timeLeft = 3 * 60 * 1000, .increment = 2000},
-    {.timeLeft = 5 * 60 * 1000, .increment = 0 },
-    {.timeLeft = 5 * 60 * 1000, .increment = 2000},
-},
-{
-    {.timeLeft = 10 * 60 * 1000, .increment = 0},
-    {.timeLeft = 15 * 60 * 1000, .increment = 10000},
-    {.timeLeft = 30 * 60 * 1000, .increment = 0},
-}
 };
 
-SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
-    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
+SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
+    StyleModalData* modalData = (StyleModalData*)app->events.modal.data;
     AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
 
-    modalData->hovered = (TimeControl){ 0, 0 };
+    modalData->isStyleHovered = false;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
@@ -51,11 +44,11 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
     // Variable title height
     const float titleHeight = rect.h * 0.1;
 
-    const float horizontalPadding = rect.w / (4 * NUM_TIME_CONTROL_OPTIONS_PER_STYLE);
-    const float optionWidth = (rect.w - horizontalPadding) / NUM_TIME_CONTROL_OPTIONS_PER_STYLE - horizontalPadding;
+    const float horizontalPadding = rect.w / (4 * STYLE_COLUMN);
+    const float optionWidth = (rect.w - horizontalPadding) / STYLE_COLUMN - horizontalPadding;
     const float optionHeight = optionWidth / 2.0;
-    const float verticalEmptySpace = rect.h - titleHeight - optionHeight * NUM_TIME_CONTROL_STYLE;
-    const float verticalSeparation = verticalEmptySpace / (NUM_TIME_CONTROL_STYLE + 2);
+    const float verticalEmptySpace = rect.h - titleHeight - optionHeight * STYLE_ROW;
+    const float verticalSeparation = verticalEmptySpace / (STYLE_ROW + 2);
 
     SDL_FRect titleRect = {
         .x = rect.x,
@@ -63,7 +56,7 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
         .w = rect.w,
         .h = titleHeight
     };
-    char* titleText = modalData->savedSettingsData->currentColor == WHITE ? "Select white's time control" : "Select black's time control";
+    const char* titleText = "Select app's style";
     SDL_AppResult result = renderSingleLineTextCenteredToFit(renderer, font, titleText, textColor, titleRect);
     if (result != SDL_APP_CONTINUE) return result;
 
@@ -75,17 +68,16 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
         .h = optionHeight
     };
 
-    for (int styleIndex = 0; styleIndex < NUM_TIME_CONTROL_STYLE; styleIndex++) {
-        for (int optionIndex = 0; optionIndex < NUM_TIME_CONTROL_OPTIONS_PER_STYLE; optionIndex++) {
-            TimeControl timeControl = timeControlOptions2[styleIndex][optionIndex];
+    for (int styleIndex = 0; styleIndex < STYLE_ROW; styleIndex++) {
+        for (int optionIndex = 0; optionIndex < STYLE_COLUMN; optionIndex++) {
+            StringKeyAppStyleValue keyValue = stringKeyStyleValueMap[styleIndex][optionIndex];
             if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &optionRect)) {
                 SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
                 SDL_RenderFillRect(renderer, &optionRect);
-                modalData->hovered = timeControl;
+                modalData->hovered = keyValue.styleValue;
+                modalData->isStyleHovered = true;
             }
-            char buffer[11];
-            formatTimeControl(timeControl, buffer, 11);
-            result = renderSingleLineTextCenteredToFit(renderer, font, buffer, textColor, optionRect);
+            result = renderSingleLineTextCenteredToFit(renderer, font, keyValue.appStyleName, textColor, optionRect);
             if (result != SDL_APP_CONTINUE) return result;
             optionRect.x += optionRect.w + horizontalPadding;
         }
@@ -96,31 +88,29 @@ SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult onTimeControlModalCancel(SDL_Event* event, App* app) {
+SDL_AppResult onStyleModalCancel(SDL_Event* event, App* app) {
     (void)event;
-    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
-    
+    StyleModalData* modalData = (StyleModalData*)app->events.modal.data;
+
     SDL_AppResult result = setSettingsModalActiveFromCopy(app, modalData->savedSettingsData);
 
     SDL_free(modalData);
     return result;
 }
 
-SDL_AppResult clickedTimeControlModal(SDL_Event* event, SDL_FRect rect, App* app) {
+SDL_AppResult clickedStyleModal(SDL_Event* event, SDL_FRect rect, App* app) {
     (void)event, (void)rect;
 
-    TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
-    // A timeleft of 0 means no time controls were selected
-    if (modalData->hovered.timeLeft == 0) return SDL_APP_CONTINUE;
+    StyleModalData* modalData = (StyleModalData*)app->events.modal.data;
+    if (!modalData->isStyleHovered) return SDL_APP_CONTINUE;
 
-    if (modalData->savedSettingsData->currentColor == WHITE) modalData->savedSettingsData->gameInfo.white.timeControl = modalData->hovered;
-    else if (modalData->savedSettingsData->currentColor == BLACK) modalData->savedSettingsData->gameInfo.black.timeControl = modalData->hovered;
+    modalData->savedSettingsData->currentStyle = *modalData->hovered;
 
     // Close the modal
-    return onTimeControlModalCancel(event, app);
+    return onStyleModalCancel(event, app);
 }
 
-void setTimeControlModalActive(App* app) {
+void setStyleModalActive(App* app) {
     // Closing the text input if it is active
     closeTextInput(NULL, app);
 
@@ -128,16 +118,17 @@ void setTimeControlModalActive(App* app) {
     SDL_assert(app->events.modal.modalId == SETTINGS_MODAL_ID);
     SettingsData* settingsData = (SettingsData*)app->events.modal.data;
 
-    TimeControlModalData* modalData = SDL_malloc(sizeof(TimeControlModalData));
+    StyleModalData* modalData = SDL_malloc(sizeof(StyleModalData));
     SDL_assert(modalData);
     // Setting the hovered time left to 0 since we did not select any time control yet
-    modalData->hovered.timeLeft = 0;
+    modalData->hovered->backgroundColor.a = 69;
+    modalData->isStyleHovered = false;
     modalData->savedSettingsData = settingsData;
 
     // Initializing the time control modal
     app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
-    app->events.modal.modalRender.renderFunction = &renderTimeControlModal;
-    app->events.modal.modalRender.onMouseButtonDown = &clickedTimeControlModal;
+    app->events.modal.modalRender.renderFunction = &renderStyleModal;
+    app->events.modal.modalRender.onMouseButtonDown = &clickedStyleModal;
     app->events.modal.modalRender.onMouseHovered = &rerenderScene;
     app->events.modal.modalRender.onMouseButtonUp = NULL;
     app->events.modal.modalRender.onMouseWheelScrolled = NULL;
@@ -146,7 +137,7 @@ void setTimeControlModalActive(App* app) {
 
     app->events.modal.data = modalData;
     app->events.modal.canOnlyInteractWithModal = true;
-    app->events.modal.onEscape = &onTimeControlModalCancel;
+    app->events.modal.onEscape = &onStyleModalCancel;
     app->events.modal.onReturn = NULL;
     app->events.modal.modalId = TIME_CONTROL_MODAL_ID;
     app->events.modal.isActive = true;

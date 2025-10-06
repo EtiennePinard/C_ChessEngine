@@ -392,7 +392,7 @@ void setEngineConfigModalActive(App* app) {
     app->events.modal.onEscape = &onEngineConfigModalCancel;
     app->events.modal.onReturn = &onEngineConfigModalClose;
 
-    app->events.modal.modalId = ENGINE_CONFIG_MODAL_ID2;
+    app->events.modal.modalId = ENGINE_CONFIG_MODAL_ID;
     app->events.modal.isActive = true;
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
 }

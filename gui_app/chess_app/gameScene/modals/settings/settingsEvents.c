@@ -24,6 +24,7 @@ SDL_AppResult closedSettingsModal(SDL_Event* event, App* app) {
     if (data->gameInfo.black.engineConfig.enginePath) SDL_free(data->gameInfo.black.engineConfig.enginePath);
     if (data->gameInfo.startingPositionFen) SDL_free(data->gameInfo.startingPositionFen);
     data->gameInfo = modalData->gameInfo;
+    data->appStyle = modalData->currentStyle;
 
     // Resetting the game to the new settings
     LoadGameInfoResult loadGameInfoResult = loadGameInfo(app);
@@ -120,6 +121,9 @@ SDL_AppResult clickedSettingsModal(SDL_Event* event, SDL_FRect rect, App* app) {
             setStartingPositionTextInputActive(data->startingPosition, app);
             SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);
         }
+    }
+    else if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->styleButton)) {
+        
     }
 
     return SDL_APP_CONTINUE;

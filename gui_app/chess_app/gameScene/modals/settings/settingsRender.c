@@ -83,7 +83,7 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
 SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     SettingsData* data = (SettingsData*)app->events.modal.data;
     AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
-    
+
     SDL_Renderer* renderer = app->state.sdlState.renderer;
 
     SDL_Color backgroundColor = style.backgroundColor;
@@ -144,19 +144,29 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     renderStartingPositionControl(startingPositionRect, app);
     data->startingPosition = startingPositionRect;
 
-    y += rowHeight + rowPadding;
+    y += rowHeight + rowPadding / 2;
     const float buttonWidth = BUTTON_WIDTH_PERCENT * rect.w;
+    x = rect.x + (rect.w - buttonWidth) / 2;
+    SDL_FRect styleButtonRect = { x, y, buttonWidth, rowHeight };
+    renderButton(styleButtonRect, app, HOVERING_MODAL, "Change style",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor
+    );
+    data->styleButton = styleButtonRect;
+    y += rowHeight + rowPadding / 2;
+
     columnPadding = (rect.w - 2 * buttonWidth) / 3.0;
     x = rect.x + columnPadding;
 
     SDL_FRect saveButtonRect = { x, y, buttonWidth, rowHeight };
     x += saveButtonRect.w + columnPadding;
     SDL_FRect cancelButtonRect = { x, y, buttonWidth, rowHeight };
-    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save", 
+    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save",
         style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
         style.buttonStyle.idleColor, style.buttonStyle.borderColor,
         style.textStyle.textColor);
-    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel", 
+    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel",
         style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
         style.buttonStyle.idleColor, style.buttonStyle.borderColor,
         style.textStyle.textColor);

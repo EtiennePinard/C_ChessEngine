@@ -15,11 +15,13 @@ typedef struct PromotionModalData {
 typedef struct SettingsData {
     GameConfig gameInfo;
     PieceCharacteristics currentColor;
+    AppStyle currentStyle;
 
     SDL_FRect colorToggle;
     SDL_FRect engineConfig;
     SDL_FRect timeControl;
     SDL_FRect startingPosition;
+    SDL_FRect styleButton;
 
     SDL_FRect saveButton;
     SDL_FRect cancelButton;
@@ -51,12 +53,20 @@ typedef struct EngineConfigModalData {
     SettingsData* savedSettingsData;
 } EngineConfigModalData;
 
+typedef struct StyleModalData {
+    AppStyle* hovered;
+    bool isStyleHovered;
+
+    SettingsData* savedSettingsData;
+} StyleModalData;
+
 typedef enum GameModalId {
     PROMOTION_MODAL_ID,
     GAME_ENDED_MODAL_ID,
     SETTINGS_MODAL_ID,
-    TIME_CONTROL_MODAL_ID2,
-    ENGINE_CONFIG_MODAL_ID2
+    TIME_CONTROL_MODAL_ID,
+    ENGINE_CONFIG_MODAL_ID,
+    STYLE_MODAL_ID
 } GameModal;
 
 void setPromotionModalActive(App* app, int promotionSquareTo);
@@ -65,6 +75,7 @@ SDL_AppResult setSettingsModalActive(App* app);
 SDL_AppResult setSettingsModalActiveFromCopy(App* app, SettingsData* settingsData);
 void setTimeControlModalActive(App* app);
 void setEngineConfigModalActive(App* app);
+void setStyleModalActive(App* app);
 
 SDL_FRect calculatePromotionRect(GameSceneData* data, int promotionSquareTo, SDL_FRect boardRect);
 SDL_FRect calculateGameEndedRect(SDL_FRect boardRect);

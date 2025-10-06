@@ -443,11 +443,13 @@ SDL_AppResult clickedDownScrollbar(SDL_Event* event, SDL_FRect rect, App* app) {
 
 LoadGameInfoResult loadGameInfo(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
-
+    
     if (!FenString_setChessPositionFromCopiedFenString(data->gameInfo.startingPositionFen, &data->state.position)) {
         return INVALID_FEN_STRING;
     }
-
+    
+    // TODO: Could leak memory if change from computer to human and does not 
+    // call UCIEngine_terminate
     data->state.white.timeControl = data->gameInfo.white.timeControl;
     if (data->gameInfo.white.engineConfig.isEngine) {
         if (!data->gameInfo.white.engineConfig.enginePath) return EMPTY_WHITE_ENGINE_PATH;

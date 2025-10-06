@@ -53,4 +53,6 @@ typedef struct AppStyle {
     ScrollBarStyle scrollbarStyle;
 } AppStyle;
 
+extern AppStyle defaultStyle;
+
 #endif /* FFFA9261_E3F1_49C7_A19E_16F715951AD0 */

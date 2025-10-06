@@ -1,6 +1,8 @@
 #ifndef FFFA9261_E3F1_49C7_A19E_16F715951AD0
 #define FFFA9261_E3F1_49C7_A19E_16F715951AD0
 
+#include <SDL3/SDL.h>
+
 #define PADDING_PERCENT (0.03f)
 #define CREDITS_HEIGHT_PERCENT (0.05f)
 #define CREDITS_WIDTH_PERCENT (0.5f)
@@ -8,31 +10,47 @@
 #define WHITE_COLOR ((SDL_Color) {255, 255, 255, 255})
 #define BLACK_COLOR ((SDL_Color) { 0, 0, 0, 255 })
 
-#define BACKGROUND_COLOR ((SDL_Color) {30, 30, 30, 255})  // Very dark gray
+typedef struct TextStyle {
+    SDL_Color textColor;
+    SDL_Color selectedTextColor;
+    SDL_Color selectedTextBgColor;
+} TextStyle;
 
-#define SQUARE_COLOR_1 ((SDL_Color) {100, 100, 100, 255})  // Medium gray
-#define SQUARE_COLOR_2 ((SDL_Color) {50, 50, 50, 255})     // Darker gray
-#define PROMOTION_HIGHLIGHT_COLOR ((SDL_Color) { 80, 80, 120, 128 }) // Light gray
-#define CLICKED_SQUARE_COLOR PROMOTION_HIGHLIGHT_COLOR
+typedef struct CheckboxStyle {
+    SDL_Color borderColor;
+    SDL_Color hoverColor;
+    SDL_Color checkedColor;
+} CheckboxStyle;
 
-#define OVERLAY_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray background
+typedef struct ButtonStyle {
+    SDL_Color idleColor;
+    SDL_Color borderColor;
+    SDL_Color hoverColor;
+    SDL_Color clickedColor;
+} ButtonStyle;
 
-#define BUTTON_BORDER_COLOR ((SDL_Color) { 200, 200, 200, 255 }) // Light gray
-#define BUTTON_BG_COLOR ((SDL_Color) {40, 40, 40, 255})          // Dark blue
-#define BUTTON_HIGHLIGHT_COLOR ((SDL_Color){ 80, 80, 120, 255 }) // Bright gray
-#define BUTTON_CLICKED_COLOR ((SDL_Color){ 120, 120, 160, 255 }) // Bright gray
-#define BUTTON_TEXT_COLOR WHITE_COLOR  
+typedef struct ChessboardStyle {
+    SDL_Color square1Color;
+    SDL_Color square2Color;
+    SDL_Color highlightSquareColor;
+} ChessboardStyle;
 
-#define SELECTED_TEXT_COLOR WHITE_COLOR
-#define SELECTED_TEXT_BG_COLOR ((SDL_Color){ 30, 120, 230, 25 }) // Blue-ish
+typedef struct ScrollBarStyle {
+    SDL_Color idleColor;
+    SDL_Color hoverColor;
+    SDL_Color clickedColor;
+} ScrollBarStyle;
 
-#define CHECKBOX_BORDER_COLOR BUTTON_HIGHLIGHT_COLOR
-#define CHECKBOX_HOVER_COLOR BUTTON_BORDER_COLOR
-#define CHECKBOX_CHECKED_COLOR WHITE_COLOR
-#define CHECKBOX_TEXT_COLOR BUTTON_TEXT_COLOR
+typedef struct AppStyle {
+    SDL_Color backgroundColor;
+    SDL_Color modalBgColor;
+    SDL_Color creditsColor;
 
-#define SEMI_TRANSPARENT_BACKGROUND_COLOR ((SDL_Color) { 30, 30, 30, 230 })
-
-#define CREDIT_COLOR ((SDL_Color) { 128, 128, 128, 255 })
+    ChessboardStyle chessboardStyle;
+    TextStyle textStyle;
+    ButtonStyle buttonStyle;
+    CheckboxStyle checkboxStyle;
+    ScrollBarStyle scrollbarStyle;
+} AppStyle;
 
 #endif /* FFFA9261_E3F1_49C7_A19E_16F715951AD0 */

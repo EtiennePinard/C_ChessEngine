@@ -187,8 +187,6 @@ SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    SDL_Color fillColor = checked ? checkedColor : (SDL_Color) { 0, 0, 0, 0 };
-
     const float boxSize = rect.h * 0.8f;
     const float boxX = rect.x;
     const float boxY = rect.y + (rect.h - boxSize) / 2.0f;
@@ -212,7 +210,7 @@ SDL_AppResult renderLabeledCheckboxButton(SDL_FRect rect, App* app, bool checked
 
     // Fill if checked
     if (checked) {
-        SDL_SetRenderDrawColor(renderer, fillColor.r, fillColor.g, fillColor.b, fillColor.a);
+        SDL_SetRenderDrawColor(renderer, checkedColor.r, checkedColor.g, checkedColor.b, checkedColor.a);
         SDL_RenderFillRect(renderer, &checkboxRect);
     }
 

@@ -2,15 +2,17 @@
 #define DDB8F9F1_B4AC_462A_883D_545E82BB7
 
 #include "AppState.h"
+#include "AppStyle.h"
 
 /**
  * @brief Sets the game scene from a game config
  * 
  * @param app The app's data
  * @param gameConfig The game config which will determine the starting conditions of the game
+ * @param appStyle The style of the app
  * @return SDL_AppResult If the app should continue or terminate with failure or success
  */
-SDL_AppResult setGameSceneFromGameConfig(App* app, GameConfig* gameConfig);
+SDL_AppResult setGameScene(App* app, GameConfig* gameConfig, AppStyle* appStyle);
 
 /**
  * @brief Copies a string to a heap allocated piece of memory

@@ -39,7 +39,11 @@ SDL_AppResult renderPromotionModal(SDL_FRect rect, App* app) {
     float squareSize = rect.w / 2.0;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
+    SDL_SetRenderDrawColor(renderer, 
+        data->appStyle.modalBgColor.r, 
+        data->appStyle.modalBgColor.g, 
+        data->appStyle.modalBgColor.b, 
+        data->appStyle.modalBgColor.a);
     SDL_RenderFillRect(renderer, &rect);
 
     SDL_SetRenderDrawColor(renderer, BLACK_COLOR.r, BLACK_COLOR.g, BLACK_COLOR.b, BLACK_COLOR.a);
@@ -67,7 +71,7 @@ SDL_AppResult renderPromotionModal(SDL_FRect rect, App* app) {
 
         if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &pieceRect)) {
 
-            SDL_Color highlightColor = PROMOTION_HIGHLIGHT_COLOR;
+            SDL_Color highlightColor = data->appStyle.chessboardStyle.highlightSquareColor;
 
             // Enable alpha blending for transparency
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);

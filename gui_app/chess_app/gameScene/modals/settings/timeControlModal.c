@@ -28,15 +28,17 @@ const TimeControl timeControlOptions2[NUM_TIME_CONTROL_STYLE][NUM_TIME_CONTROL_O
 
 SDL_AppResult renderTimeControlModal(SDL_FRect rect, App* app) {
     TimeControlModalData* modalData = (TimeControlModalData*)app->events.modal.data;
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+
     modalData->hovered = (TimeControl){ 0, 0 };
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
-    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
-    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
+    SDL_Color textColor = style.textStyle.textColor;
+    SDL_Color highlightColor = style.buttonStyle.hoverColor;
+    SDL_Color backgroundColor = style.backgroundColor;
 
     // Modal semi-transparent dark background
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);

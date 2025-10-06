@@ -27,14 +27,15 @@ SDL_AppResult renderEnginePathButton(SDL_FRect rect, App* app, SDL_Color highlig
 
 SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     EngineConfigModalData* modalData = (EngineConfigModalData*)app->events.modal.data;
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
 
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
-    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
-    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
+    SDL_Color textColor = style.textStyle.textColor;
+    SDL_Color highlightColor = style.buttonStyle.hoverColor;
+    SDL_Color backgroundColor = style.backgroundColor;
 
     const float padding = rect.h * 0.05f;
     const float lineHeight = TTF_GetFontLineSkip(font);
@@ -72,7 +73,10 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     modalData->checkboxRect = checkboxRect;
     result = renderLabeledCheckboxButton(checkboxRect, app,
         modalData->currentConfig.isEngine, "Use Engine", HOVERING_MODAL,
-        CHECKBOX_BORDER_COLOR, CHECKBOX_HOVER_COLOR, CHECKBOX_CHECKED_COLOR, CHECKBOX_TEXT_COLOR);
+        style.checkboxStyle.borderColor,
+        style.checkboxStyle.hoverColor,
+        style.checkboxStyle.checkedColor,
+        style.textStyle.textColor);
     if (result != SDL_APP_CONTINUE) return result;
 
     y += buttonHeight + padding;
@@ -100,15 +104,14 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
             .h = buttonHeight
         };
         modalData->thinkTimeRect = timeRect;
-        SDL_Color borderColor = BUTTON_BORDER_COLOR;
-        SDL_Color textColor = BUTTON_TEXT_COLOR;
+
         // Border
         SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
         SDL_RenderRect(renderer, &timeRect);
         if (!app->events.textInput.isActive || app->events.textInput.textInputId != THINK_TIME_TEXT_INPUT_ID) {
             // Highlight the rectangle if hovered without inputing text
             if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &timeRect)) {
-                SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
+                SDL_Color highlightColor = style.buttonStyle.hoverColor;
                 SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
                 SDL_RenderFillRect(renderer, &timeRect);
             }
@@ -141,7 +144,10 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
         };
         result = renderLabeledCheckboxButton(thinksByHimselfRect, app,
             modalData->currentConfig.timeToThink == 0, "Engine thinks on its own", HOVERING_MODAL,
-            CHECKBOX_BORDER_COLOR, CHECKBOX_HOVER_COLOR, CHECKBOX_CHECKED_COLOR, CHECKBOX_TEXT_COLOR);
+            style.checkboxStyle.borderColor,
+            style.checkboxStyle.hoverColor,
+            style.checkboxStyle.checkedColor,
+            style.textStyle.textColor);
         modalData->thinkByHimselfRect = thinksByHimselfRect;
         if (result != SDL_APP_CONTINUE) return result;
     }
@@ -166,10 +172,16 @@ SDL_AppResult renderEngineConfigModal(SDL_FRect rect, App* app) {
     modalData->okButtonRect = okRect;
     modalData->cancelButtonRect = cancelRect;
 
-    result = renderButton(okRect, app, HOVERING_MODAL, "OK", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    result = renderButton(okRect, app, HOVERING_MODAL, "OK",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
     if (result != SDL_APP_CONTINUE) return result;
 
-    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    return renderButton(cancelRect, app, HOVERING_MODAL, "Cancel",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
 }
 
 SDL_AppResult onEngineConfigModalClose(SDL_Event* event, App* app) {
@@ -215,7 +227,7 @@ SDL_AppResult onEngineConfigModalCancel(SDL_Event* event, App* app) {
     if (data->currentConfig.enginePath) SDL_free(data->currentConfig.enginePath);
 
     SDL_AppResult result = setSettingsModalActiveFromCopy(app, data->savedSettingsData);
-    
+
     SDL_free(data);
     return result;
 }

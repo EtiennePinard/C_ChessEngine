@@ -5,9 +5,9 @@
 #include "../../sdl_framework/CommonEvents.h"
 #include "../../sdl_framework/CommonRenderFunctions.h"
 
-#include "GameEvents.h"
 #include "../AppUtils.h"
 #include "../AppStyle.h"
+#include "../Config.h"
 
 #include "GameEvents.h"
 #include "GameRender.h"
@@ -52,7 +52,7 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
 
         if (previousMoveSquare) {
             // Change the color of the square if it was part of the previous move
-            SDL_Color color = CLICKED_SQUARE_COLOR;
+            SDL_Color color = data->appStyle.chessboardStyle.highlightSquareColor;
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             SDL_RenderFillRect(renderer, &squareRect);
         }
@@ -60,12 +60,12 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
             // Only change the border of the square if it selected
 
             // Rendering the complete rectangle with the border color
-            SDL_Color color = CLICKED_SQUARE_COLOR;
+            SDL_Color color = data->appStyle.chessboardStyle.highlightSquareColor;
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             SDL_RenderFillRect(renderer, &squareRect);
 
             // Render the inner rectangle with the square color
-            color = ((row + col) % 2 == 0) ? SQUARE_COLOR_1 : SQUARE_COLOR_2;
+            color = ((row + col) % 2 == 0) ? data->appStyle.chessboardStyle.square1Color : data->appStyle.chessboardStyle.square2Color;
             const int borderThickness = squareSize / 8;
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             SDL_FRect innerRect = {
@@ -77,7 +77,7 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
             SDL_RenderFillRect(renderer, &innerRect);
         }
         else {
-            SDL_Color color = ((row + col) % 2 == 0) ? SQUARE_COLOR_1 : SQUARE_COLOR_2;
+            SDL_Color color = ((row + col) % 2 == 0) ? data->appStyle.chessboardStyle.square1Color : data->appStyle.chessboardStyle.square2Color;
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
             SDL_RenderFillRect(renderer, &squareRect);
         }
@@ -126,15 +126,15 @@ SDL_AppResult renderWhiteClock(SDL_FRect whiteClockRect, App* app) {
 
 #define SCROLL_BAR_SIZE_PERCENT (0.1f)
 
+// TODO: Idle scrollbar color is broken, also add the hover and dragged option
 SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_Color scrollBarColor = { 75, 75, 75, 255 };
-    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
+    SDL_Color scrollBarColor = data->appStyle.scrollbarStyle.idleColor;
+    SDL_Color backgroundColor = data->appStyle.backgroundColor;
 
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
     SDL_RenderFillRect(renderer, &rect);
-
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
     // Drawing the bar
     float scrollbarX = (float)rect.x;
@@ -149,7 +149,7 @@ SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
         // Update the scroll ratio
         data->moveListInfo.scrollRatio = SDL_clamp((app->events.mouseState.mousePoint.y - data->moveListInfo.startingDragOffset - rect.y) / maxScrollY, 0.0, 1.0);
         // Bright highlight the scrollbar
-        scrollBarColor = (SDL_Color){ 140, 140, 140, 255 };
+        scrollBarColor = data->appStyle.scrollbarStyle.clickedColor;
     }
     else {
         data->moveListInfo.isScrolling = false;
@@ -168,9 +168,8 @@ SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
     if (app->events.mouseState.hoveredIndex == MOVE_LIST_SCROLLBAR &&
         SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->moveListInfo.scrollbarFRect) &&
         !app->events.mouseState.holdingLeftMouseButton) {
-
-        // Small highlight of the scrollbar
-        scrollBarColor = (SDL_Color){ 111, 111, 111, 255 };
+        // Small highlight of the scrollbar if hovered
+        scrollBarColor = data->appStyle.scrollbarStyle.hoverColor;
     }
 
     SDL_FRect scrollbarFRect = (SDL_FRect){
@@ -180,6 +179,7 @@ SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
         scrollbarHeight - 2 * radius
     };
 
+    // SDL_Log("Scrollbar color: %d, %d, %d, %d\n", scrollBarColor.r, scrollBarColor.g, scrollBarColor.b, scrollBarColor.a);
     SDL_SetRenderDrawColor(renderer, scrollBarColor.r, scrollBarColor.g, scrollBarColor.b, scrollBarColor.a);
     SDL_RenderFillRect(renderer, &scrollbarFRect);
 
@@ -195,11 +195,12 @@ SDL_AppResult renderMoveListScrollbar(SDL_FRect rect, App* app) {
 SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
     TTF_Font* font = app->state.sdlState.font;
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
-    SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
-    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
+    SDL_Color borderColor = data->appStyle.buttonStyle.borderColor;
+    SDL_Color textColor = data->appStyle.textStyle.textColor;
+    SDL_Color highlightColor = data->appStyle.buttonStyle.hoverColor;
+    SDL_Color backgroundColor = data->appStyle.backgroundColor;
 
     // Draw semi-transparent background
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
@@ -209,7 +210,6 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &rect);
 
-    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
     const size_t numRows = data->moveListInfo.movesPlayed.count / 2 + data->moveListInfo.movesPlayed.count % 2;
     // If we have no moves to render simply return
@@ -323,15 +323,27 @@ SDL_AppResult renderMoveList(SDL_FRect rect, App* app) {
 
 
 SDL_AppResult renderRestartButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, RESTART_BUTTON, "Restart", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+    return renderButton(rect, app, RESTART_BUTTON, "Restart",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
 }
 
 SDL_AppResult renderFlipBoardButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+    return renderButton(rect, app, FLIP_BOARD_BUTTON, "Flip board",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
 }
 
 SDL_AppResult renderSettingsButton(SDL_FRect rect, App* app) {
-    return renderButton(rect, app, SETTINGS_BUTTON, "Settings", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+    return renderButton(rect, app, SETTINGS_BUTTON, "Settings",
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
 }
 
 #define BOARD_SIZE_PERCENT (0.75f)
@@ -355,7 +367,7 @@ SDL_AppResult computeGameSceneRender(App* app) {
     GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
 
     // Setting in the background color of the scene
-    sceneRender->renderDrawColor = BACKGROUND_COLOR;
+    sceneRender->renderDrawColor = data->appStyle.backgroundColor;
 
     sceneRender->numRenderBox = TOTAL_GAME_SCENE_RENDER_BOX;
     // We assume that sceneRender->renderBoxes is always NULL
@@ -502,6 +514,9 @@ void terminateGameScene(void* data) {
     SDL_free(gameData->moveListInfo.movesPlayed.data);
     cleanupTextures(gameData->textures);
     SDL_free(gameData->textures.data);
+
+    saveGameConfig(&gameData->gameInfo);
+    saveAppStyle(&gameData->appStyle);
 
     SDL_free(gameData);
 }

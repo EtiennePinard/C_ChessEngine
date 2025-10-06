@@ -102,15 +102,20 @@ bool initializeApp(App* app) {
     SDL_Log("Done!\n");
 
     SDL_Log("Initializing Game Scene...\n");
+    // Loading game config and app style
     GameConfig gameConfig; 
-    loadMainMenuConfig(&gameConfig);
-    setGameSceneFromGameConfig(app, &gameConfig);
-
-    app->events.modal.isActive = false;
-    app->events.onWindowResize = &onWindowResize;
-    app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
+    AppStyle appStyle;
+    loadGameConfig(&gameConfig);
+    loadAppStyle(&appStyle);
+    // Correctly setting game scene data in app
+    if (setGameScene(app, &gameConfig, &appStyle) != SDL_APP_CONTINUE) return false;
 
     SDL_Log("Done!\n");
+    
+    app->events.modal.isActive = false;
+    app->events.textInput.isActive = false;
+    app->events.onWindowResize = &onWindowResize;
+    app->runAfterRenderAndEventsFunction = &afterRenderAndEventsFunction;
 
     SDL_Log("App is initialized!\n");
     return true;

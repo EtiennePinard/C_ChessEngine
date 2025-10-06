@@ -8,8 +8,9 @@
 
 SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engineConfig, SDL_Color textureColor, int hoverIndex) {
     SettingsData* data = (SettingsData*)app->events.modal.data;
+    GameSceneData* sceneData = (GameSceneData*)app->state.currentScene.data;
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_Color hightLightColor = BUTTON_HIGHLIGHT_COLOR;
+    SDL_Color hightLightColor = sceneData->appStyle.buttonStyle.hoverColor;
 
     // Rendering the texture in a square to not distort it
     SDL_FRect squareRect = { rect.x, rect.y, SDL_min(rect.w, rect.h), SDL_min(rect.w, rect.h) };
@@ -28,7 +29,7 @@ SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engine
     else texture = data->textures.data[0].texture;
     // Changing the texture color. This works because the original texture is fully white
     SDL_SetTextureColorMod(texture, textureColor.r, textureColor.g, textureColor.b);
-    
+
     SDL_RenderTexture(renderer, texture, NULL, &squareRect);
     return SDL_APP_CONTINUE;
 }
@@ -36,16 +37,21 @@ SDL_AppResult renderPlayerInfoIcon(SDL_FRect rect, App* app, EngineConfig engine
 SDL_AppResult renderTimeControl(SDL_FRect rect, App* app, TimeControl timeControl, int hoverIndex) {
     char buffer[11];
     formatTimeControl(timeControl, buffer, 11);
-    return renderButton(rect, app, hoverIndex, buffer, BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+    return renderButton(rect, app, hoverIndex, buffer,
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
 }
 
 SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
     SDL_Renderer* renderer = app->state.sdlState.renderer;
 
     SettingsData* data = (SettingsData*)app->events.modal.data;
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
 
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
-    SDL_Color textColor = BUTTON_TEXT_COLOR;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
+    SDL_Color textColor = style.textStyle.textColor;
 
     // Border
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
@@ -55,7 +61,7 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
         // Highlight the rectangle if hovered without inputing text
         if (app->events.mouseState.hoveredIndex == HOVERING_MODAL &&
             SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->startingPosition)) {
-            SDL_Color highlightColor = BUTTON_HIGHLIGHT_COLOR;
+            SDL_Color highlightColor = style.buttonStyle.hoverColor;
             SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
             SDL_RenderFillRect(renderer, &rect);
         }
@@ -76,10 +82,12 @@ SDL_AppResult renderStartingPositionControl(SDL_FRect rect, App* app) {
 
 SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     SettingsData* data = (SettingsData*)app->events.modal.data;
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+    
     SDL_Renderer* renderer = app->state.sdlState.renderer;
 
-    SDL_Color backgroundColor = SEMI_TRANSPARENT_BACKGROUND_COLOR;
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
+    SDL_Color backgroundColor = style.backgroundColor;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
 
     // Modal background
     SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
@@ -114,14 +122,17 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     if (data->currentColor == WHITE) {
         renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.white.engineConfig, WHITE_COLOR, HOVERING_MODAL);
         renderTimeControl(timeControlRect, app, data->gameInfo.white.timeControl, HOVERING_MODAL);
-        renderButton(colorToggleRect, app, HOVERING_MODAL, "White", 
-            BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR, BUTTON_BORDER_COLOR, WHITE_COLOR);
+        renderButton(colorToggleRect, app, HOVERING_MODAL, "White",
+            style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+            style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+            WHITE_COLOR);
     }
     else {
         renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.black.engineConfig, BLACK_COLOR, HOVERING_MODAL);
         renderTimeControl(timeControlRect, app, data->gameInfo.black.timeControl, HOVERING_MODAL);
-        renderButton(colorToggleRect, app, HOVERING_MODAL, "Black", 
-            BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR, BUTTON_BORDER_COLOR, BLACK_COLOR);
+        renderButton(colorToggleRect, app, HOVERING_MODAL, "Black",
+            style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+            style.buttonStyle.idleColor, style.buttonStyle.borderColor, BLACK_COLOR);
     }
     data->engineConfig = engineConfigRect;
     data->timeControl = timeControlRect;
@@ -141,8 +152,14 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     SDL_FRect saveButtonRect = { x, y, buttonWidth, rowHeight };
     x += saveButtonRect.w + columnPadding;
     SDL_FRect cancelButtonRect = { x, y, buttonWidth, rowHeight };
-    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
-    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel", BUTTON_HIGHLIGHT_COLOR, BUTTON_CLICKED_COLOR, BUTTON_BG_COLOR,  BUTTON_BORDER_COLOR, BUTTON_TEXT_COLOR);
+    renderButton(saveButtonRect, app, HOVERING_MODAL, "Save", 
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
+    renderButton(cancelButtonRect, app, HOVERING_MODAL, "Cancel", 
+        style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
+        style.buttonStyle.idleColor, style.buttonStyle.borderColor,
+        style.textStyle.textColor);
     data->saveButton = saveButtonRect;
     data->cancelButton = cancelButtonRect;
 
@@ -151,7 +168,7 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     y = rect.y + rect.h - creditsHeight - padding;
     x = rect.x + (rect.w - creditsWidth) / 2.0;
     SDL_FRect creditsRect = { x, y, creditsWidth, creditsHeight };
-    renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, CREDIT_COLOR, creditsRect);
+    renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, style.creditsColor, creditsRect);
 
     return SDL_APP_CONTINUE;
 }

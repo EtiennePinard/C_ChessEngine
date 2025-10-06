@@ -1,8 +1,8 @@
 #ifndef B8A31D74_EDB3_4C47_A179_16C371768CA7
 #define B8A31D74_EDB3_4C47_A179_16C371768CA7
 
-#include "../AppState.h"
 #include "../uciEngineCommunication/UCIEngineCommunication.h"
+#include "../AppStyle.h"
 
 typedef struct UndoGameState {
     ChessPosition position;
@@ -78,6 +78,8 @@ typedef struct GameSceneData {
     UndoGameStates_da undoGameStates;
     
     GameConfig gameInfo;
+    AppStyle appStyle;
+
     Textures textures;
 } GameSceneData;
 

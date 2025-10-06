@@ -42,15 +42,18 @@ SDL_AppResult startingPositionTextInputCancel(SDL_Event* event, App* app) {
 }
 
 SDL_AppResult renderStartingPosition(SDL_FRect rect, App* app) {
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
 
     // Border
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &rect);
 
     return renderTextInputCenteredToFit(rect, app,
-        BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
+        style.buttonStyle.hoverColor, style.textStyle.textColor,
+        style.textStyle.selectedTextColor, style.textStyle.selectedTextBgColor);
 }
 
 void setStartingPositionTextInputActive(SDL_FRect rect, App* app) {
@@ -121,21 +124,24 @@ SDL_AppResult thinkTimeTextInputCancel(SDL_Event* event, App* app) {
     return closeTextInput(event, app);
 }
 
-SDL_AppResult renderThinkTime2(SDL_FRect rect, App* app) {
+SDL_AppResult renderThinkTime(SDL_FRect rect, App* app) {
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_Color borderColor = BUTTON_BORDER_COLOR;
+    SDL_Color borderColor = style.buttonStyle.borderColor;
 
     // Border
     SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
     SDL_RenderRect(renderer, &rect);
 
     return renderTextInputCenteredToFit(rect, app,
-        BUTTON_HIGHLIGHT_COLOR, BUTTON_TEXT_COLOR, SELECTED_TEXT_COLOR, SELECTED_TEXT_BG_COLOR);
+        style.buttonStyle.hoverColor, style.textStyle.textColor,
+        style.textStyle.selectedTextColor, style.textStyle.selectedTextBgColor);
 }
 
 void setTimeToThinkTextInputActive(SDL_FRect rect, App* app) {
     app->events.textInput.textInputRender.renderRect = rect;
-    app->events.textInput.textInputRender.renderFunction = &renderThinkTime2;
+    app->events.textInput.textInputRender.renderFunction = &renderThinkTime;
     app->events.textInput.textInputRender.onMouseButtonDown = &resetTextInputSelectionOnMouseButtonDown;
     app->events.textInput.textInputRender.onMouseButtonUp = NULL;
     app->events.textInput.textInputRender.onMouseEntered = &changeMouseIconOnEnterTextInput;

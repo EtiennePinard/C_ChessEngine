@@ -5,10 +5,9 @@
 #include "gameScene/GameEvents.h"
 #include "gameScene/GameRender.h"
 
-#include "AppStyle.h"
 #include "AppUtils.h"
 
-SDL_AppResult setGameSceneFromGameConfig(App* app, GameConfig* gameConfig) {
+SDL_AppResult setGameScene(App* app, GameConfig* gameConfig, AppStyle* appStyle) {
     GameSceneData* gameData = SDL_calloc(1, sizeof(GameSceneData));
     gameData->flipBoard = false; // We don't have an option for that yet
 
@@ -23,8 +22,9 @@ SDL_AppResult setGameSceneFromGameConfig(App* app, GameConfig* gameConfig) {
         return SDL_APP_FAILURE;
     }
 
-    // Loading the new game info
+    // Setting game info and app style
     gameData->gameInfo = *gameConfig;
+    gameData->appStyle = *appStyle;
 
     // Setting the current scene to the game scene
     app->state.currentScene.sceneId = GAME_SCENE_ID;
@@ -141,5 +141,7 @@ SDL_AppResult formatTimeControl(TimeControl timeControl, char* output, size_t ou
 }
 
 SDL_AppResult renderCredits(SDL_FRect rect, App* app) {
-    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, CREDIT_COLOR, rect);
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, CREDIT_TEXT, style.creditsColor, rect);
 }

@@ -19,10 +19,15 @@ SDL_FRect calculateGameEndedRect(SDL_FRect boardRect) {
 }
 
 SDL_AppResult renderGameEndedModal(SDL_FRect rect, App* app) {
+    GameSceneData* sceneData = (GameSceneData*)app->state.currentScene.data;
     GameEndedModalData* modalData = (GameEndedModalData*)app->events.modal.data;
 
     SDL_Renderer* renderer = app->state.sdlState.renderer;
-    SDL_SetRenderDrawColor(renderer, OVERLAY_COLOR.r, OVERLAY_COLOR.g, OVERLAY_COLOR.b, OVERLAY_COLOR.a);
+    SDL_SetRenderDrawColor(renderer, 
+        sceneData->appStyle.modalBgColor.r, 
+        sceneData->appStyle.modalBgColor.g, 
+        sceneData->appStyle.modalBgColor.b, 
+        sceneData->appStyle.modalBgColor.a);
     SDL_RenderFillRect(renderer, &rect);
 
     SDL_SetRenderDrawColor(renderer, BLACK_COLOR.r, BLACK_COLOR.g, BLACK_COLOR.b, BLACK_COLOR.a);

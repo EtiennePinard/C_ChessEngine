@@ -31,7 +31,6 @@ SDL_AppResult setSettingsModalActive(App* app) {
     modalData->gameInfo.black.engineConfig.enginePath = copyString(data->gameInfo.black.engineConfig.enginePath);
     modalData->gameInfo.startingPositionFen = copyString(data->gameInfo.startingPositionFen);
     modalData->currentColor = WHITE;
-    modalData->currentStyle = data->appStyle;
     modalData->wasInStartingPositionBefore = true;
     modalData->wasTextInputExited = false;
 

@@ -111,17 +111,21 @@ SDL_AppResult renderChessboard(SDL_FRect boardRect, App* app) {
 #define CLOCK_BUFFER_SIZE (16)
 
 SDL_AppResult renderBlackClock(SDL_FRect blackClockRect, App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     char buffer[CLOCK_BUFFER_SIZE];
 
-    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.black.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, blackClockRect);
+    if (formatTime(data->state.black.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer,
+        data->appStyle.textStyle.textColor, blackClockRect);
 }
 
 SDL_AppResult renderWhiteClock(SDL_FRect whiteClockRect, App* app) {
+    GameSceneData* data = (GameSceneData*)app->state.currentScene.data;
     char buffer[CLOCK_BUFFER_SIZE];
 
-    if (formatTime(((GameSceneData*)app->state.currentScene.data)->state.white.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer, WHITE_COLOR, whiteClockRect);
+    if (formatTime(data->state.white.timeControl.timeLeft, buffer, CLOCK_BUFFER_SIZE) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
+    return renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, buffer,
+        data->appStyle.textStyle.textColor, whiteClockRect);
 }
 
 #define SCROLL_BAR_SIZE_PERCENT (0.1f)
@@ -507,16 +511,23 @@ SDL_AppResult computeGameSceneRender(App* app) {
 
 void terminateGameScene(void* data) {
     GameSceneData* gameData = (GameSceneData*)data;
+    // Saving game config
+    saveGameConfig(&gameData->gameInfo);
+    saveAppStyle(&gameData->appStyle);
+
+    // Terminating the UCI engine if they were active
     if (gameData->state.white.engineCommunication) UCIEngine_terminate(gameData->state.white.engineCommunication);
     if (gameData->state.black.engineCommunication) UCIEngine_terminate(gameData->state.black.engineCommunication);
+    // Freeing the allocated engine config strings
+    if (gameData->gameInfo.white.engineConfig.enginePath) SDL_free(gameData->gameInfo.white.engineConfig.enginePath);
+    if (gameData->gameInfo.black.engineConfig.enginePath) SDL_free(gameData->gameInfo.black.engineConfig.enginePath);
+    if (gameData->gameInfo.startingPositionFen) SDL_free(gameData->gameInfo.startingPositionFen);
 
     SDL_free(gameData->undoGameStates.data);
     SDL_free(gameData->moveListInfo.movesPlayed.data);
     cleanupTextures(gameData->textures);
     SDL_free(gameData->textures.data);
 
-    saveGameConfig(&gameData->gameInfo);
-    saveAppStyle(&gameData->appStyle);
 
     SDL_free(gameData);
 }

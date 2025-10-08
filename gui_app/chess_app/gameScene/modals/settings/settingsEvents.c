@@ -24,7 +24,6 @@ SDL_AppResult closedSettingsModal(SDL_Event* event, App* app) {
     if (data->gameInfo.black.engineConfig.enginePath) SDL_free(data->gameInfo.black.engineConfig.enginePath);
     if (data->gameInfo.startingPositionFen) SDL_free(data->gameInfo.startingPositionFen);
     data->gameInfo = modalData->gameInfo;
-    data->appStyle = modalData->currentStyle;
 
     // Resetting the game to the new settings
     LoadGameInfoResult loadGameInfoResult = loadGameInfo(app);
@@ -85,10 +84,10 @@ SDL_AppResult cancelSettingsModal(SDL_Event* event, App* app) {
         return SDL_APP_CONTINUE;
     }
 
-    // Clicked ok button, saving settings and leaving
-    SDL_free(modalData->gameInfo.white.engineConfig.enginePath);
-    SDL_free(modalData->gameInfo.black.engineConfig.enginePath);
-    SDL_free(modalData->gameInfo.startingPositionFen);
+    // Clicked cancel button, freeing memory
+    if (modalData->gameInfo.white.engineConfig.enginePath) SDL_free(modalData->gameInfo.white.engineConfig.enginePath);
+    if (modalData->gameInfo.black.engineConfig.enginePath) SDL_free(modalData->gameInfo.black.engineConfig.enginePath);
+    if (modalData->gameInfo.startingPositionFen) SDL_free(modalData->gameInfo.startingPositionFen);
 
     cleanupTextures(modalData->textures);
     SDL_free(modalData->textures.data);
@@ -123,7 +122,7 @@ SDL_AppResult clickedSettingsModal(SDL_Event* event, SDL_FRect rect, App* app) {
         }
     }
     else if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &data->styleButton)) {
-        
+        setStyleModalActive(app);
     }
 
     return SDL_APP_CONTINUE;

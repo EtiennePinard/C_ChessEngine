@@ -5,6 +5,7 @@
 
 #include "gameScene/GameScene.h"
 
+#include "AppUtils.h"
 #include "Config.h"
 
 #define STARTING_BUFFER_SIZE (16)
@@ -250,7 +251,10 @@ fallback:
     data->black.engineConfig.timeToThink = DEFAULT_TIME_TO_THINK;
     data->black.timeControl = DEFAULT_TIME_CONTROL;
 
-    data->startingPositionFen = INITIAL_FEN;
+    // We do this copy string operation since the program
+    // assumes that startingPositionFen is heap allocated and therefore
+    // needs to be freed
+    data->startingPositionFen = copyString(INITIAL_FEN);
 }
 
 // Helper function

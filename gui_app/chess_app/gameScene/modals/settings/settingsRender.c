@@ -104,7 +104,8 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     const float rowPadding = ROW_PADDING_PERCENT * rect.h;
 
     SDL_FRect titleRect = { x, y, rect.w - 2 * padding, rowHeight };
-    renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, "Settings", WHITE_COLOR, titleRect);
+    renderSingleLineTextCenteredToFit(app->state.sdlState.renderer, app->state.sdlState.font, "Settings", 
+        style.textStyle.textColor, titleRect);
 
     y += rowHeight + rowPadding;
     const float engineConfigWidth = ENGINE_CONFIG_WIDTH_PERCENT * rect.w;
@@ -120,12 +121,12 @@ SDL_AppResult renderSettingsModal(SDL_FRect rect, App* app) {
     x += timeControlRect.w + columnPadding;
     SDL_FRect colorToggleRect = { x, y, colorToggleWidth, rowHeight };
     if (data->currentColor == WHITE) {
-        renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.white.engineConfig, WHITE_COLOR, HOVERING_MODAL);
+        renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.white.engineConfig, style.textStyle.textColor, HOVERING_MODAL);
         renderTimeControl(timeControlRect, app, data->gameInfo.white.timeControl, HOVERING_MODAL);
         renderButton(colorToggleRect, app, HOVERING_MODAL, "White",
             style.buttonStyle.hoverColor, style.buttonStyle.clickedColor,
             style.buttonStyle.idleColor, style.buttonStyle.borderColor,
-            WHITE_COLOR);
+            style.textStyle.textColor);
     }
     else {
         renderPlayerInfoIcon(engineConfigRect, app, data->gameInfo.black.engineConfig, BLACK_COLOR, HOVERING_MODAL);

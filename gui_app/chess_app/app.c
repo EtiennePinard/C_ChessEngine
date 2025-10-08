@@ -127,21 +127,7 @@ bool initializeApp(App* app) {
 
 void cleanupApp(App* app) {
     MagicBitBoard_terminate();
-
-    // Freeing the allocated engine config strings
-    switch (app->state.currentScene.sceneId) {
-    case GAME_SCENE_ID:
-        GameSceneData* gameSceneData = (GameSceneData*)app->state.currentScene.data;
-        if (gameSceneData->gameInfo.white.engineConfig.enginePath) SDL_free(gameSceneData->gameInfo.white.engineConfig.enginePath);
-        if (gameSceneData->gameInfo.black.engineConfig.enginePath) SDL_free(gameSceneData->gameInfo.black.engineConfig.enginePath);
-        if (gameSceneData->gameInfo.startingPositionFen) SDL_free(gameSceneData->gameInfo.startingPositionFen);
-        break;
-    default:
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Invalid scene ID %d\n", app->state.currentScene.sceneId);
-    }
-
     SDL_free(app->state.currentScene.sceneRender.renderBoxes);
-
     cleanupSDL_State(app->state.sdlState);
     quitSDL();
 }

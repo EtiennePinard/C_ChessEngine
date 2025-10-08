@@ -15,7 +15,6 @@ typedef struct PromotionModalData {
 typedef struct SettingsData {
     GameConfig gameInfo;
     PieceCharacteristics currentColor;
-    AppStyle currentStyle;
 
     SDL_FRect colorToggle;
     SDL_FRect engineConfig;
@@ -54,9 +53,7 @@ typedef struct EngineConfigModalData {
 } EngineConfigModalData;
 
 typedef struct StyleModalData {
-    AppStyle* hovered;
-    bool isStyleHovered;
-
+    bool firstTimeRendering; 
     SettingsData* savedSettingsData;
 } StyleModalData;
 

@@ -53,6 +53,11 @@ typedef struct AppStyle {
     ScrollBarStyle scrollbarStyle;
 } AppStyle;
 
+#define NUM_STYLES (5)
 extern AppStyle defaultStyle;
+extern AppStyle midnightBlueStyle;
+extern AppStyle forestGreenStyle;
+extern AppStyle solarizedLightStyle;
+extern AppStyle royalPurpleStyle;
 
 #endif /* FFFA9261_E3F1_49C7_A19E_16F715951AD0 */

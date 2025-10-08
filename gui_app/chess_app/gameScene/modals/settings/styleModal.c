@@ -6,85 +6,64 @@
 
 #include "../GameModals.h"
 
-typedef struct StringKeyAppStyleValue {
-    char* appStyleName;
-    AppStyle* styleValue;
-} StringKeyAppStyleValue;
+typedef struct Button Button;
 
-#define STYLE_ROW (1)
-#define STYLE_COLUMN (1)
-const StringKeyAppStyleValue stringKeyStyleValueMap[STYLE_ROW][STYLE_COLUMN] = {
-{
-    {.appStyleName = "default style", .styleValue = &defaultStyle },
-},
-};
+typedef SDL_AppResult(*ButtonOnClick)(SDL_FRect, App*, void* buttonData);
 
-SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
-    StyleModalData* modalData = (StyleModalData*)app->events.modal.data;
-    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+typedef struct ButtonData {
+    char* title;
+    void* data;
+} ButtonData;
 
-    modalData->isStyleHovered = false;
+typedef struct Buttons {
+    ButtonStyle buttonStyle;
+    SDL_Color textColor;
+    ButtonOnClick onClick;
 
-    SDL_Renderer* renderer = app->state.sdlState.renderer;
-    TTF_Font* font = app->state.sdlState.font;
+    size_t numButton;
+    ButtonData* data;
+} Buttons;
 
-    SDL_Color borderColor = style.buttonStyle.borderColor;
-    SDL_Color textColor = style.textStyle.textColor;
-    SDL_Color highlightColor = style.buttonStyle.hoverColor;
-    SDL_Color backgroundColor = style.backgroundColor;
+#define VERTICAL_SEPARATION_PERCENT (0.3)
 
-    // Modal semi-transparent dark background
-    SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-    SDL_RenderFillRect(renderer, &rect);
+SDL_AppResult renderButtonGrid(SDL_FRect rectToFit, App* app,
+    int numRows, int numItemsPerRow[numRows], Buttons buttons) {
 
-    // Modal border
-    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
-    SDL_RenderRect(renderer, &rect);
+    const float verticalSeparation = rectToFit.h / numRows * VERTICAL_SEPARATION_PERCENT;
+    const float optionHeight = rectToFit.h / numRows - verticalSeparation;
 
-    // Variable title height
-    const float titleHeight = rect.h * 0.1;
-
-    const float horizontalPadding = rect.w / (4 * STYLE_COLUMN);
-    const float optionWidth = (rect.w - horizontalPadding) / STYLE_COLUMN - horizontalPadding;
-    const float optionHeight = optionWidth / 2.0;
-    const float verticalEmptySpace = rect.h - titleHeight - optionHeight * STYLE_ROW;
-    const float verticalSeparation = verticalEmptySpace / (STYLE_ROW + 2);
-
-    SDL_FRect titleRect = {
-        .x = rect.x,
-        .y = rect.y + verticalSeparation / 2.0,
-        .w = rect.w,
-        .h = titleHeight
+    SDL_FRect buttonRect = {
+       .y = rectToFit.y,
+       .h = optionHeight
     };
-    const char* titleText = "Select app's style";
-    SDL_AppResult result = renderSingleLineTextCenteredToFit(renderer, font, titleText, textColor, titleRect);
-    if (result != SDL_APP_CONTINUE) return result;
-
-    const float gridTopY = titleRect.y + titleRect.h;
-    SDL_FRect optionRect = {
-        .x = rect.x + horizontalPadding,
-        .y = gridTopY + verticalSeparation,
-        .w = optionWidth,
-        .h = optionHeight
-    };
-
-    for (int styleIndex = 0; styleIndex < STYLE_ROW; styleIndex++) {
-        for (int optionIndex = 0; optionIndex < STYLE_COLUMN; optionIndex++) {
-            StringKeyAppStyleValue keyValue = stringKeyStyleValueMap[styleIndex][optionIndex];
-            if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &optionRect)) {
-                SDL_SetRenderDrawColor(renderer, highlightColor.r, highlightColor.g, highlightColor.b, highlightColor.a);
-                SDL_RenderFillRect(renderer, &optionRect);
-                modalData->hovered = keyValue.styleValue;
-                modalData->isStyleHovered = true;
+    size_t buttonIndex = 0;
+    for (int row = 0; row < numRows; row++) {
+        int numElementsInRow = numItemsPerRow[row];
+        const float horizontalPadding = rectToFit.w / numElementsInRow / 4.0;
+        buttonRect.w = (rectToFit.w - horizontalPadding) / numElementsInRow - horizontalPadding;
+        buttonRect.x = rectToFit.x + horizontalPadding;
+        for (int colIndex = 0; colIndex < numElementsInRow; colIndex++) {
+            ButtonData buttonData = buttons.data[buttonIndex++];
+            SDL_assert(buttonIndex <= buttons.numButton);
+            if (!app->events.mouseState.holdingLeftMouseButton && ((StyleModalData*)app->events.modal.data)->firstTimeRendering) {
+                ((StyleModalData*)app->events.modal.data)->firstTimeRendering = false;
             }
-            result = renderSingleLineTextCenteredToFit(renderer, font, keyValue.appStyleName, textColor, optionRect);
-            if (result != SDL_APP_CONTINUE) return result;
-            optionRect.x += optionRect.w + horizontalPadding;
-        }
-        optionRect.y += optionHeight + verticalSeparation;
-        optionRect.x = rect.x + horizontalPadding;
-    }
+            if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &buttonRect) && app->events.mouseState.holdingLeftMouseButton) {
+                buttons.onClick(buttonRect, app, buttonData.data);
+            }
+            if (renderButton(
+                buttonRect, app,
+                HOVERING_MODAL, buttonData.title,
+                buttons.buttonStyle.hoverColor,
+                buttons.buttonStyle.clickedColor,
+                buttons.buttonStyle.idleColor,
+                buttons.buttonStyle.borderColor,
+                buttons.textColor) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
 
+            buttonRect.x += buttonRect.w + horizontalPadding;
+        }
+        buttonRect.y += buttonRect.h + verticalSeparation;
+    }
     return SDL_APP_CONTINUE;
 }
 
@@ -98,16 +77,80 @@ SDL_AppResult onStyleModalCancel(SDL_Event* event, App* app) {
     return result;
 }
 
-SDL_AppResult clickedStyleModal(SDL_Event* event, SDL_FRect rect, App* app) {
-    (void)event, (void)rect;
-
+SDL_AppResult onButtonClick(SDL_FRect rect, App* app, void* buttonData) {
+    (void)rect;
     StyleModalData* modalData = (StyleModalData*)app->events.modal.data;
-    if (!modalData->isStyleHovered) return SDL_APP_CONTINUE;
+    if (modalData->firstTimeRendering) return SDL_APP_CONTINUE;
 
-    modalData->savedSettingsData->currentStyle = *modalData->hovered;
+    GameSceneData* sceneData = (GameSceneData*)app->state.currentScene.data;
+    // We want to immediately change the style and rerender
+    // so the user can see if they like the new style or not
+    // and then change back if they did not like it
+    sceneData->appStyle = *((AppStyle*)buttonData);
+    // We also want to change the background color
+    app->state.currentScene.sceneRender.renderDrawColor = sceneData->appStyle.backgroundColor;
+    return SDL_APP_CONTINUE;
+}
 
-    // Close the modal
-    return onStyleModalCancel(event, app);
+SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
+    AppStyle style = ((GameSceneData*)app->state.currentScene.data)->appStyle;
+
+    SDL_Renderer* renderer = app->state.sdlState.renderer;
+    TTF_Font* font = app->state.sdlState.font;
+
+    SDL_Color borderColor = style.buttonStyle.borderColor;
+    SDL_Color textColor = style.textStyle.textColor;
+    SDL_Color backgroundColor = style.backgroundColor;
+
+    // Modal semi-transparent dark background
+    SDL_SetRenderDrawColor(renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+    SDL_RenderFillRect(renderer, &rect);
+
+    // Modal border
+    SDL_SetRenderDrawColor(renderer, borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+    SDL_RenderRect(renderer, &rect);
+
+    // Variable title height
+    const float titleHeight = rect.h * 0.1;
+
+    const float verticalSeparation = titleHeight;
+
+    SDL_FRect titleRect = {
+        .x = rect.x,
+        .y = rect.y + verticalSeparation / 2.0,
+        .w = rect.w,
+        .h = titleHeight
+    };
+    const char* titleText = "Select app's style";
+    if (renderSingleLineTextCenteredToFit(renderer, font,
+        titleText, textColor, titleRect) != SDL_APP_CONTINUE)
+        return SDL_APP_FAILURE;
+
+    const float gridTopY = titleRect.y + titleRect.h + verticalSeparation;
+    SDL_FRect buttonGridRect = {
+        .x = rect.x,
+        .y = gridTopY,
+        .w = rect.w,
+        .h = rect.h - 2 * verticalSeparation - titleRect.h
+    };
+
+    Buttons buttons = {
+        .buttonStyle = style.buttonStyle,
+        .onClick = &onButtonClick,
+        .textColor = style.textStyle.textColor,
+        .numButton = NUM_STYLES,
+        .data = (ButtonData[]) {
+             {.title = "Default Gray", .data = &defaultStyle },
+             {.title = "Midnight Blue", .data = &midnightBlueStyle},
+             {.title = "Forest Green", .data = &forestGreenStyle},
+             {.title = "Solarized Light", .data = &solarizedLightStyle},
+             {.title = "Royal Purple", .data = &royalPurpleStyle}
+        }
+    };
+
+    renderButtonGrid(buttonGridRect, app, 2, (int[]) { 2, 3 }, buttons);
+
+    return SDL_APP_CONTINUE;
 }
 
 void setStyleModalActive(App* app) {
@@ -120,16 +163,14 @@ void setStyleModalActive(App* app) {
 
     StyleModalData* modalData = SDL_malloc(sizeof(StyleModalData));
     SDL_assert(modalData);
-    // Setting the hovered time left to 0 since we did not select any time control yet
-    modalData->hovered->backgroundColor.a = 69;
-    modalData->isStyleHovered = false;
     modalData->savedSettingsData = settingsData;
+    modalData->firstTimeRendering = true;
 
     // Initializing the time control modal
     app->events.modal.modalRender.renderRect = calculateSettingsRect(app);
     app->events.modal.modalRender.renderFunction = &renderStyleModal;
-    app->events.modal.modalRender.onMouseButtonDown = &clickedStyleModal;
-    app->events.modal.modalRender.onMouseHovered = &rerenderScene;
+    app->events.modal.modalRender.onMouseHovered = &rerenderScene; // So that we can detect hover behaviour and clicks
+    app->events.modal.modalRender.onMouseButtonDown = NULL;
     app->events.modal.modalRender.onMouseButtonUp = NULL;
     app->events.modal.modalRender.onMouseWheelScrolled = NULL;
     app->events.modal.modalRender.onMouseEntered = NULL;
@@ -139,7 +180,7 @@ void setStyleModalActive(App* app) {
     app->events.modal.canOnlyInteractWithModal = true;
     app->events.modal.onEscape = &onStyleModalCancel;
     app->events.modal.onReturn = NULL;
-    app->events.modal.modalId = TIME_CONTROL_MODAL_ID;
+    app->events.modal.modalId = STYLE_MODAL_ID;
     app->events.modal.isActive = true;
 
     SDL_SetAtomicInt(&app->state.currentScene.shouldRender, MAIN_THREAD_RERENDER);

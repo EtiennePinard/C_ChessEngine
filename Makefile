@@ -139,6 +139,7 @@ app_SRC = \
     gui_app/chess_app/gameScene/modals/settings/settingsTextInput.c \
     gui_app/chess_app/gameScene/modals/settings/timeControlModal.c \
     gui_app/chess_app/gameScene/modals/settings/engineConfigModal.c \
+    gui_app/chess_app/gameScene/modals/settings/styleModal.c \
     gui_app/chess_app/appUtils.c \
     gui_app/chess_app/appStyle.c \
     gui_app/chess_app/config.c \

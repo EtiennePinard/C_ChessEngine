@@ -99,6 +99,38 @@ AppStyle forestGreenStyle = {
     }
 };
 
+AppStyle royalPurpleStyle = {
+    .backgroundColor = { 25, 20, 35, 255 },
+    .modalBgColor = { 50, 40, 70, 255 },
+    .creditsColor = { 160, 130, 200, 255 },
+    .chessboardStyle = {
+        .square1Color = { 90, 70, 130, 255 },
+        .square2Color = { 45, 35, 70, 255 },
+        .highlightSquareColor = { 150, 100, 200, 100 }
+    },
+    .textStyle = {
+        .textColor = { 240, 230, 255, 255 },
+        .selectedTextColor = { 255, 255, 255, 255 },
+        .selectedTextBgColor = { 180, 120, 255, 40 }
+    },
+    .buttonStyle = {
+        .idleColor = { 50, 40, 70, 255 },
+        .borderColor = { 150, 120, 200, 255 },
+        .hoverColor = { 90, 70, 130, 255 },
+        .clickedColor = { 120, 100, 160, 255 }
+    },
+    .checkboxStyle = {
+        .borderColor = { 150, 120, 200, 255 },
+        .hoverColor = { 200, 170, 240, 255 },
+        .checkedColor = { 255, 255, 255, 255 }
+    },
+    .scrollbarStyle = {
+        .idleColor = { 70, 55, 100, 255 },
+        .hoverColor = { 100, 80, 130, 255 },
+        .clickedColor = { 130, 110, 160, 255 }
+    }
+};
+
 AppStyle solarizedLightStyle = {
     .backgroundColor = { 250, 245, 230, 255 },
     .modalBgColor = { 240, 230, 210, 255 },
@@ -131,34 +163,34 @@ AppStyle solarizedLightStyle = {
     }
 };
 
-AppStyle royalPurpleStyle = {
-    .backgroundColor = { 25, 20, 35, 255 },
-    .modalBgColor = { 50, 40, 70, 255 },
-    .creditsColor = { 160, 130, 200, 255 },
+AppStyle solarizedDarkStyle = {
+    .backgroundColor = { 0, 43, 54, 255 },        // Base03
+    .modalBgColor = { 7, 54, 66, 255 },           // Base02
+    .creditsColor = { 131, 148, 150, 255 },       // Base0
     .chessboardStyle = {
-        .square1Color = { 90, 70, 130, 255 },
-        .square2Color = { 45, 35, 70, 255 },
-        .highlightSquareColor = { 150, 100, 200, 100 }
+        .square1Color = { 88, 110, 117, 255 },    // Base01
+        .square2Color = { 0, 43, 54, 255 },       // Base03
+        .highlightSquareColor = { 38, 139, 210, 128 } // Solarized Blue (semi-transparent)
     },
     .textStyle = {
-        .textColor = { 240, 230, 255, 255 },
+        .textColor = { 253, 246, 227, 255 },      // Base3 (light text)
         .selectedTextColor = { 255, 255, 255, 255 },
-        .selectedTextBgColor = { 180, 120, 255, 40 }
+        .selectedTextBgColor = { 42, 161, 152, 40 }   // Solarized Cyan with transparency
     },
     .buttonStyle = {
-        .idleColor = { 50, 40, 70, 255 },
-        .borderColor = { 150, 120, 200, 255 },
-        .hoverColor = { 90, 70, 130, 255 },
-        .clickedColor = { 120, 100, 160, 255 }
+        .idleColor = { 7, 54, 66, 255 },          // Base02
+        .borderColor = { 147, 161, 161, 255 },    // Base1
+        .hoverColor = { 38, 139, 210, 255 },      // Solarized Blue
+        .clickedColor = { 42, 161, 152, 255 }     // Solarized Cyan
     },
     .checkboxStyle = {
-        .borderColor = { 150, 120, 200, 255 },
-        .hoverColor = { 200, 170, 240, 255 },
-        .checkedColor = { 255, 255, 255, 255 }
+        .borderColor = { 147, 161, 161, 255 },    // Base1
+        .hoverColor = { 181, 137, 0, 255 },       // Solarized Yellow
+        .checkedColor = { 42, 161, 152, 255 }     // Solarized Cyan
     },
     .scrollbarStyle = {
-        .idleColor = { 70, 55, 100, 255 },
-        .hoverColor = { 100, 80, 130, 255 },
-        .clickedColor = { 130, 110, 160, 255 }
+        .idleColor = { 88, 110, 117, 255 },       // Base01
+        .hoverColor = { 38, 139, 210, 255 },      // Blue
+        .clickedColor = { 42, 161, 152, 255 }     // Cyan
     }
 };

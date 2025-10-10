@@ -104,7 +104,7 @@ SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
         .titles = modalData->buttonTitles
     };
 
-    renderButtonGrid(buttonGridRect, app, 2, (int[]) { 2, 3 }, buttons, modalData->buttonRects);
+    renderButtonGrid(buttonGridRect, app, 2, (int[]) { 3, 3 }, buttons, modalData->buttonRects);
 
     return SDL_APP_CONTINUE;
 }
@@ -154,8 +154,22 @@ void setStyleModalActive(App* app) {
     StyleModalData* modalData = SDL_malloc(sizeof(StyleModalData));
     SDL_assert(modalData);
     modalData->savedSettingsData = settingsData;
-    char* titles[NUM_STYLES] = { "Default Gray", "Midnight Blue", "Forest Green", "Solarized Light", "Royal Purple" };
-    AppStyle* appStyles[NUM_STYLES] = { &defaultStyle, &midnightBlueStyle, &forestGreenStyle, &solarizedLightStyle, &royalPurpleStyle };
+    char* titles[NUM_STYLES] = { 
+        "Default Gray", 
+        "Midnight Blue", 
+        "Forest Green", 
+        "Royal Purple", 
+        "Solarized Light", 
+        "Solarized Dark" 
+    };
+    AppStyle* appStyles[NUM_STYLES] = { 
+        &defaultStyle, 
+        &midnightBlueStyle,
+        &forestGreenStyle,
+        &royalPurpleStyle,
+        &solarizedLightStyle,
+        &solarizedDarkStyle 
+    };
     memcpy(&modalData->buttonTitles, titles, sizeof(titles));
     memcpy(&modalData->appStyles, appStyles, sizeof(appStyles));
 

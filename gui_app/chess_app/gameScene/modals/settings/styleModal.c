@@ -6,16 +6,12 @@
 
 #include "../GameModals.h"
 
-typedef struct Button Button;
-
-typedef SDL_AppResult(*ButtonOnClick)(SDL_FRect, App*, void* buttonData);
-
 typedef struct Buttons {
     ButtonStyle buttonStyle;
     SDL_Color textColor;
 
     size_t numButton;
-    ButtonData* data;
+    char** titles;
 } Buttons;
 
 #define VERTICAL_SEPARATION_PERCENT (0.3)
@@ -38,18 +34,18 @@ SDL_AppResult renderButtonGrid(SDL_FRect rectToFit, App* app,
         buttonRect.w = (rectToFit.w - horizontalPadding) / numElementsInRow - horizontalPadding;
         buttonRect.x = rectToFit.x + horizontalPadding;
         for (int colIndex = 0; colIndex < numElementsInRow; colIndex++) {
-            ButtonData buttonData = buttons.data[buttonIndex];
+            char* buttonTitle = buttons.titles[buttonIndex];
             if (renderButton(
                 buttonRect, app,
-                HOVERING_MODAL, buttonData.title,
+                HOVERING_MODAL, buttonTitle,
                 buttons.buttonStyle.hoverColor,
                 buttons.buttonStyle.clickedColor,
                 buttons.buttonStyle.idleColor,
                 buttons.buttonStyle.borderColor,
                 buttons.textColor) != SDL_APP_CONTINUE) return SDL_APP_FAILURE;
-                buttonRects[buttonIndex] = buttonRect;
-                buttonIndex++;
-                SDL_assert(buttonIndex <= buttons.numButton);
+            buttonRects[buttonIndex] = buttonRect;
+            buttonIndex++;
+            SDL_assert(buttonIndex <= buttons.numButton);
 
             buttonRect.x += buttonRect.w + horizontalPadding;
         }
@@ -105,7 +101,7 @@ SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
         .buttonStyle = style.buttonStyle,
         .textColor = style.textStyle.textColor,
         .numButton = NUM_STYLES,
-        .data = modalData->buttonData
+        .titles = modalData->buttonTitles
     };
 
     renderButtonGrid(buttonGridRect, app, 2, (int[]) { 2, 3 }, buttons, modalData->buttonRects);
@@ -113,12 +109,12 @@ SDL_AppResult renderStyleModal(SDL_FRect rect, App* app) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult onButtonClick(App* app, AppStyle* buttonData) {
+SDL_AppResult onButtonClick(App* app, AppStyle* appStyle) {
     GameSceneData* sceneData = (GameSceneData*)app->state.currentScene.data;
     // We want to immediately change the style and rerender
     // so the user can see if they like the new style or not
     // and then change back if they did not like it
-    sceneData->appStyle = *buttonData;
+    sceneData->appStyle = *appStyle;
     // We also want to change the background color
     app->state.currentScene.sceneRender.renderDrawColor = sceneData->appStyle.backgroundColor;
     return SDL_APP_CONTINUE;
@@ -130,7 +126,7 @@ SDL_AppResult clickedDownStyleModal(SDL_Event* event, SDL_FRect rect, App* app) 
     for (size_t buttonIndex = 0; buttonIndex < NUM_STYLES; buttonIndex++) {
         if (SDL_PointInRectFloat(&app->events.mouseState.mousePoint, &modalData->buttonRects[buttonIndex])) {
             // We assume we cannot be in two buttons at once
-            return onButtonClick(app, modalData->buttonData[buttonIndex].data);
+            return onButtonClick(app, modalData->appStyles[buttonIndex]);
         }
     }
 
@@ -158,11 +154,10 @@ void setStyleModalActive(App* app) {
     StyleModalData* modalData = SDL_malloc(sizeof(StyleModalData));
     SDL_assert(modalData);
     modalData->savedSettingsData = settingsData;
-    modalData->buttonData[0] = (ButtonData){ .title = "Default Gray", .data = &defaultStyle };
-    modalData->buttonData[1] = (ButtonData){ .title = "Midnight Blue", .data = &midnightBlueStyle };
-    modalData->buttonData[2] = (ButtonData){ .title = "Forest Green", .data = &forestGreenStyle };
-    modalData->buttonData[3] = (ButtonData){ .title = "Solarized Light", .data = &solarizedLightStyle };
-    modalData->buttonData[4] = (ButtonData){ .title = "Royal Purple", .data = &royalPurpleStyle };
+    char* titles[NUM_STYLES] = { "Default Gray", "Midnight Blue", "Forest Green", "Solarized Light", "Royal Purple" };
+    AppStyle* appStyles[NUM_STYLES] = { &defaultStyle, &midnightBlueStyle, &forestGreenStyle, &solarizedLightStyle, &royalPurpleStyle };
+    memcpy(&modalData->buttonTitles, titles, sizeof(titles));
+    memcpy(&modalData->appStyles, appStyles, sizeof(appStyles));
 
     // Initializing the time control modal
     app->events.modal.modalRender.renderRect = calculateSettingsRect(app);

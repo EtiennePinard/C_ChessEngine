@@ -52,13 +52,9 @@ typedef struct EngineConfigModalData {
     SettingsData* savedSettingsData;
 } EngineConfigModalData;
 
-typedef struct ButtonData {
-    char* title;
-    void* data;
-} ButtonData;
-
 typedef struct StyleModalData {
-    ButtonData buttonData[NUM_STYLES];
+    AppStyle* appStyles[NUM_STYLES];
+    char* buttonTitles[NUM_STYLES];
     SDL_FRect buttonRects[NUM_STYLES];
     SettingsData* savedSettingsData;
 } StyleModalData;
